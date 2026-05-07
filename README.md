@@ -1,73 +1,90 @@
-# React + TypeScript + Vite
+# 💧⛽ POS Air & Gas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+> **Point of Sale web app** for a Micro/Small/Medium Enterprise (MSMe) selling bottled water and cylinder gas.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📖 Overview
 
-## React Compiler
+POS Air & Gas is a **mobile-first PWA** built to manage the daily operations of a small water & gas shop. It supports three user roles — Owner, Kurir (courier), and Kasir (clerk) — each with a tailored experience for their responsibilities.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## ✨ Features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+| Module | Description |
+|---|---|
+| 🔐 **Authentication** | JWT-based login with role-aware routing (owner / kurir / kasir) |
+| 📊 **Dashboard** | Daily revenue summary, weekly bar chart, stock snapshot, and debt overview with date filter |
+| 📦 **Stock Management** | Receive stock, transfer between locations, vendor exchange runs, defect write-off |
+| 🗺️ **Locations** | Manage warehouse and vehicle/truck locations with stock per location |
+| 🛒 **Transactions** | Delivery (kurir), counter sale (kasir), and vendor-direct pass-through transactions |
+| 👥 **Customers** | Customer list with per-customer custom pricing |
+| 💸 **Debt & Payments** | Partial payment support, customer debt tracking, and standalone debt settlement |
+| 🧴 **Container Loans** | Track owner-owned containers borrowed by customers |
+| 🧑‍💼 **Users** | Owner-only user management (create, activate/deactivate) |
+| ⚙️ **Settings / Profile** | All roles can update their own name and password; settings hub for owner |
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 🗂️ Product Categories
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- **Simple** — no container; standard in/out stock (e.g. karton air cup)
+- **Refillable** — filled/empty container state tracked per location (e.g. galon air, tabung gas)
+
+---
+
+## 👤 User Roles
+
+| Role | Access |
+|---|---|
+| **Owner** | Full access to all modules |
+| **Kurir** | Truck loading/return, vendor exchange, delivery transactions |
+| **Kasir** | Counter sales, payment collection |
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Framework | React 19 + TypeScript |
+| Build Tool | Vite |
+| Styling | SCSS (CSS Modules per component) |
+| Routing | React Router v7 |
+| HTTP Client | Axios |
+| PWA | Vite PWA plugin + Web App Manifest |
+
+---
+
+## 🚀 Getting Started
+
+```bash
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+
+# Build for production
+npm run build
+
+# Preview production build
+npm run preview
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+---
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📁 Project Structure
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── components/     # Reusable UI components (Button, Modal, Badge, …)
+├── pages/          # Page-level components per route
+├── services/       # API service modules per domain
+├── hooks/          # Custom React hooks (useAuth, useApi, usePolling)
+├── context/        # React context (AuthContext)
+├── types/          # Shared TypeScript types
+├── styles/         # Global SCSS variables, mixins, reset
+└── utils/          # Helper utilities (formatCurrency, constants)
 ```
