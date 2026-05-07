@@ -1,0 +1,28 @@
+.page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
+.loadingWrap { display: flex; justify-content: center; padding: 48px; }
+.tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
+.table {
+  width: 100%;
+  th { background: var(--color-cloud-gray); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-whisper-gray); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--color-light-violet-stroke); }
+  td { padding: 14px 16px; font-size: 15px; color: var(--color-charcoal-text); border-bottom: 1px solid var(--color-light-violet-stroke); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--color-cloud-gray); }
+}
+.inactiveRow td { opacity: 0.55; }
+.nameCell { font-weight: 500; color: var(--color-deep-space-violet) !important; white-space: nowrap; }
+.addressCell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--color-slate-text) !important; }
+.actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.actionBtn { font-size: 13px; font-weight: 500; color: var(--color-digital-violet); padding: 6px 12px; border-radius: 9999px; transition: background-color 0.15s; white-space: nowrap; &:hover { background: var(--color-hover-violet); } }
+.pricingBtn { color: var(--color-slate-text); &:hover { background: var(--color-cloud-gray); } }
+.deactivateBtn { color: var(--color-danger); &:hover { background: #fee2e2; } }
+.form { display: flex; flex-direction: column; gap: 20px; }
+.pricingInfo { background: var(--color-cloud-gray); padding: 12px 16px; margin-bottom: 20px; font-size: 13px; color: var(--color-slate-text); }
+.pricingTable { display: flex; flex-direction: column; gap: 16px; }
+.pricingRow { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: end; padding-bottom: 16px; border-bottom: 1px solid var(--color-light-violet-stroke); &:last-child { border-bottom: none; padding-bottom: 0; } @media (max-width: 480px) { grid-template-columns: 1fr; } }
+.pricingProduct { display: flex; flex-direction: column; gap: 4px; }
+.pricingProductName { font-weight: 500; font-size: 15px; color: var(--color-deep-space-violet); }
+.pricingBasePrice { font-size: 13px; color: var(--color-whisper-gray); }
+.pricingInput {}

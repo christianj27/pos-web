@@ -1,0 +1,72 @@
+@use 'variables' as *;
+
+// ─── Respond to breakpoints ───────────────────────────────────────────────────
+@mixin respond-tablet {
+  @media (min-width: #{$tablet}) { @content; }
+}
+@mixin respond-desktop {
+  @media (min-width: #{$desktop}) { @content; }
+}
+
+// ─── Flex helpers ─────────────────────────────────────────────────────────────
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+// ─── Text truncate ────────────────────────────────────────────────────────────
+@mixin truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+// ─── Typography helpers ───────────────────────────────────────────────────────
+@mixin heading-sm {
+  font-family: $font-object-sans;
+  font-size: 24px;
+  line-height: 1.38;
+  letter-spacing: -0.48px;
+  font-weight: 700;
+}
+@mixin heading {
+  font-family: $font-object-sans;
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: -0.8px;
+  font-weight: 700;
+}
+@mixin body-text {
+  font-family: $font-helvetica-neue;
+  font-size: 16px;
+  line-height: 1.5;
+}
+@mixin caption {
+  font-family: $font-helvetica-neue;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+@mixin card {
+  background: $color-white-canvas;
+  border-radius: $radius-card;
+  border: 1px solid $color-light-violet-stroke;
+}
+@mixin elevated-card {
+  background: $color-white-canvas;
+  border-radius: $radius-general;
+  box-shadow: $shadow-lg;
+}
+
+// ─── Tap target ───────────────────────────────────────────────────────────────
+@mixin tap-target {
+  min-height: 44px;
+  min-width: 44px;
+}

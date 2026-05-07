@@ -1,0 +1,19 @@
+.page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
+.loadingWrap { display: flex; justify-content: center; padding: 48px; }
+.tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
+.table {
+  width: 100%;
+  th { background: var(--color-cloud-gray); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-whisper-gray); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--color-light-violet-stroke); }
+  td { padding: 14px 16px; font-size: 15px; color: var(--color-charcoal-text); border-bottom: 1px solid var(--color-light-violet-stroke); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--color-cloud-gray); }
+}
+.nameCell { font-weight: 600; color: var(--color-deep-space-violet) !important; }
+.amountCell { font-family: var(--font-object-sans); font-weight: 700; font-size: 16px !important; color: var(--color-success) !important; }
+.notesCell { font-size: 14px !important; color: var(--color-whisper-gray) !important; max-width: 200px; }
+.dateCell { font-size: 13px !important; color: var(--color-whisper-gray) !important; white-space: nowrap; }
+.createForm { display: flex; flex-direction: column; gap: 16px; }
+.errorBanner { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; font-size: 14px; color: var(--color-danger); }

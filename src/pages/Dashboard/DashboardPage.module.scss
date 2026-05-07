@@ -1,0 +1,146 @@
+.page {
+  padding: 24px 16px;
+
+  @media (min-width: 768px) {
+    padding: 32px 24px;
+  }
+}
+
+.container {
+  max-width: var(--max-width);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.title {
+  font-family: var(--font-object-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  letter-spacing: -0.56px;
+}
+
+.date {
+  font-size: 14px;
+  color: var(--color-whisper-gray);
+  margin-top: 4px;
+  text-transform: capitalize;
+}
+
+.errorBanner {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  font-size: 14px;
+  color: var(--color-danger);
+}
+
+.sectionTitle {
+  font-family: var(--font-object-sans);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-whisper-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 16px;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+}
+
+.statCard {
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    align-items: center;
+    gap: 16px;
+    padding: 24px 20px;
+  }
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.iconGreen  { background: #dcfce7; color: #16a34a; }
+.iconViolet { background: var(--color-hover-violet); color: var(--color-digital-violet); }
+.iconOrange { background: #fef3c7; color: #d97706; }
+.iconBlue   { background: #dbeafe; color: #2563eb; }
+
+.statContent {}
+
+.statLabel {
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+  margin-bottom: 4px;
+}
+
+.statValue {
+  font-family: var(--font-object-sans);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  letter-spacing: -0.4px;
+  line-height: 1.2;
+}
+
+.summaryCard {
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+}
+
+.summaryRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.summaryLabel {
+  font-size: 15px;
+  color: var(--color-slate-text);
+}
+
+.summaryValue {
+  font-family: var(--font-object-sans);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+}
+
+.danger {
+  color: var(--color-danger);
+}

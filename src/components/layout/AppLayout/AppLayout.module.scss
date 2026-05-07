@@ -1,0 +1,89 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background: var(--color-white-canvas);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 90;
+  background: var(--color-white-canvas);
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+  height: var(--navbar-height);
+  flex-shrink: 0;
+}
+
+.navInner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  padding: 0 16px;
+  max-width: var(--max-width);
+  margin: 0 auto;
+
+  @media (min-width: 768px) {
+    padding: 0 24px;
+  }
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.navRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-slate-text);
+  display: none;
+
+  @media (min-width: 480px) {
+    display: block;
+  }
+}
+
+.logoutBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 9999px;
+  color: var(--color-whisper-gray);
+  font-size: 14px;
+  font-weight: 500;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background-color: var(--color-cloud-gray);
+    color: var(--color-charcoal-text);
+  }
+}
+
+.logoutLabel {
+  display: none;
+
+  @media (min-width: 480px) {
+    display: inline;
+  }
+}
+
+.main {
+  flex: 1;
+  padding-bottom: var(--bottom-nav-height);
+  overflow-x: hidden;
+}

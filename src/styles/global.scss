@@ -1,0 +1,89 @@
+@use 'variables' as *;
+@use 'reset';
+
+:root {
+  // Colors
+  --color-white-canvas:        #{$color-white-canvas};
+  --color-cloud-gray:          #{$color-cloud-gray};
+  --color-deep-space-violet:   #{$color-deep-space-violet};
+  --color-digital-violet:      #{$color-digital-violet};
+  --color-charcoal-text:       #{$color-charcoal-text};
+  --color-slate-text:          #{$color-slate-text};
+  --color-whisper-gray:        #{$color-whisper-gray};
+  --color-hover-violet:        #{$color-hover-violet};
+  --color-light-violet-stroke: #{$color-light-violet-stroke};
+
+  --color-success: #{$color-success};
+  --color-warning: #{$color-warning};
+  --color-danger:  #{$color-danger};
+  --color-info:    #{$color-info};
+
+  // Typography
+  --font-object-sans:    #{$font-object-sans};
+  --font-helvetica-neue: #{$font-helvetica-neue};
+
+  // Spacing
+  --spacing-4:   #{$spacing-4};
+  --spacing-8:   #{$spacing-8};
+  --spacing-12:  #{$spacing-12};
+  --spacing-16:  #{$spacing-16};
+  --spacing-20:  #{$spacing-20};
+  --spacing-24:  #{$spacing-24};
+  --spacing-28:  #{$spacing-28};
+  --spacing-32:  #{$spacing-32};
+  --spacing-40:  #{$spacing-40};
+  --spacing-48:  #{$spacing-48};
+  --spacing-56:  #{$spacing-56};
+  --spacing-64:  #{$spacing-64};
+
+  // Layout
+  --max-width:          #{$max-width};
+  --bottom-nav-height:  #{$bottom-nav-height};
+  --navbar-height:      #{$navbar-height};
+
+  // Shadows
+  --shadow-md: #{$shadow-md};
+  --shadow-lg: #{$shadow-lg};
+
+  // Typography scale
+  --text-caption:     13px;
+  --text-body:        16px;
+  --text-subheading:  18px;
+  --text-heading-sm:  24px;
+  --text-heading:     32px;
+  --text-heading-lg:  40px;
+  --text-display:     48px;
+  --text-display-lg:  80px;
+}
+
+html, body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-helvetica-neue);
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: var(--color-charcoal-text);
+  background-color: var(--color-white-canvas);
+}
+
+#root {
+  height: 100%;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-cloud-gray);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-light-violet-stroke);
+  border-radius: 9999px;
+  &:hover {
+    background: var(--color-whisper-gray);
+  }
+}

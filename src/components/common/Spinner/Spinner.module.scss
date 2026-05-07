@@ -1,0 +1,20 @@
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.spinner {
+  display: inline-block;
+  border-radius: 50%;
+  border-style: solid;
+  border-top-color: transparent !important;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.sm { width: 16px; height: 16px; border-width: 2px; }
+.md { width: 24px; height: 24px; border-width: 2.5px; }
+.lg { width: 36px; height: 36px; border-width: 3px; }
+
+.violet  { border-color: var(--color-digital-violet); }
+.white   { border-color: rgba(255,255,255,0.8); }
+.inherit { border-color: currentColor; }

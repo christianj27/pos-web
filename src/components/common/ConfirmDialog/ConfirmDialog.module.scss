@@ -1,0 +1,48 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(31, 31, 71, 0.48);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  padding: 24px;
+}
+
+.dialog {
+  background: var(--color-white-canvas);
+  border-radius: 0;
+  padding: 28px 24px 24px;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: var(--shadow-lg);
+
+  @media (min-width: 768px) {
+    padding: 32px 28px 28px;
+  }
+}
+
+.title {
+  font-family: var(--font-object-sans);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  margin-bottom: 10px;
+}
+
+.message {
+  font-size: 15px;
+  color: var(--color-slate-text);
+  line-height: 1.5;
+  margin-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+
+  @media (max-width: 480px) {
+    flex-direction: column-reverse;
+  }
+}
