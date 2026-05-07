@@ -39,6 +39,7 @@
   cursor: pointer;
   -webkit-appearance: none;
   appearance: none;
+  border-radius: 5px;
 
   &:focus {
     border-color: var(--color-digital-violet);

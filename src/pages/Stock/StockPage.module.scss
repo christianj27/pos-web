@@ -4,9 +4,9 @@
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 .refreshBtn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--color-whisper-gray); transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
-.tabBar { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--color-light-violet-stroke); padding-bottom: 0; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
-.tabBtn { flex-shrink: 0; padding: 10px 16px; font-size: 14px; font-weight: 500; color: var(--color-whisper-gray); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.15s, border-color 0.15s; &:hover { color: var(--color-slate-text); } }
-.tabActive { color: var(--color-digital-violet) !important; border-bottom-color: var(--color-digital-violet) !important; background: none !important; }
+.tabBar { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
+.tabBtn { flex-shrink: 0; font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 9999px; white-space: nowrap; color: var(--color-whisper-gray); background: none; border: none; cursor: pointer; transition: background-color 0.15s, color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
+.tabActive { background: var(--color-deep-space-violet) !important; color: #fff !important; }
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
 .table {
   width: 100%;
