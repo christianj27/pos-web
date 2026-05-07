@@ -64,23 +64,19 @@ export function DebtPaymentsPage() {
         {!loading && payments.length === 0 && <EmptyState message="Belum ada catatan pembayaran hutang." />}
 
         {!loading && payments.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr><th>Pelanggan</th><th>Jumlah</th><th>Catatan</th><th>Dicatat oleh</th><th>Waktu</th></tr>
-              </thead>
-              <tbody>
-                {payments.map((p) => (
-                  <tr key={p.id}>
-                    <td className={styles.nameCell}>{p.customer_name}</td>
-                    <td className={styles.amountCell}>{formatCurrency(p.amount)}</td>
-                    <td className={styles.notesCell}>{p.notes ?? '—'}</td>
-                    <td>{p.created_by_name}</td>
-                    <td className={styles.dateCell}>{formatDate(p.created_at)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.cardList}>
+            {payments.map((p) => (
+              <div key={p.id} className={styles.card}>
+                <div className={styles.cardTop}>
+                  <div className={styles.cardInfo}>
+                    <span className={styles.cardName}>{p.customer_name}</span>
+                    {p.notes && <span className={styles.cardSub}>{p.notes}</span>}
+                  </div>
+                  <span className={styles.cardAmount}>{formatCurrency(p.amount)}</span>
+                </div>
+                <div className={styles.cardMeta}>{p.created_by_name} · {formatDate(p.created_at)}</div>
+              </div>
+            ))}
           </div>
         )}
       </div>

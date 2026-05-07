@@ -11,6 +11,8 @@ import { CustomersPage } from './pages/Customers/CustomersPage';
 import { StockPage } from './pages/Stock/StockPage';
 import { TransactionsPage } from './pages/Transactions/TransactionsPage';
 import { DebtPaymentsPage } from './pages/DebtPayments/DebtPaymentsPage';
+import { SettingsPage } from './pages/Settings/SettingsPage';
+import { ProfilePage } from './pages/Profile/ProfilePage';
 import { Spinner } from './components/common';
 import type { UserRole } from './types';
 
@@ -70,6 +72,14 @@ export default function App() {
 
             <Route path="/debt-payments" element={
               <RequireAuth allowedRoles={['owner', 'kasir']}><DebtPaymentsPage /></RequireAuth>
+            } />
+
+            <Route path="/settings" element={
+              <RequireAuth allowedRoles={['owner']}><SettingsPage /></RequireAuth>
+            } />
+
+            <Route path="/profile" element={
+              <RequireAuth><ProfilePage /></RequireAuth>
             } />
           </Route>
 

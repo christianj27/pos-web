@@ -34,4 +34,12 @@ export const userService = {
     if (u) u.is_active = true;
     return delay({ ...u! });
   },
+
+  updateProfile: (data: { name?: string; currentPassword?: string; newPassword?: string }): Promise<void> => {
+    // return apiClient.put('/api/profile', { name: data.name, current_password: data.currentPassword, new_password: data.newPassword }).then((r) => r.data);
+    if (data.name) {
+      mockDb.users.forEach((u) => { if (u.is_active) u.name = data.name!; });
+    }
+    return delay(undefined);
+  },
 };

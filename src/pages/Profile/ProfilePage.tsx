@@ -1,0 +1,127 @@
+import { useState } from 'react';
+import { useAuth } from '../../hooks/useAuth';
+import { userService } from '../../services/userService';
+import { Button, Input, Badge } from '../../components/common';
+import styles from './ProfilePage.module.scss';
+
+export function ProfilePage() {
+  const { user, logout } = useAuth();
+
+  const [name, setName] = useState(user?.name ?? '');
+  const [savingName, setSavingName] = useState(false);
+  const [nameSuccess, setNameSuccess] = useState(false);
+  const [nameError, setNameError] = useState<string | null>(null);
+
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [savingPwd, setSavingPwd] = useState(false);
+  const [pwdSuccess, setPwdSuccess] = useState(false);
+  const [pwdError, setPwdError] = useState<string | null>(null);
+
+  async function handleSaveName(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) { setNameError('Nama tidak boleh kosong.'); return; }
+    setSavingName(true); setNameError(null); setNameSuccess(false);
+    try {
+      await userService.updateProfile({ name: name.trim() });
+      setNameSuccess(true);
+    } catch {
+      setNameError('Gagal menyimpan nama.');
+    } finally { setSavingName(false); }
+  }
+
+  async function handleSavePwd(e: React.FormEvent) {
+    e.preventDefault();
+    if (!currentPwd || !newPwd || !confirmPwd) { setPwdError('Semua kolom wajib diisi.'); return; }
+    if (newPwd !== confirmPwd) { setPwdError('Konfirmasi kata sandi tidak cocok.'); return; }
+    if (newPwd.length < 8) { setPwdError('Kata sandi minimal 8 karakter.'); return; }
+    setSavingPwd(true); setPwdError(null); setPwdSuccess(false);
+    try {
+      await userService.updateProfile({ currentPassword: currentPwd, newPassword: newPwd });
+      setPwdSuccess(true);
+      setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
+    } catch {
+      setPwdError('Kata sandi saat ini tidak benar.');
+    } finally { setSavingPwd(false); }
+  }
+
+  const roleLabel: Record<string, string> = { owner: 'Owner', kurir: 'Kurir', kasir: 'Kasir' };
+  const isOwner = user?.role === 'owner';
+
+  return (
+    <div className={styles.page}>
+      <div className={styles.container}>
+        <h1 className={styles.title}>Profil Saya</h1>
+
+        {/* Info */}
+        <div className={styles.section}>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Username</span>
+            <span className={styles.infoValue}>{user?.username}</span>
+          </div>
+          <div className={styles.infoRow}>
+            <span className={styles.infoLabel}>Peran</span>
+            <Badge variant={user?.role as 'owner' | 'kurir' | 'kasir'}>{roleLabel[user?.role ?? ''] ?? user?.role}</Badge>
+          </div>
+        </div>
+
+        {/* Edit Name */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Ubah Nama</h2>
+          {nameSuccess && <div className={styles.successBanner}>Nama berhasil diperbarui.</div>}
+          {nameError && <div className={styles.errorBanner}>{nameError}</div>}
+          <form className={styles.form} onSubmit={handleSaveName}>
+            <Input
+              label="Nama Tampil"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              required
+            />
+            <Button type="submit" loading={savingName} size="sm">Simpan Nama</Button>
+          </form>
+        </div>
+
+        {/* Change Password */}
+        <div className={styles.section}>
+          <h2 className={styles.sectionTitle}>Ubah Kata Sandi</h2>
+          {pwdSuccess && <div className={styles.successBanner}>Kata sandi berhasil diperbarui.</div>}
+          {pwdError && <div className={styles.errorBanner}>{pwdError}</div>}
+          <form className={styles.form} onSubmit={handleSavePwd}>
+            <Input
+              label="Kata Sandi Saat Ini"
+              type="password"
+              value={currentPwd}
+              onChange={(e) => setCurrentPwd(e.target.value)}
+              required
+            />
+            <Input
+              label="Kata Sandi Baru"
+              type="password"
+              value={newPwd}
+              onChange={(e) => setNewPwd(e.target.value)}
+              required
+            />
+            <Input
+              label="Konfirmasi Kata Sandi Baru"
+              type="password"
+              value={confirmPwd}
+              onChange={(e) => setConfirmPwd(e.target.value)}
+              required
+            />
+            <Button type="submit" loading={savingPwd} size="sm">Simpan Kata Sandi</Button>
+          </form>
+        </div>
+
+        {/* Logout (kurir / kasir only — owner uses /settings) */}
+        {!isOwner && (
+          <div className={styles.section}>
+            <Button variant="danger" onClick={() => logout()} style={{ width: '100%' }}>
+              Keluar
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

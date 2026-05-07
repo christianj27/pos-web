@@ -8,6 +8,8 @@ export interface CreateTransactionPayload {
   location_id?: string;
   items: { product_id: string; quantity: number; unit_price: number }[];
   paid_amount: number;
+  payment_method?: 'cash' | 'transfer' | 'qris';
+  notes?: string;
 }
 
 export const transactionService = {
@@ -35,6 +37,8 @@ export const transactionService = {
       customer_id: customer?.id, customer_name: customer?.name,
       location_id: location?.id, location_name: location?.name,
       items, total_amount, paid_amount: data.paid_amount,
+      payment_method: data.payment_method ?? 'cash',
+      notes: data.notes,
       status: data.paid_amount >= total_amount ? 'completed' : 'pending',
       created_by_name: 'Demo User', created_at: new Date().toISOString(),
     };

@@ -118,6 +118,8 @@ export interface Transaction {
   items: TransactionItem[];
   total_amount: number;
   paid_amount: number;
+  payment_method?: 'cash' | 'transfer' | 'qris';
+  notes?: string;
   status: TransactionStatus;
   created_by_name: string;
   created_at: string;

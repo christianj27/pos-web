@@ -140,49 +140,33 @@ export function UsersPage() {
         )}
 
         {!loading && users.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Username</th>
-                  <th>Peran</th>
-                  <th>Status</th>
-                  <th>Dibuat</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((u) => (
-                  <tr key={u.id} className={!u.is_active ? styles.inactiveRow : ''}>
-                    <td className={styles.nameCell}>{u.name}</td>
-                    <td className={styles.usernameCell}>@{u.username}</td>
-                    <td>
-                      <Badge variant={u.role as UserRole}>{ROLE_LABELS[u.role]}</Badge>
-                    </td>
-                    <td>
-                      <Badge variant={u.is_active ? 'active' : 'inactive'}>
-                        {u.is_active ? 'Aktif' : 'Tidak Aktif'}
-                      </Badge>
-                    </td>
-                    <td className={styles.dateCell}>{formatDate(u.created_at)}</td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button className={styles.actionBtn} onClick={() => openEdit(u)}>Edit</button>
-                        {u.id !== me?.id && (
-                          <button
-                            className={[styles.actionBtn, u.is_active ? styles.deactivateBtn : styles.activateBtn].join(' ')}
-                            onClick={() => setConfirmTarget(u)}
-                          >
-                            {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.cardList}>
+            {users.map((u) => (
+              <div key={u.id} className={[styles.card, !u.is_active ? styles.cardInactive : ''].join(' ')}>
+                <div className={styles.cardTop}>
+                  <div className={styles.cardInfo}>
+                    <span className={styles.cardName}>{u.name}</span>
+                    <span className={styles.cardSub}>@{u.username}</span>
+                  </div>
+                  <div className={styles.cardBadges}>
+                    <Badge variant={u.role as UserRole}>{ROLE_LABELS[u.role]}</Badge>
+                    <Badge variant={u.is_active ? 'active' : 'inactive'}>{u.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                  </div>
+                </div>
+                <div className={styles.cardMeta}>{formatDate(u.created_at)}</div>
+                <div className={styles.cardActions}>
+                  <button className={styles.actionBtn} onClick={() => openEdit(u)}>Edit</button>
+                  {u.id !== me?.id && (
+                    <button
+                      className={[styles.actionBtn, u.is_active ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                      onClick={() => setConfirmTarget(u)}
+                    >
+                      {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

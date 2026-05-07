@@ -1,0 +1,32 @@
+.page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+.title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  @media (min-width: 480px) { grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 768px) { grid-template-columns: repeat(3, 1fr); }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 20px 16px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  text-align: left;
+  transition: background-color 0.15s, border-color 0.15s;
+  &:hover { background: var(--color-cloud-gray); border-color: var(--color-digital-violet); }
+}
+
+.cardDanger {
+  &:hover { background: #fef2f2; border-color: var(--color-danger); }
+  .cardLabel { color: var(--color-danger); }
+}
+
+.cardLabel { font-weight: 700; font-size: 16px; color: var(--color-deep-space-violet); }
+.cardDesc { font-size: 13px; color: var(--color-whisper-gray); }

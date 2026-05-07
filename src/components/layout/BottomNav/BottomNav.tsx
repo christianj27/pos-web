@@ -6,7 +6,6 @@ interface NavItem {
   to: string;
   label: string;
   icon: React.ReactNode;
-  roles?: string[];
 }
 
 function HomeIcon() {
@@ -58,23 +57,49 @@ function DebtIcon() {
     </svg>
   );
 }
+function ProfileIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+      <circle cx="12" cy="8" r="4" />
+      <path strokeLinecap="round" d="M4 20c0-4 3.6-7 8-7s8 3 8 7" />
+    </svg>
+  );
+}
 
-const NAV_ITEMS: NavItem[] = [
-  { to: '/dashboard',    label: 'Dashboard',    icon: <HomeIcon />,     roles: ['owner'] },
-  { to: '/transactions', label: 'Transaksi',    icon: <TxIcon /> },
-  { to: '/stock',        label: 'Stok',         icon: <StockIcon />,    roles: ['owner', 'kurir'] },
-  { to: '/customers',    label: 'Pelanggan',    icon: <CustomerIcon /> },
-  { to: '/debt-payments',label: 'Hutang',       icon: <DebtIcon />,     roles: ['owner', 'kasir'] },
-  { to: '/users',        label: 'Pengaturan',   icon: <SettingsIcon />, roles: ['owner'] },
+// Role-specific nav items (max 5 per role)
+const OWNER_NAV: NavItem[] = [
+  { to: '/dashboard',    label: 'Dashboard',  icon: <HomeIcon /> },
+  { to: '/transactions', label: 'Transaksi',  icon: <TxIcon /> },
+  { to: '/stock',        label: 'Stok',       icon: <StockIcon /> },
+  { to: '/customers',    label: 'Pelanggan',  icon: <CustomerIcon /> },
+  { to: '/settings',     label: 'Pengaturan', icon: <SettingsIcon /> },
 ];
+
+const KURIR_NAV: NavItem[] = [
+  { to: '/transactions', label: 'Transaksi', icon: <TxIcon /> },
+  { to: '/stock',        label: 'Stok',      icon: <StockIcon /> },
+  { to: '/customers',    label: 'Pelanggan', icon: <CustomerIcon /> },
+  { to: '/profile',      label: 'Profil',    icon: <ProfileIcon /> },
+];
+
+const KASIR_NAV: NavItem[] = [
+  { to: '/transactions',  label: 'Transaksi', icon: <TxIcon /> },
+  { to: '/customers',     label: 'Pelanggan', icon: <CustomerIcon /> },
+  { to: '/debt-payments', label: 'Hutang',    icon: <DebtIcon /> },
+  { to: '/profile',       label: 'Profil',    icon: <ProfileIcon /> },
+];
+
+const NAV_BY_ROLE: Record<string, NavItem[]> = {
+  owner: OWNER_NAV,
+  kurir: KURIR_NAV,
+  kasir: KASIR_NAV,
+};
 
 export function BottomNav() {
   const { user } = useAuth();
   const role = user?.role ?? '';
 
-  const visible = NAV_ITEMS.filter((item) =>
-    !item.roles || item.roles.includes(role)
-  );
+  const visible = NAV_BY_ROLE[role] ?? [];
 
   return (
     <nav className={styles.nav} aria-label="Navigasi utama">

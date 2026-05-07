@@ -127,45 +127,27 @@ export function LocationsPage() {
         )}
 
         {!loading && locations.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Tipe</th>
-                  <th>Kurir / Operator</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {locations.map((l) => (
-                  <tr key={l.id} className={!l.is_active ? styles.inactiveRow : ''}>
-                    <td className={styles.nameCell}>{l.name}</td>
-                    <td><Badge variant={l.type}>{LOCATION_TYPE_LABELS[l.type]}</Badge></td>
-                    <td>{l.assigned_to_name ?? '—'}</td>
-                    <td>
-                      <Badge variant={l.is_active ? 'active' : 'inactive'}>
-                        {l.is_active ? 'Aktif' : 'Tidak Aktif'}
-                      </Badge>
-                    </td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button className={styles.actionBtn} onClick={() => openEdit(l)}>Edit</button>
-                        {l.type !== 'warehouse' && l.is_active && (
-                          <button
-                            className={[styles.actionBtn, styles.deactivateBtn].join(' ')}
-                            onClick={() => setConfirmTarget(l)}
-                          >
-                            Nonaktifkan
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.cardList}>
+            {locations.map((l) => (
+              <div key={l.id} className={[styles.card, !l.is_active ? styles.cardInactive : ''].join(' ')}>
+                <div className={styles.cardTop}>
+                  <div className={styles.cardInfo}>
+                    <span className={styles.cardName}>{l.name}</span>
+                    {l.assigned_to_name && <span className={styles.cardSub}>{l.assigned_to_name}</span>}
+                  </div>
+                  <div className={styles.cardBadges}>
+                    <Badge variant={l.type}>{LOCATION_TYPE_LABELS[l.type]}</Badge>
+                    <Badge variant={l.is_active ? 'active' : 'inactive'}>{l.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                  </div>
+                </div>
+                <div className={styles.cardActions}>
+                  <button className={styles.actionBtn} onClick={() => openEdit(l)}>Edit</button>
+                  {l.type !== 'warehouse' && l.is_active && (
+                    <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(l)}>Nonaktifkan</button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

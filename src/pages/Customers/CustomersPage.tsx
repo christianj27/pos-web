@@ -130,37 +130,28 @@ export function CustomersPage() {
         )}
 
         {!loading && customers.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Telepon</th>
-                  <th>Alamat</th>
-                  <th>Status</th>
-                  {isOwner && <th>Aksi</th>}
-                </tr>
-              </thead>
-              <tbody>
-                {customers.map((c) => (
-                  <tr key={c.id} className={!c.is_active ? styles.inactiveRow : ''}>
-                    <td className={styles.nameCell}>{c.name}</td>
-                    <td>{c.phone ?? '—'}</td>
-                    <td className={styles.addressCell}>{c.address ?? '—'}</td>
-                    <td><Badge variant={c.is_active ? 'active' : 'inactive'}>{c.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge></td>
-                    {isOwner && (
-                      <td>
-                        <div className={styles.actions}>
-                          <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
-                          <button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga</button>
-                          {c.is_active && <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(c)}>Nonaktifkan</button>}
-                        </div>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.cardList}>
+            {customers.map((c) => (
+              <div key={c.id} className={[styles.card, !c.is_active ? styles.cardInactive : ''].join(' ')}>
+                <div className={styles.cardTop}>
+                  <div className={styles.cardInfo}>
+                    <span className={styles.cardName}>{c.name}</span>
+                    {c.phone && <span className={styles.cardSub}>{c.phone}</span>}
+                    {c.address && <span className={styles.cardAddress}>{c.address}</span>}
+                  </div>
+                  <div className={styles.cardBadges}>
+                    <Badge variant={c.is_active ? 'active' : 'inactive'}>{c.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                  </div>
+                </div>
+                {isOwner && (
+                  <div className={styles.cardActions}>
+                    <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
+                    <button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>
+                    {c.is_active && <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(c)}>Nonaktifkan</button>}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>

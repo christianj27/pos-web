@@ -35,7 +35,7 @@
 }
 
 .logo {
-  height: 32px;
+  height: 40px;
   width: auto;
   object-fit: contain;
 }
@@ -46,40 +46,40 @@
   gap: 12px;
 }
 
+.profileLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: inherit;
+  border-radius: 9999px;
+  padding: 4px 8px 4px 4px;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: var(--color-cloud-gray);
+  }
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background-color: var(--color-digital-violet);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.5px;
+}
+
 .userName {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-slate-text);
-  display: none;
-
-  @media (min-width: 480px) {
-    display: block;
-  }
-}
-
-.logoutBtn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 12px;
-  border-radius: 9999px;
-  color: var(--color-whisper-gray);
-  font-size: 14px;
-  font-weight: 500;
-  transition: background-color 0.15s, color 0.15s;
-
-  &:hover {
-    background-color: var(--color-cloud-gray);
-    color: var(--color-charcoal-text);
-  }
-}
-
-.logoutLabel {
-  display: none;
-
-  @media (min-width: 480px) {
-    display: inline;
-  }
 }
 
 .main {

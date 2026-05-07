@@ -4,6 +4,15 @@
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
+
+.cardList { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--color-light-violet-stroke); }
+.card { padding: 16px; border-bottom: 1px solid var(--color-light-violet-stroke); background: var(--color-white-canvas); display: flex; flex-direction: column; gap: 6px; &:last-child { border-bottom: none; } }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.cardInfo { display: flex; flex-direction: column; gap: 2px; }
+.cardName { font-weight: 700; font-size: 16px; color: var(--color-deep-space-violet); }
+.cardSub { font-size: 13px; color: var(--color-whisper-gray); }
+.cardAmount { font-family: var(--font-object-sans); font-size: 18px; font-weight: 700; color: var(--color-success); flex-shrink: 0; }
+.cardMeta { font-size: 12px; color: var(--color-whisper-gray); }
 .table {
   width: 100%;
   th { background: var(--color-cloud-gray); padding: 12px 16px; text-align: left; font-size: 13px; font-weight: 600; color: var(--color-whisper-gray); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; border-bottom: 1px solid var(--color-light-violet-stroke); }

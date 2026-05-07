@@ -131,40 +131,28 @@ export function ProductsPage() {
         )}
 
         {!loading && products.length > 0 && (
-          <div className={styles.tableWrap}>
-            <table className={styles.table}>
-              <thead>
-                <tr>
-                  <th>Nama</th>
-                  <th>Kategori</th>
-                  <th>Jenis</th>
-                  <th>Satuan</th>
-                  <th>Harga Dasar</th>
-                  <th>Status</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {products.map((p) => (
-                  <tr key={p.id} className={!p.is_active ? styles.inactiveRow : ''}>
-                    <td className={styles.nameCell}>{p.name}</td>
-                    <td><Badge variant={p.category as ProductCategory}>{PRODUCT_CATEGORY_LABELS[p.category]}</Badge></td>
-                    <td><Badge variant={p.type}>{PRODUCT_TYPE_LABELS[p.type]}</Badge></td>
-                    <td>{p.unit}</td>
-                    <td className={styles.priceCell}>{formatCurrency(p.base_price)}</td>
-                    <td><Badge variant={p.is_active ? 'active' : 'inactive'}>{p.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge></td>
-                    <td>
-                      <div className={styles.actions}>
-                        <button className={styles.actionBtn} onClick={() => openEdit(p)}>Edit</button>
-                        {p.is_active && (
-                          <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(p)}>Nonaktifkan</button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className={styles.cardList}>
+            {products.map((p) => (
+              <div key={p.id} className={[styles.card, !p.is_active ? styles.cardInactive : ''].join(' ')}>
+                <div className={styles.cardTop}>
+                  <div className={styles.cardInfo}>
+                    <span className={styles.cardName}>{p.name}</span>
+                    <span className={styles.cardPrice}>{formatCurrency(p.base_price)} / {p.unit}</span>
+                  </div>
+                  <div className={styles.cardBadges}>
+                    <Badge variant={p.category as ProductCategory}>{PRODUCT_CATEGORY_LABELS[p.category]}</Badge>
+                    <Badge variant={p.type}>{PRODUCT_TYPE_LABELS[p.type]}</Badge>
+                    <Badge variant={p.is_active ? 'active' : 'inactive'}>{p.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                  </div>
+                </div>
+                <div className={styles.cardActions}>
+                  <button className={styles.actionBtn} onClick={() => openEdit(p)}>Edit</button>
+                  {p.is_active && (
+                    <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(p)}>Nonaktifkan</button>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

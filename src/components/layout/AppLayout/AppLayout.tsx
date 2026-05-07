@@ -1,11 +1,20 @@
-import { Outlet } from 'react-router-dom';
+import { Link, Outlet } from 'react-router-dom';
 import { BottomNav } from '../BottomNav/BottomNav';
 import { useAuth } from '../../../hooks/useAuth';
 import logoSrc from '../../../assets/logo.png';
 import styles from './AppLayout.module.scss';
 
+function getInitials(name: string): string {
+  return name
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? '')
+    .join('');
+}
+
 export function AppLayout() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
 
   return (
     <div className={styles.layout}>
@@ -16,13 +25,12 @@ export function AppLayout() {
             <img src={logoSrc} alt="POS Logo" className={styles.logo} />
           </div>
           <div className={styles.navRight}>
-            <span className={styles.userName}>{user?.name}</span>
-            <button className={styles.logoutBtn} onClick={logout} aria-label="Keluar">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
-              </svg>
-              <span className={styles.logoutLabel}>Keluar</span>
-            </button>
+            <Link to="/profile" className={styles.profileLink} aria-label="Profil saya">
+              <div className={styles.avatar} aria-hidden="true">
+                {getInitials(user?.name ?? '')}
+              </div>
+              <span className={styles.userName}>{user?.name}</span>
+            </Link>
           </div>
         </div>
       </header>
