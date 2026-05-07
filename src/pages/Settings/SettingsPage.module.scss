@@ -1,32 +1,99 @@
 .page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
-.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 28px; }
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 
-.grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  @media (min-width: 480px) { grid-template-columns: repeat(2, 1fr); }
-  @media (min-width: 768px) { grid-template-columns: repeat(3, 1fr); }
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-whisper-gray);
+  margin-bottom: 12px;
 }
 
-.card {
+// ── Master Data section ────────────────────────────────────────────────────
+.section { display: flex; flex-direction: column; }
+
+.masterGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  @media (min-width: 768px) { grid-template-columns: repeat(4, 1fr); }
+}
+
+.masterCard {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 6px;
+  gap: 8px;
   padding: 20px 16px;
   border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 10px;
   background: var(--color-white-canvas);
   text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
+  &:hover {
+    background: var(--color-cloud-gray);
+    border-color: var(--color-digital-violet);
+    box-shadow: 0 2px 8px rgba(99, 60, 180, 0.08);
+  }
+}
+
+.masterIcon {
+  color: var(--color-digital-violet);
+  display: flex;
+  align-items: center;
+}
+
+.masterLabel { font-weight: 700; font-size: 15px; color: var(--color-deep-space-violet); }
+.masterDesc { font-size: 12px; color: var(--color-whisper-gray); line-height: 1.4; }
+
+// ── Account section ────────────────────────────────────────────────────────
+.accountSection {
+  display: flex;
+  flex-direction: column;
+  padding-top: 8px;
+  border-top: 2px solid var(--color-light-violet-stroke);
+}
+
+.accountGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.accountCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 16px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 10px;
+  background: #f8f7fc;
+  text-align: left;
+  cursor: pointer;
   transition: background-color 0.15s, border-color 0.15s;
   &:hover { background: var(--color-cloud-gray); border-color: var(--color-digital-violet); }
 }
 
-.cardDanger {
-  &:hover { background: #fef2f2; border-color: var(--color-danger); }
-  .cardLabel { color: var(--color-danger); }
+.logoutCard {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 16px;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  background: #fff5f5;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.15s, border-color 0.15s;
+  &:hover { background: #fee2e2; border-color: var(--color-danger); }
+  .accountLabel { color: var(--color-danger); }
+  .accountDesc { color: #f87171; }
 }
 
-.cardLabel { font-weight: 700; font-size: 16px; color: var(--color-deep-space-violet); }
-.cardDesc { font-size: 13px; color: var(--color-whisper-gray); }
+.accountLabel { font-weight: 700; font-size: 15px; color: var(--color-deep-space-violet); }
+.accountDesc { font-size: 12px; color: var(--color-whisper-gray); }

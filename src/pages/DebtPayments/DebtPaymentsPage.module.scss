@@ -3,10 +3,13 @@
 .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
+
+.backArrow { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: var(--color-slate-text); background: none; border: none; cursor: pointer; flex-shrink: 0; transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); } }
+.titleGroup { display: flex; align-items: center; gap: 8px; }
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
 
-.cardList { display: flex; flex-direction: column; gap: 0; border: 1px solid var(--color-light-violet-stroke); }
-.card { padding: 16px; border-bottom: 1px solid var(--color-light-violet-stroke); background: var(--color-white-canvas); display: flex; flex-direction: column; gap: 6px; &:last-child { border-bottom: none; } }
+.cardList { display: flex; flex-direction: column; gap: 8px; }
+.card { padding: 16px; border: 1px solid var(--color-light-violet-stroke); border-radius: 8px; background: var(--color-white-canvas); display: flex; flex-direction: column; gap: 6px; }
 .cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .cardInfo { display: flex; flex-direction: column; gap: 2px; }
 .cardName { font-weight: 700; font-size: 16px; color: var(--color-deep-space-violet); }

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { debtService } from '../../services/debtService';
 import { customerService } from '../../services/customerService';
 import { Button, Modal, Input, Select, EmptyState, Spinner } from '../../components/common';
@@ -9,6 +10,7 @@ import styles from './DebtPaymentsPage.module.scss';
 
 export function DebtPaymentsPage() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isOwner = user?.role === 'owner';
 
   const [payments, setPayments] = useState<DebtPayment[]>([]);
@@ -54,7 +56,14 @@ export function DebtPaymentsPage() {
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.header}>
-          <h1 className={styles.title}>Pembayaran Hutang</h1>
+          <div className={styles.titleGroup}>
+            {isOwner && (
+              <button className={styles.backArrow} onClick={() => navigate('/settings')} aria-label="Kembali ke Pengaturan">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+              </button>
+            )}
+            <h1 className={styles.title}>Pembayaran Hutang</h1>
+          </div>
           {(isOwner || user?.role === 'kasir') && (
             <Button onClick={openCreate} size="sm">+ Catat Pembayaran</Button>
           )}

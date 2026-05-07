@@ -150,22 +150,25 @@ export function StockPage() {
             {levels.length === 0 ? (
               <EmptyState message="Belum ada data stok." />
             ) : (
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr><th>Produk</th><th>Lokasi</th><th>Status</th><th>Jumlah</th></tr>
-                  </thead>
-                  <tbody>
-                    {levels.map((l, i) => (
-                      <tr key={i}>
-                        <td className={styles.nameCell}>{l.product_name} <span className={styles.unit}>({l.product_unit})</span></td>
-                        <td>{l.location_name}</td>
-                        <td>{l.container_status ? <Badge variant={l.container_status}>{CONTAINER_STATUS_LABELS[l.container_status]}</Badge> : '—'}</td>
-                        <td className={styles.qtyCell}>{l.quantity}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className={styles.cardList}>
+                {levels.map((l, i) => (
+                  <div key={i} className={styles.card}>
+                    <div className={styles.cardTop}>
+                      <div className={styles.cardInfo}>
+                        <span className={styles.cardName}>
+                          {l.product_name} <span className={styles.cardSub}>({l.product_unit})</span>
+                        </span>
+                        <span className={styles.cardSub}>{l.location_name}</span>
+                      </div>
+                      <div className={styles.cardBadges}>
+                        {l.container_status ? (
+                          <Badge variant={l.container_status}>{CONTAINER_STATUS_LABELS[l.container_status]}</Badge>
+                        ) : null}
+                        <span className={styles.cardQty}>{l.quantity}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </>
@@ -174,25 +177,27 @@ export function StockPage() {
         {!loading && tab === 'movements' && (
           <>
             {movements.length === 0 ? <EmptyState message="Belum ada riwayat pergerakan stok." /> : (
-              <div className={styles.tableWrap}>
-                <table className={styles.table}>
-                  <thead>
-                    <tr><th>Tipe</th><th>Produk</th><th>Dari</th><th>Ke</th><th>Jumlah</th><th>Biaya</th><th>Waktu</th></tr>
-                  </thead>
-                  <tbody>
-                    {movements.map((m) => (
-                      <tr key={m.id}>
-                        <td><Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movement_type] ?? m.movement_type}</Badge></td>
-                        <td className={styles.nameCell}>{m.product_name}</td>
-                        <td>{m.from_location_name ?? '—'}</td>
-                        <td>{m.to_location_name ?? '—'}</td>
-                        <td className={styles.qtyCell}>{m.quantity}</td>
-                        <td>{m.purchase_cost ? formatCurrency(m.purchase_cost) : '—'}</td>
-                        <td className={styles.dateCell}>{formatDate(m.created_at)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+              <div className={styles.cardList}>
+                {movements.map((m) => (
+                  <div key={m.id} className={styles.card}>
+                    <div className={styles.cardTop}>
+                      <div className={styles.cardInfo}>
+                        <span className={styles.cardName}>{m.product_name}</span>
+                        <span className={styles.cardRoute}>
+                          {m.from_location_name ?? '—'} → {m.to_location_name ?? '—'}
+                        </span>
+                      </div>
+                      <div className={styles.cardBadges}>
+                        <Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movement_type] ?? m.movement_type}</Badge>
+                        <span className={styles.cardQty}>{m.quantity}</span>
+                      </div>
+                    </div>
+                    <div className={styles.cardBottom}>
+                      <span className={styles.cardCost}>{m.purchase_cost ? formatCurrency(m.purchase_cost) : '—'}</span>
+                      <span className={styles.cardDate}>{formatDate(m.created_at)}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </>

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
 import { Button, Input, Badge } from '../../components/common';
@@ -6,6 +7,8 @@ import styles from './ProfilePage.module.scss';
 
 export function ProfilePage() {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+  const isOwner = user?.role === 'owner';
 
   const [name, setName] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
@@ -47,12 +50,18 @@ export function ProfilePage() {
   }
 
   const roleLabel: Record<string, string> = { owner: 'Owner', kurir: 'Kurir', kasir: 'Kasir' };
-  const isOwner = user?.role === 'owner';
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <h1 className={styles.title}>Profil Saya</h1>
+        <div className={styles.titleGroup}>
+          {isOwner && (
+            <button className={styles.backArrow} onClick={() => navigate('/settings')} aria-label="Kembali ke Pengaturan">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
+            </button>
+          )}
+          <h1 className={styles.title}>Profil Saya</h1>
+        </div>
 
         {/* Info */}
         <div className={styles.section}>

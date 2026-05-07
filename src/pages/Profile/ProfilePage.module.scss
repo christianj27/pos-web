@@ -2,6 +2,9 @@
 .container { max-width: 560px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 
+.backArrow { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: var(--color-slate-text); background: none; border: none; cursor: pointer; flex-shrink: 0; transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); } }
+.titleGroup { display: flex; align-items: center; gap: 8px; }
+
 .section {
   display: flex;
   flex-direction: column;

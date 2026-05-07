@@ -6,14 +6,15 @@
 
 // Status filter tabs
 .tabsRow { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
-.tab { font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 9999px; white-space: nowrap; color: var(--color-whisper-gray); transition: background-color 0.15s, color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
-.tabActive { background: var(--color-deep-space-violet); color: #fff !important; }
+.tab { font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 9999px; white-space: nowrap; color: var(--color-whisper-gray); background: none; border: none; cursor: pointer; transition: background-color 0.15s, color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
+.tabActive { background: var(--color-deep-space-violet) !important; color: #fff !important; }
 
 .filterRow { max-width: 280px; }
 
 .txList { display: flex; flex-direction: column; gap: 12px; }
 .txCard {
   border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 8px;
   background: var(--color-white-canvas);
   padding: 16px 20px;
   display: flex;

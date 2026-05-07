@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { useAuth } from '../../../hooks/useAuth';
 import styles from './BottomNav.module.scss';
 
@@ -95,26 +95,36 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   kasir: KASIR_NAV,
 };
 
+const SETTINGS_SUB_PATHS = ['/users', '/products', '/locations', '/debt-payments', '/profile'];
+
 export function BottomNav() {
   const { user } = useAuth();
+  const location = useLocation();
   const role = user?.role ?? '';
 
   const visible = NAV_BY_ROLE[role] ?? [];
 
   return (
     <nav className={styles.nav} aria-label="Navigasi utama">
-      {visible.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          className={({ isActive }) =>
-            [styles.item, isActive ? styles.active : ''].join(' ')
-          }
-        >
-          <span className={styles.iconWrap}>{item.icon}</span>
-          <span className={styles.label}>{item.label}</span>
-        </NavLink>
-      ))}
+      {visible.map((item) => {
+        const isSettingsSubPath =
+          role === 'owner' &&
+          item.to === '/settings' &&
+          SETTINGS_SUB_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
+
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className={({ isActive }) =>
+              [styles.item, isActive || isSettingsSubPath ? styles.active : ''].join(' ')
+            }
+          >
+            <span className={styles.iconWrap}>{item.icon}</span>
+            <span className={styles.label}>{item.label}</span>
+          </NavLink>
+        );
+      })}
     </nav>
   );
 }

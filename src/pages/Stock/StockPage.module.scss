@@ -5,8 +5,8 @@
 .refreshBtn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--color-whisper-gray); transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
 .tabBar { display: flex; gap: 4px; overflow-x: auto; border-bottom: 1px solid var(--color-light-violet-stroke); padding-bottom: 0; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
-.tabBtn { flex-shrink: 0; padding: 10px 16px; font-size: 14px; font-weight: 500; color: var(--color-whisper-gray); border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; &:hover { color: var(--color-slate-text); } }
-.tabActive { color: var(--color-digital-violet) !important; border-bottom-color: var(--color-digital-violet) !important; }
+.tabBtn { flex-shrink: 0; padding: 10px 16px; font-size: 14px; font-weight: 500; color: var(--color-whisper-gray); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; transition: color 0.15s, border-color 0.15s; &:hover { color: var(--color-slate-text); } }
+.tabActive { color: var(--color-digital-violet) !important; border-bottom-color: var(--color-digital-violet) !important; background: none !important; }
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
 .table {
   width: 100%;
@@ -19,6 +19,23 @@
 .unit { font-weight: 400; color: var(--color-whisper-gray) !important; }
 .qtyCell { font-weight: 700; font-family: var(--font-object-sans); color: var(--color-deep-space-violet) !important; }
 .dateCell { font-size: 13px !important; color: var(--color-whisper-gray) !important; }
+
+// Card list for levels and movements
+.cardList { display: flex; flex-direction: column; gap: 8px; }
+.card { padding: 16px; border: 1px solid var(--color-light-violet-stroke); border-radius: 8px; background: var(--color-white-canvas); display: flex; flex-direction: column; gap: 8px; }
+.cardTop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.cardInfo { display: flex; flex-direction: column; gap: 2px; }
+.cardName { font-weight: 700; font-size: 15px; color: var(--color-deep-space-violet); }
+.cardSub { font-size: 13px; color: var(--color-whisper-gray); }
+.cardBadges { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.cardQty { font-family: var(--font-object-sans); font-size: 20px; font-weight: 700; color: var(--color-deep-space-violet); flex-shrink: 0; }
+.cardMeta { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.cardMetaText { font-size: 12px; color: var(--color-whisper-gray); }
+.cardMetaRight { font-size: 12px; color: var(--color-whisper-gray); text-align: right; }
+.cardRoute { font-size: 13px; color: var(--color-slate-text); display: flex; align-items: center; gap: 4px; }
+.cardBottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--color-light-violet-stroke); padding-top: 8px; }
+.cardCost { font-size: 13px; font-weight: 600; color: var(--color-digital-violet); }
+.cardDate { font-size: 12px; color: var(--color-whisper-gray); }
 .formCard { background: var(--color-white-canvas); border: 1px solid var(--color-light-violet-stroke); padding: 24px; max-width: 520px; }
 .formTitle { font-family: var(--font-object-sans); font-size: 20px; font-weight: 700; color: var(--color-deep-space-violet); margin-bottom: 8px; }
 .formSubtitle { font-size: 14px; color: var(--color-whisper-gray); margin-bottom: 20px; line-height: 1.5; }
