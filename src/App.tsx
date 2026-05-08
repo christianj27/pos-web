@@ -63,7 +63,7 @@ export default function App() {
             } />
 
             <Route path="/stock" element={
-              <RequireAuth allowedRoles={['owner', 'kurir']}><StockPage /></RequireAuth>
+              <RequireAuth allowedRoles={['owner', 'kurir', 'kasir']}><StockPage /></RequireAuth>
             } />
 
             <Route path="/transactions" element={

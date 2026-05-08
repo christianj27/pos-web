@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
-import { PRODUCT_CATEGORY_LABELS, PRODUCT_TYPE_LABELS } from '../../utils/constants';
+import { PRODUCT_CATEGORY_LABELS, PRODUCT_TYPE_LABELS, UNIT_OPTIONS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatCurrency';
 import type { Product, ProductCategory } from '../../types';
 import styles from './ProductsPage.module.scss';
@@ -178,7 +178,7 @@ export function ProductsPage() {
             <Select label="Tipe Produksi" value={formData.production_type} onChange={(e) => setField('production_type', e.target.value)} options={PRODUCTION_OPTIONS} placeholder="Pilih tipe produksi..." error={formErrors.production_type} required />
           )}
           <Select label="Jenis" value={formData.type} onChange={(e) => setField('type', e.target.value)} options={TYPE_OPTIONS} placeholder="Pilih jenis..." error={formErrors.type} required />
-          <Input label="Satuan" placeholder="cth: galon, karton, tabung" value={formData.unit} onChange={(e) => setField('unit', e.target.value)} error={formErrors.unit} required />
+          <Select label="Satuan" value={formData.unit} onChange={(e) => setField('unit', e.target.value)} options={UNIT_OPTIONS} placeholder="Pilih satuan..." error={formErrors.unit} required />
           <Input label="Harga Dasar (Rp)" type="number" min="0" value={formData.base_price} onChange={(e) => setField('base_price', e.target.value)} error={formErrors.base_price} required />
         </div>
       </Modal>

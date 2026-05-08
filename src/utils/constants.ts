@@ -46,7 +46,19 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   receive: 'Terima',
   transfer: 'Transfer',
   defect: 'Rusak/Defek',
+  production: 'Produksi',
 };
+
+export const UNIT_OPTIONS = [
+  { value: 'galon', label: 'Galon' },
+  { value: 'tabung 3kg', label: 'Tabung 3 kg' },
+  { value: 'tabung 12kg', label: 'Tabung 12 kg' },
+  { value: 'karton', label: 'Karton' },
+  { value: 'dus', label: 'Dus' },
+  { value: 'cup', label: 'Cup' },
+  { value: 'botol', label: 'Botol' },
+  { value: 'pcs', label: 'Pcs' },
+];
 
 export const CONTAINER_STATUS_LABELS: Record<string, string> = {
   filled: 'Terisi',

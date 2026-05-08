@@ -67,16 +67,21 @@ export interface CustomerPricingItem {
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
 export type ContainerStatus = 'filled' | 'empty';
-export type MovementType = 'receive' | 'transfer' | 'defect';
+export type MovementType = 'receive' | 'transfer' | 'defect' | 'production';
 
 export interface StockLevel {
   product_id: string;
   product_name: string;
   product_unit: string;
+  product_category: ProductCategory;
   location_id: string;
   location_name: string;
-  quantity: number;
-  container_status?: ContainerStatus;
+  /** null for simple products */
+  quantity_filled: number | null;
+  /** null for simple products */
+  quantity_empty: number | null;
+  /** null for refillable products */
+  quantity_total: number | null;
 }
 
 export interface StockMovement {
