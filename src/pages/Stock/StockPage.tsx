@@ -9,12 +9,11 @@ import { useAuth } from '../../hooks/useAuth';
 import type { StockLevel, StockMovement, Product, Location } from '../../types';
 import styles from './StockPage.module.scss';
 
-type Tab = 'levels' | 'movements' | 'receive' | 'transfer' | 'defect' | 'vendor';
+type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect';
 
 export function StockPage() {
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
-  const isKurir = user?.role === 'kurir';
 
   const [tab, setTab] = useState<Tab>('levels');
   const [levels, setLevels] = useState<StockLevel[]>([]);
@@ -112,10 +111,10 @@ export function StockPage() {
   const tabs: { key: Tab; label: string }[] = [
     { key: 'levels',    label: 'Level Stok' },
     { key: 'movements', label: 'Riwayat' },
-    { key: 'receive',   label: 'Terima Stok' },
-    { key: 'transfer',  label: 'Transfer' },
-    ...(isOwner || isKurir ? [{ key: 'defect' as Tab, label: 'Defek/Rusak' }] : []),
-    ...(isOwner || isKurir ? [{ key: 'vendor' as Tab, label: 'Tukar Vendor' }] : []),
+    ...(isOwner ? [{ key: 'receive' as Tab, label: 'Terima Stok' }] : []),
+    ...(isOwner ? [{ key: 'vendor' as Tab, label: 'Tukar Vendor' }] : []),
+    ...(isOwner ? [{ key: 'transfer' as Tab, label: 'Transfer' }] : []),
+    ...(isOwner ? [{ key: 'defect' as Tab, label: 'Defek/Rusak' }] : []),
   ];
 
   return (
