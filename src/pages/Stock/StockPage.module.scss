@@ -37,6 +37,46 @@
 .cardCost { font-size: 13px; font-weight: 600; color: var(--color-digital-violet); }
 .cardDate { font-size: 12px; color: var(--color-whisper-gray); }
 .formCard { background: var(--color-white-canvas); border: 1px solid var(--color-light-violet-stroke); padding: 24px; max-width: 520px; }
+
+.dateFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.dateInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-deep-space-violet);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid var(--color-digital-violet);
+    outline-offset: -1px;
+  }
+}
+
+.todayBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-digital-violet);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
 .formTitle { font-family: var(--font-object-sans); font-size: 20px; font-weight: 700; color: var(--color-deep-space-violet); margin-bottom: 8px; }
 .formSubtitle { font-size: 14px; color: var(--color-whisper-gray); margin-bottom: 20px; line-height: 1.5; }
 .form { display: flex; flex-direction: column; gap: 16px; }

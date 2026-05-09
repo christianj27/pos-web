@@ -13,6 +13,10 @@ import styles from './TransactionsPage.module.scss';
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
 interface CartItem { product_id: string; product_name: string; quantity: number; unit_price: number; }
 
+function getTodayWIB(): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
+}
+
 const STATUS_TABS = [
   { value: 'all', label: 'Semua' },
   { value: 'completed', label: 'Selesai' },
@@ -41,6 +45,7 @@ export function TransactionsPage() {
 
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
+  const [selectedDate, setSelectedDate] = useState<string>(getTodayWIB());
 
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
   const [paymentTx, setPaymentTx] = useState<Transaction | null>(null);
@@ -70,7 +75,7 @@ export function TransactionsPage() {
 
   const load = useCallback(async () => {
     const [txs, prods, custs, locs] = await Promise.all([
-      transactionService.list().catch(() => []),
+      transactionService.list(selectedDate).catch(() => []),
       productService.list().catch(() => []),
       customerService.list().catch(() => []),
       locationService.list().catch(() => []),
@@ -80,7 +85,7 @@ export function TransactionsPage() {
     setCustomers((custs as Customer[]).filter((c) => c.is_active));
     setLocations((locs as Location[]).filter((l) => l.is_active));
     setLoading(false);
-  }, []);
+  }, [selectedDate]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -252,6 +257,22 @@ export function TransactionsPage() {
         <div className={styles.header}>
           <h1 className={styles.title}>Transaksi</h1>
           <Button onClick={openOverlay} size="sm">+ Transaksi Baru</Button>
+        </div>
+
+        {/* Date filter — FR-TXN-015 */}
+        <div className={styles.dateFilterRow}>
+          <input
+            type="date"
+            className={styles.dateInput}
+            value={selectedDate}
+            max={getTodayWIB()}
+            onChange={(e) => { if (e.target.value) { setSelectedDate(e.target.value); setLoading(true); } }}
+          />
+          {selectedDate !== getTodayWIB() && (
+            <button className={styles.todayBtn} onClick={() => { setSelectedDate(getTodayWIB()); setLoading(true); }}>
+              Hari Ini
+            </button>
+          )}
         </div>
 
         {/* Status filter tabs */}

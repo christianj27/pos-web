@@ -11,6 +11,46 @@
 
 .filterRow { max-width: 280px; }
 
+.dateFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.dateInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-deep-space-violet);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid var(--color-digital-violet);
+    outline-offset: -1px;
+  }
+}
+
+.todayBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-digital-violet);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
+
 .txList { display: flex; flex-direction: column; gap: 12px; }
 .txCard {
   border: 1px solid var(--color-light-violet-stroke);

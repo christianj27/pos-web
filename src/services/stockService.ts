@@ -25,6 +25,10 @@ function findOrCreateLevel(productId: string, locationId: string): StockLevel {
   return level;
 }
 
+function toWIBDate(isoString: string): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
+}
+
 // ─── Service ──────────────────────────────────────────────────────────────────
 
 export const stockService = {
@@ -37,9 +41,12 @@ export const stockService = {
     return delay(levels);
   },
 
-  getMovements: (): Promise<StockMovement[]> =>
-    // apiClient.get<StockMovement[]>('/api/stock/movements').then((r) => r.data),
-    delay([...mockDb.stockMovements].reverse()),
+  getMovements: (date?: string): Promise<StockMovement[]> => {
+    // return apiClient.get<StockMovement[]>(`/api/stock/movements${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    const all = [...mockDb.stockMovements].reverse();
+    const filtered = date ? all.filter((m) => toWIBDate(m.created_at) === date) : all;
+    return delay(filtered);
+  },
 
   receive: (data: { product_id: string; to_location_id: string; quantity: number; container_status?: string; purchase_cost?: number; notes?: string }): Promise<void> => {
     // return apiClient.post('/api/stock/movements', { ...data, movement_type: 'receive' }).then((r) => r.data);

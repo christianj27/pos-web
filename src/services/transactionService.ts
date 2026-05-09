@@ -14,10 +14,17 @@ export interface CreateTransactionPayload {
   debt_payment_amount?: number;
 }
 
+function toWIBDate(isoString: string): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
+}
+
 export const transactionService = {
-  list: (): Promise<Transaction[]> =>
-    // apiClient.get<Transaction[]>('/api/transactions').then((r) => r.data),
-    delay([...mockDb.transactions].reverse()),
+  list: (date?: string): Promise<Transaction[]> => {
+    // return apiClient.get<Transaction[]>(`/api/transactions${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    const all = [...mockDb.transactions].reverse();
+    const filtered = date ? all.filter((tx) => toWIBDate(tx.created_at) === date) : all;
+    return delay(filtered);
+  },
 
   get: (id: string): Promise<Transaction> => {
     // return apiClient.get<Transaction>(`/api/transactions/${id}`).then((r) => r.data);

@@ -14,6 +14,9 @@ type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect'
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
+function getTodayWIB(): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
+}
 
 export function StockPage() {
   const { user } = useAuth();
@@ -38,24 +41,34 @@ export function StockPage() {
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
   const [containerLoans, setContainerLoans] = useState<ContainerLoan[]>([]);
   const [containerLoansLoading, setContainerLoansLoading] = useState(false);
+  const [movementsDate, setMovementsDate] = useState<string>(getTodayWIB());
+  const [movementsLoading, setMovementsLoading] = useState(false);
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
   const load = useCallback(async () => {
-    const [lvls, mvts, prods, locs] = await Promise.all([
+    const [lvls, prods, locs] = await Promise.all([
       stockService.getLevels().catch(() => []),
-      stockService.getMovements().catch(() => []),
       productService.list().catch(() => []),
       locationService.list().catch(() => []),
     ]);
     setLevels(lvls as StockLevel[]);
-    setMovements(mvts as StockMovement[]);
     setProducts((prods as Product[]).filter((p) => p.is_active));
     setLocations((locs as Location[]).filter((l) => l.is_active));
     setLoading(false);
   }, []);
+
+  async function loadMovements(date: string) {
+    setMovementsLoading(true);
+    try {
+      const mvts = await stockService.getMovements(date);
+      setMovements(mvts as StockMovement[]);
+    } finally {
+      setMovementsLoading(false);
+    }
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -254,6 +267,7 @@ export function StockPage() {
               setTab(t.key);
               resetFeedback();
               if (t.key === 'container_loans') loadContainerLoans();
+              if (t.key === 'movements') loadMovements(movementsDate);
             }}
             >
               {t.label}
@@ -331,7 +345,23 @@ export function StockPage() {
         {/* -- Riwayat -- */}
         {!loading && tab === 'movements' && (
           <>
-            {movements.length === 0 ? <EmptyState message="Belum ada riwayat pergerakan stok." /> : (
+            <div className={styles.dateFilterRow}>
+              <input
+                type="date"
+                className={styles.dateInput}
+                value={movementsDate}
+                max={getTodayWIB()}
+                onChange={(e) => { if (e.target.value) { setMovementsDate(e.target.value); loadMovements(e.target.value); } }}
+              />
+              {movementsDate !== getTodayWIB() && (
+                <button className={styles.todayBtn} onClick={() => { setMovementsDate(getTodayWIB()); loadMovements(getTodayWIB()); }}>
+                  Hari Ini
+                </button>
+              )}
+            </div>
+            {movementsLoading ? (
+              <div className={styles.loadingWrap}><Spinner /></div>
+            ) : movements.length === 0 ? <EmptyState message="Belum ada riwayat pergerakan stok." /> : (
               <div className={styles.cardList}>
                 {movements.map((m) => (
                   <div key={m.id} className={styles.card}>

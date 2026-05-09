@@ -108,11 +108,11 @@ export const mockDb = {
     { id: 'mov-5', movement_type: 'defect',    product_id: 'prod-4', product_name: 'Gas LPG 3 kg',  from_location_id: 'loc-3', from_location_name: 'Truk Rudi', quantity: 2, container_status: 'filled', notes: 'Tabung bocor saat pengiriman', created_by_name: 'Rudi Kurir',   created_at: '2025-04-05T14:30:00.000Z' },
     { id: 'mov-6', movement_type: 'production',product_id: 'prod-3', product_name: 'Galon Isi Ulang', from_location_id: 'loc-1', from_location_name: 'Gudang Utama', quantity: 10, container_status: 'filled', purchase_cost: 30000,   notes: '[Produksi] Isi ulang 10 galon', created_by_name: 'Budi Santoso', created_at: '2025-04-06T09:00:00.000Z' },
     // Delivery tx-6: Andi antar 10 Galon Aqua ke Bu Ani, terima 20 galon kosong
-    { id: 'mov-7', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 10, container_status: 'filled', notes: 'Penjualan tx-6 — Toko Bu Ani', created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:30:00.000Z' },
-    { id: 'mov-8', movement_type: 'receive',    product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 20, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Toko Bu Ani (tx-6)', created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:35:00.000Z' },
+    { id: 'mov-7', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 10, container_status: 'filled', notes: 'Penjualan tx-6 — Toko Bu Ani', created_by_name: 'Andi Kurir', created_at: '2026-05-10T09:30:00.000Z' },
+    { id: 'mov-8', movement_type: 'receive',    product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 20, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Toko Bu Ani (tx-6)', created_by_name: 'Andi Kurir', created_at: '2026-05-10T09:35:00.000Z' },
     // Delivery tx-7: Andi antar 20 Galon Aqua ke Pak Joko, terima 10 galon kosong
-    { id: 'mov-9', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 20, container_status: 'filled', notes: 'Penjualan tx-7 — Warung Pak Joko', created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:00:00.000Z' },
-    { id: 'mov-10', movement_type: 'receive',   product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 10, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Warung Pak Joko (tx-7)', created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:05:00.000Z' },
+    { id: 'mov-9', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 20, container_status: 'filled', notes: 'Penjualan tx-7 — Warung Pak Joko', created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:00:00.000Z' },
+    { id: 'mov-10', movement_type: 'receive',   product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 10, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Warung Pak Joko (tx-7)', created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:05:00.000Z' },
   ] as StockMovement[],
 
   transactions: [
@@ -167,7 +167,7 @@ export const mockDb = {
       location_id: 'loc-2', location_name: 'Truk Andi',
       items: [{ product_id: 'prod-1', product_name: 'Galon Aqua', quantity: 10, unit_price: 4500, subtotal: 45000 }],
       total_amount: 45000, paid_amount: 45000, status: 'completed',
-      created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:30:00.000Z', completed_at: '2025-04-20T09:30:00.000Z',
+      created_by_name: 'Andi Kurir', created_at: '2026-05-10T09:30:00.000Z', completed_at: '2026-05-10T09:30:00.000Z',
     },
     {
       // Kasus 2: Andi antar 20 Galon Aqua ke Pak Joko, Pak Joko kembalikan 10 galon kosong
@@ -178,7 +178,7 @@ export const mockDb = {
       location_id: 'loc-2', location_name: 'Truk Andi',
       items: [{ product_id: 'prod-1', product_name: 'Galon Aqua', quantity: 20, unit_price: 5000, subtotal: 100000 }],
       total_amount: 100000, paid_amount: 100000, status: 'completed',
-      created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:00:00.000Z', completed_at: '2025-04-20T11:00:00.000Z',
+      created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:00:00.000Z', completed_at: '2026-05-10T11:00:00.000Z',
     },
   ] as Transaction[],
 
