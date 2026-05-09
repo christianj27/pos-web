@@ -158,11 +158,35 @@ export interface ContainerLoan {
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
+export interface WeeklyChartEntry {
+  date: string; // YYYY-MM-DD
+  revenue: number;
+  transaction_count: number;
+  purchase_cost: number;
+}
+
+export interface RecentTransaction {
+  id: string;
+  created_at: string;
+  customer_name?: string;
+  created_by_name: string;
+  type: TransactionType;
+  total_amount: number;
+  paid_amount: number;
+  status: TransactionStatus;
+}
+
 export interface DashboardStats {
   today_revenue: number;
   today_transactions: number;
   today_purchase_cost: number;
+  today_debt_collected: number;
+  low_stock_count: number;
   total_outstanding_debt: number;
+  previous_day_revenue: number;
+  weekly_chart: WeeklyChartEntry[];
+  recent_transactions: RecentTransaction[];
+  warehouse_stock: StockLevel[];
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

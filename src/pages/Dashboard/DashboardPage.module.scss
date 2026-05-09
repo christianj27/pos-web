@@ -14,6 +14,8 @@
   gap: 32px;
 }
 
+// ─── Header ──────────────────────────────────────────────────────────────────
+
 .header {
   display: flex;
   align-items: flex-start;
@@ -44,6 +46,56 @@
   color: var(--color-danger);
 }
 
+// ─── Date Filter ─────────────────────────────────────────────────────────────
+
+.filterRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dateInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-deep-space-violet);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid var(--color-digital-violet);
+    outline-offset: -1px;
+  }
+}
+
+.todayBtn {
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-digital-violet);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
+
+.lastUpdated {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+  white-space: nowrap;
+}
+
+// ─── Section title ────────────────────────────────────────────────────────────
+
 .sectionTitle {
   font-family: var(--font-object-sans);
   font-size: 16px;
@@ -54,13 +106,15 @@
   margin-bottom: 16px;
 }
 
+// ─── Stat cards ──────────────────────────────────────────────────────────────
+
 .statsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 
   @media (min-width: 768px) {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(3, 1fr);
     gap: 16px;
   }
 }
@@ -90,12 +144,27 @@
   justify-content: center;
   flex-shrink: 0;
 }
+
 .iconGreen  { background: #dcfce7; color: #16a34a; }
 .iconViolet { background: var(--color-hover-violet); color: var(--color-digital-violet); }
 .iconOrange { background: #fef3c7; color: #d97706; }
 .iconBlue   { background: #dbeafe; color: #2563eb; }
+.iconRed    { background: #fee2e2; color: var(--color-danger); }
+.iconYellow { background: #fef9c3; color: #ca8a04; }
 
 .statContent {}
+
+.revDelta {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-top: 4px;
+}
+
+.revDeltaUp   { color: #16a34a; }
+.revDeltaDown { color: var(--color-danger); }
 
 .statLabel {
   font-size: 13px;
@@ -110,18 +179,230 @@
   color: var(--color-deep-space-violet);
   letter-spacing: -0.4px;
   line-height: 1.2;
+
+  &.danger  { color: var(--color-danger); }
+  &.warning { color: #d97706; }
 }
 
-.summaryCard {
+.lowStockBadge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 7px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+  vertical-align: middle;
+}
+
+// ─── Weekly bar chart (Chart.js) ─────────────────────────────────────────────
+
+.chartWrapper {
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+  padding: 20px 16px 16px;
+
+  @media (min-width: 768px) {
+    padding: 24px 24px 20px;
+  }
+}
+
+.chartCanvas {
+  position: relative;
+  height: 180px;
+  cursor: pointer;
+
+  @media (min-width: 768px) {
+    height: 220px;
+  }
+}
+
+.chartEmpty {
+  font-size: 14px;
+  color: var(--color-whisper-gray);
+  text-align: center;
+  padding: 32px 0;
+}
+
+// ─── Chart detail panel ───────────────────────────────────────────────────────
+
+.chartDetailPanel {
+  margin-top: 12px;
+  border: 1px solid var(--color-digital-violet);
+  background: var(--color-white-canvas);
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.chartDetailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.chartDetailDate {
+  font-family: var(--font-object-sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  text-transform: capitalize;
+}
+
+.chartDetailClose {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-whisper-gray);
+  padding: 2px 6px;
+  line-height: 1;
+
+  &:hover {
+    color: var(--color-deep-space-violet);
+  }
+}
+
+.chartDetailGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+
+  @media (min-width: 480px) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.chartDetailItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.chartDetailLabel {
+  font-size: 11px;
+  color: var(--color-whisper-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.chartDetailValue {
+  font-family: var(--font-object-sans);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+}
+
+// ─── Recent transactions ─────────────────────────────────────────────────────
+
+.recentList {
   background: var(--color-white-canvas);
   border: 1px solid var(--color-light-violet-stroke);
 }
 
-.summaryRow {
+.recentRow {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 10px 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (min-width: 600px) {
+    grid-template-columns: 72px 1fr auto auto auto;
+  }
+}
+
+.recentTime {
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+  white-space: nowrap;
+}
+
+.recentMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.recentCustomer {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.recentStaff {
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+}
+
+.recentAmount {
+  font-family: var(--font-object-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  text-align: right;
+}
+
+.recentDebt {
+  font-size: 11px;
+  color: var(--color-danger);
+  font-weight: 600;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badgeDelivery   { background: #ede9fe; color: #6d28d9; }
+.badgeCounter    { background: #dbeafe; color: #1e40af; }
+.badgeCompleted  { background: #dcfce7; color: #15803d; }
+.badgeCancelled  { background: #fee2e2; color: #b91c1c; }
+
+.recentEmpty {
+  font-size: 14px;
+  color: var(--color-whisper-gray);
+  text-align: center;
+  padding: 32px 16px;
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+}
+
+// ─── Warehouse stock ─────────────────────────────────────────────────────────
+
+.stockList {
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+}
+
+.stockRow {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 12px 16px;
+  gap: 12px;
   border-bottom: 1px solid var(--color-light-violet-stroke);
 
   &:last-child {
@@ -129,18 +410,41 @@
   }
 }
 
-.summaryLabel {
-  font-size: 15px;
-  color: var(--color-slate-text);
-}
-
-.summaryValue {
-  font-family: var(--font-object-sans);
-  font-size: 18px;
-  font-weight: 700;
+.stockName {
+  font-size: 14px;
+  font-weight: 600;
   color: var(--color-deep-space-violet);
+  flex: 1;
+  min-width: 0;
 }
 
-.danger {
-  color: var(--color-danger);
+.stockUnit {
+  font-size: 12px;
+  color: var(--color-whisper-gray);
 }
+
+.stockQty {
+  font-family: var(--font-object-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+  text-align: right;
+  white-space: nowrap;
+
+  &.lowStock {
+    color: var(--color-danger);
+  }
+}
+
+.stockWarnBadge {
+  display: inline-flex;
+  align-items: center;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 9999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #92400e;
+}
+
