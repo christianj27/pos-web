@@ -6,7 +6,7 @@ type BadgeVariant =
   | 'simple' | 'refillable'
   | 'air' | 'gas'
   | 'warehouse' | 'vehicle'
-  | 'delivery' | 'counter' | 'vendor_direct'
+  | 'delivery' | 'counter'
   | 'pending' | 'completed' | 'cancelled'
   | 'filled' | 'empty'
   | 'default';

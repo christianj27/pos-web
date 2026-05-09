@@ -67,7 +67,7 @@ export interface CustomerPricingItem {
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
 export type ContainerStatus = 'filled' | 'empty';
-export type MovementType = 'receive' | 'transfer' | 'defect' | 'production';
+export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production';
 
 export interface StockLevel {
   product_id: string;
@@ -102,8 +102,8 @@ export interface StockMovement {
 }
 
 // ─── Transaction ──────────────────────────────────────────────────────────────
-export type TransactionType = 'delivery' | 'counter' | 'vendor_direct';
-export type TransactionStatus = 'pending' | 'completed' | 'cancelled';
+export type TransactionType = 'delivery' | 'counter';
+export type TransactionStatus = 'completed' | 'cancelled';
 
 export interface TransactionItem {
   product_id: string;
@@ -150,6 +150,7 @@ export interface ContainerLoan {
   product_id: string;
   product_name: string;
   quantity: number;
+  transaction_id?: string;
   notes?: string;
   created_by_name: string;
   created_at: string;
@@ -161,7 +162,6 @@ export interface DashboardStats {
   today_transactions: number;
   today_purchase_cost: number;
   total_outstanding_debt: number;
-  pending_deliveries: number;
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

@@ -123,7 +123,7 @@ export const mockDb = {
       customer_id: 'cust-2', customer_name: 'Warung Pak Joko',
       location_id: 'loc-1', location_name: 'Gudang Utama',
       items: [{ product_id: 'prod-4', product_name: 'Gas LPG 3 kg', quantity: 2, unit_price: 20000, subtotal: 40000 }],
-      total_amount: 40000, paid_amount: 20000, status: 'pending',
+      total_amount: 40000, paid_amount: 20000, status: 'completed',
       created_by_name: 'Sari Kasir', created_at: '2025-04-11T10:00:00.000Z',
     },
     {
@@ -134,7 +134,7 @@ export const mockDb = {
         { product_id: 'prod-5', product_name: 'Gas LPG 12 kg', quantity: 1, unit_price: 85000, subtotal: 85000 },
         { product_id: 'prod-4', product_name: 'Gas LPG 3 kg',  quantity: 2, unit_price: 20000, subtotal: 40000 },
       ],
-      total_amount: 125000, paid_amount: 0, status: 'pending',
+      total_amount: 125000, paid_amount: 0, status: 'completed',
       created_by_name: 'Rudi Kurir', created_at: '2025-04-12T08:00:00.000Z',
     },
     {
@@ -145,7 +145,9 @@ export const mockDb = {
       created_by_name: 'Sari Kasir', created_at: '2025-04-13T11:00:00.000Z', completed_at: '2025-04-13T11:00:00.000Z',
     },
     {
-      id: 'tx-5', type: 'vendor_direct',
+      id: 'tx-5', type: 'counter',
+      customer_id: 'cust-1', customer_name: 'Toko Bu Ani',
+      location_id: 'loc-1', location_name: 'Gudang Utama',
       items: [{ product_id: 'prod-4', product_name: 'Gas LPG 3 kg', quantity: 5, unit_price: 20000, subtotal: 100000 }],
       total_amount: 100000, paid_amount: 100000, status: 'completed',
       created_by_name: 'Budi Santoso', created_at: '2025-04-14T15:00:00.000Z', completed_at: '2025-04-14T15:00:00.000Z',
@@ -168,7 +170,6 @@ export const mockDb = {
     today_transactions: 5,
     today_purchase_cost: 1525000,
     total_outstanding_debt: 195000,
-    pending_deliveries: 2,
   } as DashboardStats,
 };
 

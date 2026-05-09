@@ -33,11 +33,9 @@ export const PRODUCT_TYPE_LABELS: Record<string, string> = {
 export const TRANSACTION_TYPE_LABELS: Record<string, string> = {
   delivery: 'Pengiriman',
   counter: 'Kasir',
-  vendor_direct: 'Vendor Langsung',
 };
 
 export const TRANSACTION_STATUS_LABELS: Record<string, string> = {
-  pending: 'Menunggu',
   completed: 'Selesai',
   cancelled: 'Dibatalkan',
 };
@@ -45,6 +43,7 @@ export const TRANSACTION_STATUS_LABELS: Record<string, string> = {
 export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   receive: 'Terima',
   transfer: 'Transfer',
+  dispatch: 'Penjualan',
   defect: 'Rusak/Defek',
   production: 'Produksi',
 };

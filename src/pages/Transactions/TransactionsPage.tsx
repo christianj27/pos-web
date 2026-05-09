@@ -15,7 +15,6 @@ interface CartItem { product_id: string; product_name: string; quantity: number;
 
 const STATUS_TABS = [
   { value: 'all', label: 'Semua' },
-  { value: 'pending', label: 'Menunggu' },
   { value: 'completed', label: 'Selesai' },
   { value: 'cancelled', label: 'Dibatalkan' },
 ] as const;
@@ -65,6 +64,9 @@ export function TransactionsPage() {
   const [paidAmount, setPaidAmount] = useState('');
   const [notes, setNotes] = useState('');
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [skipCustomer, setSkipCustomer] = useState(false);
+  const [debtPaymentAmount, setDebtPaymentAmount] = useState('');
+  const [containerReturns, setContainerReturns] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const [txs, prods, custs, locs] = await Promise.all([
@@ -99,6 +101,15 @@ export function TransactionsPage() {
     setTxType(defaultType); setLocationId('');
     setPaymentMethod('cash'); setPaidAmount(''); setNotes('');
     setSaveError(null);
+    setSkipCustomer(false); setDebtPaymentAmount(''); setContainerReturns({});
+    // Auto-fill location for locked roles
+    if (isKasir) {
+      const wh = locations.find((l) => l.type === 'warehouse' && l.is_active);
+      if (wh) setLocationId(wh.id);
+    } else if (isKurir) {
+      const truck = locations.find((l) => l.type === 'vehicle' && l.assigned_to === user?.id && l.is_active);
+      if (truck) setLocationId(truck.id);
+    }
     setOverlayOpen(true);
   }
 
@@ -111,7 +122,12 @@ export function TransactionsPage() {
   }
 
   function advanceToStep2() {
-    if (!selectedCustomer) return;
+    setStep(2);
+  }
+
+  function handleSkipCustomer() {
+    setSelectedCustomer(null);
+    setSkipCustomer(true);
     setStep(2);
   }
 
@@ -142,6 +158,20 @@ export function TransactionsPage() {
     });
   }
 
+  function setQtyDirect(prod: Product, val: number) {
+    if (val <= 0) {
+      setCart((prev) => prev.filter((c) => c.product_id !== prod.id));
+    } else {
+      setCart((prev) => {
+        const existing = prev.find((c) => c.product_id === prod.id);
+        if (existing) {
+          return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
+        }
+        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.base_price }];
+      });
+    }
+  }
+
   function cartQty(productId: string): number {
     return cart.find((c) => c.product_id === productId)?.quantity ?? 0;
   }
@@ -154,6 +184,10 @@ export function TransactionsPage() {
   async function handleCreate() {
     if (cart.length === 0) { setSaveError('Tambahkan minimal satu produk.'); return; }
     setSaving(true); setSaveError(null);
+    const containerReturnsArr = Object.entries(containerReturns)
+      .filter(([, qty]) => parseInt(qty) > 0)
+      .map(([product_id, qty]) => ({ product_id, quantity: parseInt(qty) }));
+    const debtAmt = parseFloat(debtPaymentAmount);
     try {
       await transactionService.create({
         type: txType,
@@ -163,6 +197,8 @@ export function TransactionsPage() {
         paid_amount: paid,
         payment_method: paymentMethod,
         notes: notes.trim() || undefined,
+        container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
+        debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
       });
       closeOverlay();
       load();
@@ -197,7 +233,7 @@ export function TransactionsPage() {
   const typeOptions = [
     ...(isOwner || isKasir ? [{ value: 'counter', label: 'Kasir (Counter)' }] : []),
     ...(isOwner || isKurir ? [{ value: 'delivery', label: 'Pengiriman' }] : []),
-    ...(isOwner || isKasir ? [{ value: 'vendor_direct', label: 'Vendor Langsung' }] : []),
+
   ];
 
   const filteredCustomers = customers.filter((c) =>
@@ -242,7 +278,6 @@ export function TransactionsPage() {
                 { value: 'all', label: 'Semua Tipe' },
                 { value: 'counter', label: 'Kasir (Counter)' },
                 { value: 'delivery', label: 'Pengiriman' },
-                { value: 'vendor_direct', label: 'Vendor Langsung' },
               ]}
             />
           </div>
@@ -260,7 +295,7 @@ export function TransactionsPage() {
                 <div key={tx.id} className={styles.txCard}>
                   <div className={styles.txTop}>
                     <div className={styles.txMeta}>
-                      <Badge variant={tx.type as 'delivery' | 'counter' | 'vendor_direct'}>
+                      <Badge variant={tx.type as 'delivery' | 'counter'}>
                         {TRANSACTION_TYPE_LABELS[tx.type]}
                       </Badge>
                       <Badge variant={tx.status as 'pending' | 'completed' | 'cancelled'}>
@@ -300,7 +335,7 @@ export function TransactionsPage() {
                         + Bayar
                       </button>
                     )}
-                    {tx.status === 'pending' && (
+                    {tx.status !== 'cancelled' && (
                       <button
                         className={[styles.txActionBtn, styles.cancelBtn].join(' ')}
                         onClick={() => setCancelTx(tx)}
@@ -326,7 +361,9 @@ export function TransactionsPage() {
               </svg>
             </button>
             <span className={styles.overlayTitle}>
-              {step === 1 ? 'Pilih Pelanggan' : step === 2 ? 'Pilih Produk' : 'Konfirmasi'}
+              {step === 1 ? 'Pilih Pelanggan' : step === 2
+                ? (selectedCustomer ? `Produk — ${selectedCustomer.name}` : 'Pilih Produk')
+                : (selectedCustomer ? `Konfirmasi — ${selectedCustomer.name}` : 'Konfirmasi (Tanpa Pelanggan)')}
             </span>
             <div className={styles.steps}>
               {([1, 2, 3] as const).map((s, i) => (
@@ -391,6 +428,14 @@ export function TransactionsPage() {
                 >
                   {selectedCustomer ? `Lanjut: ${selectedCustomer.name}` : 'Pilih pelanggan terlebih dahulu'}
                 </Button>
+                {(isKasir || isOwner) && (
+                  <button
+                    className={styles.skipCustomerBtn}
+                    onClick={handleSkipCustomer}
+                  >
+                    Lewati (Tanpa Pelanggan)
+                  </button>
+                )}
               </div>
             </>
           )}
@@ -400,22 +445,46 @@ export function TransactionsPage() {
             <>
               <div className={styles.overlayBody}>
                 <div className={styles.step2Controls}>
-                  <Select
-                    label="Tipe Transaksi"
-                    value={txType}
-                    onChange={(e) => setTxType(e.target.value)}
-                    options={typeOptions}
-                  />
-                  {(txType === 'delivery' || txType === 'counter') && (
-                    <Select
-                      label="Lokasi Stok"
-                      value={locationId}
-                      onChange={(e) => setLocationId(e.target.value)}
-                      options={locations.map((l) => ({ value: l.id, label: l.name }))}
-                      placeholder="Pilih lokasi..."
-                    />
+                  {isOwner ? (
+                    <>
+                      <Select
+                        label="Tipe Transaksi"
+                        value={txType}
+                        onChange={(e) => setTxType(e.target.value)}
+                        options={typeOptions}
+                      />
+                      <Select
+                        label="Lokasi Stok"
+                        value={locationId}
+                        onChange={(e) => setLocationId(e.target.value)}
+                        options={locations.map((l) => ({ value: l.id, label: l.name }))}
+                        placeholder="Pilih lokasi..."
+                      />
+                    </>
+                  ) : (
+                    <div className={styles.lockedFields}>
+                      <div className={styles.lockedField}>
+                        <span className={styles.lockedLabel}>Tipe Transaksi</span>
+                        <span className={styles.lockedValue}>{TRANSACTION_TYPE_LABELS[txType] ?? txType}</span>
+                      </div>
+                      <div className={styles.lockedField}>
+                        <span className={styles.lockedLabel}>Lokasi Stok</span>
+                        <span className={styles.lockedValue}>
+                          {locations.find((l) => l.id === locationId)?.name ?? 'Belum ditentukan'}
+                        </span>
+                      </div>
+                    </div>
                   )}
                 </div>
+                {/* Refillable warning when no customer */}
+                {skipCustomer && cart.some((c) => {
+                  const prod = products.find((p) => p.id === c.product_id);
+                  return prod?.category === 'refillable';
+                }) && (
+                  <div className={styles.warningBanner}>
+                    Produk refillable dipilih tanpa pelanggan — pinjaman kontainer tidak akan dicatat.
+                  </div>
+                )}
                 <div className={styles.searchWrap}>
                   <Input
                     label=""
@@ -441,7 +510,14 @@ export function TransactionsPage() {
                             disabled={qty === 0}
                             aria-label="Kurangi"
                           >−</button>
-                          <span className={styles.qtyValue}>{qty}</span>
+                          <input
+                            type="number"
+                            className={styles.qtyInput}
+                            value={qty === 0 ? '' : qty}
+                            min={0}
+                            onChange={(e) => setQtyDirect(prod, parseInt(e.target.value) || 0)}
+                            aria-label={`Jumlah ${prod.name}`}
+                          />
                           <button
                             className={styles.qtyBtn}
                             onClick={() => incrementQty(prod)}
@@ -478,7 +554,7 @@ export function TransactionsPage() {
                 <div className={styles.summaryCard}>
                   <div className={styles.summaryRow}>
                     <span>Pelanggan</span>
-                    <strong>{selectedCustomer?.name}</strong>
+                    <strong>{selectedCustomer?.name ?? 'Tanpa Pelanggan'}</strong>
                   </div>
                   <div className={styles.summaryRow}>
                     <span>Tipe</span>
@@ -517,6 +593,14 @@ export function TransactionsPage() {
                   </div>
                 )}
 
+                {/* Customer outstanding debt indicator */}
+                {selectedCustomer && (selectedCustomer.outstanding_debt ?? 0) > 0 && (
+                  <div className={styles.debtBox}>
+                    <span>Total Hutang Pelanggan</span>
+                    <strong>{formatCurrency(selectedCustomer.outstanding_debt!)}</strong>
+                  </div>
+                )}
+
                 <Input
                   label="Jumlah Dibayar (Rp)"
                   type="number"
@@ -526,7 +610,37 @@ export function TransactionsPage() {
                 />
 
                 {debt > 0 && (
-                  <p className={styles.debtHint}>Sisa utang: <strong>{formatCurrency(debt)}</strong></p>
+                  <p className={styles.debtHint}>Sisa utang transaksi ini: <strong>{formatCurrency(debt)}</strong></p>
+                )}
+
+                {/* Old debt payment field */}
+                {selectedCustomer && (selectedCustomer.outstanding_debt ?? 0) > 0 && (
+                  <Input
+                    label="Bayar Hutang Lama (Rp, opsional)"
+                    type="number"
+                    min="0"
+                    value={debtPaymentAmount}
+                    onChange={(e) => setDebtPaymentAmount(e.target.value)}
+                  />
+                )}
+
+                {/* Container return section */}
+                {selectedCustomer && cart.some((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable') && (
+                  <div className={styles.containerReturnSection}>
+                    <p className={styles.containerReturnTitle}>Kembalian Kontainer (opsional)</p>
+                    {cart
+                      .filter((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable')
+                      .map((c) => (
+                        <Input
+                          key={c.product_id}
+                          label={`Kontainer kosong dikembalikan — ${c.product_name}`}
+                          type="number"
+                          min="0"
+                          value={containerReturns[c.product_id] ?? ''}
+                          onChange={(e) => setContainerReturns((prev) => ({ ...prev, [c.product_id]: e.target.value }))}
+                        />
+                      ))}
+                  </div>
                 )}
 
                 <div className={styles.notesWrap}>
@@ -559,7 +673,7 @@ export function TransactionsPage() {
           footer={<Button variant="ghost" onClick={() => setDetailTx(null)}>Tutup</Button>}
         >
           <div className={styles.detailSection}>
-            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.type as 'delivery' | 'counter' | 'vendor_direct'}>{TRANSACTION_TYPE_LABELS[detailTx.type]}</Badge></div>
+            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.type as 'delivery' | 'counter'}>{TRANSACTION_TYPE_LABELS[detailTx.type]}</Badge></div>
             <div className={styles.detailRow}><span>Status</span><Badge variant={detailTx.status as 'pending' | 'completed' | 'cancelled'}>{TRANSACTION_STATUS_LABELS[detailTx.status]}</Badge></div>
             {detailTx.customer_name && <div className={styles.detailRow}><span>Pelanggan</span><strong>{detailTx.customer_name}</strong></div>}
             {detailTx.location_name && <div className={styles.detailRow}><span>Lokasi</span><span>{detailTx.location_name}</span></div>}
@@ -625,11 +739,7 @@ export function TransactionsPage() {
         onClose={() => setCancelTx(null)}
         onConfirm={handleCancelConfirm}
         title="Batalkan Transaksi"
-        message={
-          cancelTx?.status === 'completed'
-            ? 'Batalkan transaksi yang sudah selesai ini? Stok TIDAK akan dikembalikan secara otomatis.'
-            : 'Batalkan transaksi ini? Stok akan dikembalikan secara otomatis.'
-        }
+        message="Batalkan transaksi ini? Stok akan dikembalikan secara otomatis."
         confirmText="Ya, Batalkan"
         loading={cancelling}
       />

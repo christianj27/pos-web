@@ -168,7 +168,31 @@
   &:disabled { opacity: 0.3; cursor: not-allowed; }
 }
 .qtyValue { font-family: var(--font-object-sans); font-size: 18px; font-weight: 700; color: var(--color-deep-space-violet); min-width: 24px; text-align: center; }
+.qtyInput {
+  font-family: var(--font-object-sans);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  min-width: 48px;
+  width: 56px;
+  text-align: center;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 6px;
+  padding: 4px 4px;
+  background: var(--color-white-canvas);
+  -moz-appearance: textfield;
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  &:focus { outline: none; border-color: var(--color-digital-violet); }
+}
 .footerTotal { display: flex; justify-content: space-between; align-items: center; font-size: 15px; color: var(--color-slate-text); strong { font-family: var(--font-object-sans); font-size: 20px; color: var(--color-deep-space-violet); } }
+
+.lockedFields { display: flex; flex-direction: column; gap: 12px; }
+.lockedField { display: flex; flex-direction: column; gap: 4px; }
+.lockedLabel { font-size: 13px; font-weight: 500; color: var(--color-whisper-gray); }
+.lockedValue { font-size: 15px; font-weight: 600; color: var(--color-deep-space-violet); padding: 10px 14px; background: var(--color-cloud-gray); border: 1px solid var(--color-light-violet-stroke); border-radius: 8px; }
+.warningBanner { background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; font-size: 13px; color: #92400e; border-radius: 4px; }
+.skipCustomerBtn { width: 100%; padding: 12px; font-size: 15px; font-weight: 500; color: var(--color-whisper-gray); background: none; border: none; text-decoration: underline; cursor: pointer; &:hover { color: var(--color-slate-text); } }
 
 // Step 3
 .errorBanner { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; font-size: 14px; color: var(--color-danger); }
@@ -206,6 +230,20 @@
 }
 .payMethodActive { border-color: var(--color-digital-violet); background: #eff2fd; color: var(--color-digital-violet); }
 .qrisBanner { background: #fffbeb; border: 1px solid #fde68a; padding: 10px 14px; font-size: 13px; color: #92400e; }
+.debtBox {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  font-size: 15px;
+  span { color: #b91c1c; }
+  strong { font-family: var(--font-object-sans); font-size: 17px; color: #b91c1c; }
+}
+.containerReturnSection { display: flex; flex-direction: column; gap: 10px; }
+.containerReturnTitle { font-size: 14px; font-weight: 600; color: var(--color-slate-text); }
 .debtHint { font-size: 14px; color: var(--color-slate-text); strong { color: var(--color-danger); } }
 .notesWrap { display: flex; flex-direction: column; gap: 6px; }
 .notesLabel { font-size: 14px; font-weight: 500; color: var(--color-slate-text); }

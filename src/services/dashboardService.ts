@@ -7,7 +7,6 @@ export const dashboardService = {
     // return apiClient.get<DashboardStats>('/api/dashboard').then((r) => r.data);
     // Compute live totals from mock state
     const totalDebt = mockDb.customers.reduce((s, c) => s + (c.outstanding_debt ?? 0), 0);
-    const pendingDeliveries = mockDb.transactions.filter((t) => t.status === 'pending').length;
-    return delay({ ...mockDb.dashboardStats, total_outstanding_debt: totalDebt, pending_deliveries: pendingDeliveries });
+    return delay({ ...mockDb.dashboardStats, total_outstanding_debt: totalDebt });
   },
 };

@@ -2,14 +2,15 @@
 import { stockService } from '../../services/stockService';
 import { productService } from '../../services/productService';
 import { locationService } from '../../services/locationService';
+import { containerLoanService } from '../../services/containerLoanService';
 import { Button, Badge, Input, Select, EmptyState, Spinner } from '../../components/common';
 import { MOVEMENT_TYPE_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
-import type { StockLevel, StockMovement, Product, Location } from '../../types';
+import type { StockLevel, StockMovement, Product, Location, ContainerLoan } from '../../types';
 import styles from './StockPage.module.scss';
 
-type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production';
+type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'container_loans';
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
@@ -35,6 +36,9 @@ export function StockPage() {
   const [defectForm, setDefectForm] = useState({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
   const [vendorForm, setVendorForm] = useState({ product_id: '', location_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '', notes: '' });
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
+  const [containerLoans, setContainerLoans] = useState<ContainerLoan[]>([]);
+  const [containerLoansLoading, setContainerLoansLoading] = useState(false);
+  const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -171,14 +175,37 @@ export function StockPage() {
 
   // --- Tab config -------------------------------------------------------------
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'levels',     label: 'Level Stok' },
-    ...(!isKasir ? [{ key: 'movements' as Tab, label: 'Riwayat' }] : []),
-    ...(isOwner  ? [{ key: 'receive'    as Tab, label: 'Terima Stok' }] : []),
-    ...(!isKasir ? [{ key: 'vendor'     as Tab, label: 'Tukar Agent' }] : []),
-    ...(isOwner  ? [{ key: 'production' as Tab, label: 'Produksi' }] : []),
-    ...(!isKasir ? [{ key: 'transfer'   as Tab, label: 'Transfer' }] : []),
-    ...(isOwner  ? [{ key: 'defect'     as Tab, label: 'Defek/Rusak' }] : []),
+    { key: 'levels',          label: 'Level Stok' },
+    ...(!isKasir ? [{ key: 'movements'      as Tab, label: 'Riwayat' }] : []),
+    ...(isOwner  ? [{ key: 'receive'        as Tab, label: 'Terima Stok' }] : []),
+    ...(!isKasir ? [{ key: 'vendor'         as Tab, label: 'Tukar Agent' }] : []),
+    ...(isOwner  ? [{ key: 'production'     as Tab, label: 'Produksi' }] : []),
+    ...(!isKasir ? [{ key: 'transfer'       as Tab, label: 'Transfer' }] : []),
+    ...(isOwner  ? [{ key: 'defect'         as Tab, label: 'Defek/Rusak' }] : []),
+    ...(isOwner  ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
   ];
+
+  async function loadContainerLoans() {
+    setContainerLoansLoading(true);
+    try {
+      const loans = await containerLoanService.list();
+      setContainerLoans(loans);
+    } finally {
+      setContainerLoansLoading(false);
+    }
+  }
+
+  async function handleContainerReturn(customerId: string, productId: string, productName: string, qty: number) {
+    if (qty <= 0) return;
+    setSaving(true); resetFeedback();
+    try {
+      await containerLoanService.create({ customer_id: customerId, product_id: productId, quantity: -qty, notes: `Pengembalian manual — ${productName}` });
+      setReturnQtyMap((prev) => ({ ...prev, [`${customerId}-${productId}`]: '' }));
+      setSaveSuccess(true);
+      loadContainerLoans();
+    } catch { setSaveError('Gagal mencatat pengembalian.'); }
+    finally { setSaving(false); }
+  }
 
   // --- Levels helpers ----------------------------------------------------------
   /** Group levels by location, and within each location aggregate empty counts by unit. */
@@ -223,7 +250,11 @@ export function StockPage() {
             <button
               key={t.key}
               className={[styles.tabBtn, tab === t.key ? styles.tabActive : ''].join(' ')}
-              onClick={() => { setTab(t.key); resetFeedback(); }}
+              onClick={() => {
+              setTab(t.key);
+              resetFeedback();
+              if (t.key === 'container_loans') loadContainerLoans();
+            }}
             >
               {t.label}
             </button>
@@ -452,6 +483,85 @@ export function StockPage() {
                 <Button onClick={handleProduction} loading={saving} fullWidth>Simpan Produksi</Button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* -- Kontainer (Owner only) -- */}
+        {tab === 'container_loans' && (
+          <div className={styles.formCard}>
+            <h2 className={styles.formTitle}>Pinjaman Kontainer</h2>
+            <p className={styles.formSubtitle}>Daftar kontainer yang sedang dipinjam pelanggan. Catat pengembalian di sini.</p>
+            {saveSuccess && <div className={styles.successBanner}>Pengembalian berhasil dicatat.</div>}
+            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
+            {containerLoansLoading ? (
+              <div className={styles.loadingWrap}><Spinner /></div>
+            ) : (() => {
+              // Aggregate net loans per customer+product
+              type LoanKey = { customerId: string; customerName: string; productId: string; productName: string };
+              const netMap = new Map<string, LoanKey & { net: number }>();
+              containerLoans.forEach((loan) => {
+                const key = `${loan.customer_id}__${loan.product_id}`;
+                if (!netMap.has(key)) {
+                  netMap.set(key, {
+                    customerId: loan.customer_id,
+                    customerName: loan.customer_name ?? loan.customer_id,
+                    productId: loan.product_id,
+                    productName: loan.product_name ?? loan.product_id,
+                    net: 0,
+                  });
+                }
+                netMap.get(key)!.net += loan.quantity;
+              });
+              const outstanding = Array.from(netMap.values()).filter((e) => e.net > 0);
+              if (outstanding.length === 0) {
+                return <EmptyState message="Tidak ada kontainer yang sedang dipinjam." />;
+              }
+              // Group by customer
+              const byCustomer = new Map<string, typeof outstanding>();
+              outstanding.forEach((e) => {
+                if (!byCustomer.has(e.customerId)) byCustomer.set(e.customerId, []);
+                byCustomer.get(e.customerId)!.push(e);
+              });
+              return (
+                <div className={styles.containerLoansTable}>
+                  {Array.from(byCustomer.entries()).map(([custId, entries]) => (
+                    <div key={custId} className={styles.containerLoanGroup}>
+                      <div className={styles.containerLoanCustomer}>{entries[0].customerName}</div>
+                      {entries.map((e) => {
+                        const mapKey = `${e.customerId}-${e.productId}`;
+                        const inputVal = returnQtyMap[mapKey] ?? '';
+                        return (
+                          <div key={e.productId} className={styles.containerLoanRow}>
+                            <div className={styles.containerLoanInfo}>
+                              <span className={styles.containerLoanProduct}>{e.productName}</span>
+                              <span className={styles.containerLoanNet}>{e.net} unit dipinjam</span>
+                            </div>
+                            <div className={styles.containerReturnControl}>
+                              <input
+                                type="number"
+                                min="0"
+                                max={e.net}
+                                placeholder="0"
+                                value={inputVal}
+                                className={styles.containerReturnInput}
+                                onChange={(ev) => setReturnQtyMap((prev) => ({ ...prev, [mapKey]: ev.target.value }))}
+                              />
+                              <Button
+                                onClick={() => handleContainerReturn(e.customerId, e.productId, e.productName, parseInt(inputVal) || 0)}
+                                loading={saving}
+                                disabled={!inputVal || parseInt(inputVal) <= 0}
+                              >
+                                Catat
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
           </div>
         )}
       </div>
