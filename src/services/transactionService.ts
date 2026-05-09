@@ -10,6 +10,8 @@ export interface CreateTransactionPayload {
   paid_amount: number;
   payment_method?: 'cash' | 'transfer' | 'qris';
   notes?: string;
+  container_returns?: { product_id: string; quantity: number }[];
+  debt_payment_amount?: number;
 }
 
 export const transactionService = {
@@ -39,13 +41,51 @@ export const transactionService = {
       items, total_amount, paid_amount: data.paid_amount,
       payment_method: data.payment_method ?? 'cash',
       notes: data.notes,
-      status: data.paid_amount >= total_amount ? 'completed' : 'pending',
+      status: 'completed',
       created_by_name: 'Demo User', created_at: new Date().toISOString(),
     };
     mockDb.transactions.push(tx);
     // Update customer debt if underpaid
-    if (customer && data.paid_amount < total_amount) {
-      customer.outstanding_debt = (customer.outstanding_debt ?? 0) + (total_amount - data.paid_amount);
+    const debt = total_amount - data.paid_amount;
+    if (customer && debt > 0) {
+      customer.outstanding_debt = (customer.outstanding_debt ?? 0) + debt;
+    }
+    // Record ContainerLoans for refillable items (positive = lent)
+    if (customer) {
+      data.items.forEach((item) => {
+        const prod = mockDb.products.find((p) => p.id === item.product_id);
+        if (prod?.category === 'refillable') {
+          mockDb.containerLoans.push({
+            id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
+            product_id: item.product_id, product_name: prod.name,
+            quantity: item.quantity, transaction_id: tx.id,
+            created_by_name: 'Demo User', created_at: new Date().toISOString(),
+          });
+        }
+      });
+      // Record container returns (negative ContainerLoans)
+      if (data.container_returns) {
+        data.container_returns.forEach((ret) => {
+          if (ret.quantity > 0) {
+            const retProd = mockDb.products.find((p) => p.id === ret.product_id);
+            mockDb.containerLoans.push({
+              id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
+              product_id: ret.product_id, product_name: retProd?.name ?? '',
+              quantity: -ret.quantity, transaction_id: tx.id,
+              created_by_name: 'Demo User', created_at: new Date().toISOString(),
+            });
+          }
+        });
+      }
+    }
+    // Record old debt payment if provided
+    if (customer && data.debt_payment_amount && data.debt_payment_amount > 0) {
+      mockDb.debtPayments.push({
+        id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
+        amount: data.debt_payment_amount, transaction_id: tx.id,
+        created_by_name: 'Demo User', created_at: new Date().toISOString(),
+      });
+      customer.outstanding_debt = Math.max(0, (customer.outstanding_debt ?? 0) - data.debt_payment_amount);
     }
     return delay({ ...tx });
   },
@@ -53,7 +93,46 @@ export const transactionService = {
   updateStatus: (id: string, status: string): Promise<void> => {
     // return apiClient.put(`/api/transactions/${id}/status`, { status }).then((r) => r.data);
     const tx = mockDb.transactions.find((t) => t.id === id);
-    if (tx) tx.status = status as Transaction['status'];
+    if (tx && status === 'cancelled') {
+      tx.status = 'cancelled';
+      // Auto-reverse stock: add compensating StockMovements (receive back to source)
+      tx.items.forEach((item) => {
+        mockDb.stockMovements.push({
+          id: uid(),
+          product_id: item.product_id,
+          product_name: item.product_name,
+          to_location_id: tx.location_id ?? '',
+          to_location_name: tx.location_name ?? '',
+          movement_type: 'receive',
+          quantity: item.quantity,
+          notes: `Pembatalan transaksi #${tx.id}`,
+          created_by_name: 'System',
+          created_at: new Date().toISOString(),
+        });
+      });
+      // Reverse ContainerLoans created for this transaction
+      const loansForTx = mockDb.containerLoans.filter((l) => l.transaction_id === id);
+      loansForTx.forEach((loan) => {
+        mockDb.containerLoans.push({
+          id: uid(),
+          customer_id: loan.customer_id,
+          customer_name: loan.customer_name,
+          product_id: loan.product_id,
+          product_name: loan.product_name,
+          quantity: -loan.quantity,
+          transaction_id: tx.id,
+          notes: `Pembatalan transaksi #${tx.id}`,
+          created_by_name: 'System',
+          created_at: new Date().toISOString(),
+        });
+      });
+      // Restore customer debt if paid_amount < total_amount
+      const debt = tx.total_amount - tx.paid_amount;
+      if (tx.customer_id && debt > 0) {
+        const c = mockDb.customers.find((c) => c.id === tx.customer_id);
+        if (c) c.outstanding_debt = Math.max(0, (c.outstanding_debt ?? 0) - debt);
+      }
+    }
     return delay(undefined);
   },
 

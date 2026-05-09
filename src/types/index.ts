@@ -137,6 +137,7 @@ export interface DebtPayment {
   customer_id: string;
   customer_name: string;
   amount: number;
+  transaction_id?: string;
   notes?: string;
   created_by_name: string;
   created_at: string;
