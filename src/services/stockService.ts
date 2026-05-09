@@ -154,4 +154,38 @@ export const stockService = {
     });
     return delay(undefined);
   },
+
+  /** Receive multiple products into the same destination in one operation.
+   *  Real API: POST /api/stock/movements/bulk
+   *  Mock: delegates to receive() for each item sequentially.
+   */
+  receiveBulk: (data: {
+    to_location_id: string;
+    notes?: string;
+    items: { product_id: string; quantity: number; container_status?: string; purchase_cost?: number }[];
+  }): Promise<void> => {
+    // return apiClient.post('/api/stock/movements/bulk', { movement_type: 'receive', to_location_id: data.to_location_id, notes: data.notes, items: data.items }).then((r) => r.data);
+    return data.items.reduce(
+      (p, item) => p.then(() => stockService.receive({ ...item, to_location_id: data.to_location_id, notes: data.notes })),
+      Promise.resolve() as Promise<void>,
+    );
+  },
+
+  /** Transfer multiple products between the same pair of locations in one operation.
+   *  Real API: POST /api/stock/transfer/bulk
+   *  Mock: delegates to transfer() for each item sequentially.
+   */
+  transferBulk: (data: {
+    from_location_id: string;
+    to_location_id: string;
+    notes?: string;
+    items: { product_id: string; quantity: number; container_status?: string }[];
+  }): Promise<void> => {
+    // return apiClient.post('/api/stock/transfer/bulk', data).then((r) => r.data);
+    return data.items.reduce(
+      (p, item) => p.then(() => stockService.transfer({ ...item, from_location_id: data.from_location_id, to_location_id: data.to_location_id, notes: data.notes })),
+      Promise.resolve() as Promise<void>,
+    );
+  },
 };
+

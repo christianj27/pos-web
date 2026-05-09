@@ -10,6 +10,9 @@ import type { StockLevel, StockMovement, Product, Location } from '../../types';
 import styles from './StockPage.module.scss';
 
 type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production';
+interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
+interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
+function newKey() { return Math.random().toString(36).slice(2); }
 
 export function StockPage() {
   const { user } = useAuth();
@@ -23,9 +26,12 @@ export function StockPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Forms
-  const [receiveForm, setReceiveForm] = useState({ product_id: '', to_location_id: '', quantity: '', container_status: '', purchase_cost: '', notes: '' });
-  const [transferForm, setTransferForm] = useState({ product_id: '', from_location_id: '', to_location_id: '', quantity: '', container_status: '', notes: '' });
+  // Forms — Receive (multi-item cart)
+  const [receiveShared, setReceiveShared] = useState({ to_location_id: '', notes: '' });
+  const [receiveItems, setReceiveItems] = useState<ReceiveItem[]>([{ _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
+  // Forms — Transfer (multi-item cart)
+  const [transferShared, setTransferShared] = useState({ from_location_id: '', to_location_id: '', notes: '' });
+  const [transferItems, setTransferItems] = useState<TransferItem[]>([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
   const [defectForm, setDefectForm] = useState({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
   const [vendorForm, setVendorForm] = useState({ product_id: '', location_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '', notes: '' });
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
@@ -61,13 +67,18 @@ export function StockPage() {
   async function handleReceive() {
     setSaving(true); resetFeedback();
     try {
-      await stockService.receive({
-        product_id: receiveForm.product_id, to_location_id: receiveForm.to_location_id,
-        quantity: parseInt(receiveForm.quantity), container_status: receiveForm.container_status || undefined,
-        purchase_cost: receiveForm.purchase_cost ? parseFloat(receiveForm.purchase_cost) : undefined,
-        notes: receiveForm.notes || undefined,
+      await stockService.receiveBulk({
+        to_location_id: receiveShared.to_location_id,
+        notes: receiveShared.notes || undefined,
+        items: receiveItems.map((item) => ({
+          product_id: item.product_id,
+          quantity: parseInt(item.quantity),
+          container_status: item.container_status || undefined,
+          purchase_cost: item.purchase_cost ? parseFloat(item.purchase_cost) : undefined,
+        })),
       });
-      setReceiveForm({ product_id: '', to_location_id: '', quantity: '', container_status: '', purchase_cost: '', notes: '' });
+      setReceiveShared({ to_location_id: '', notes: '' });
+      setReceiveItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
       setSaveSuccess(true); load();
     } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
     finally { setSaving(false); }
@@ -76,15 +87,43 @@ export function StockPage() {
   async function handleTransfer() {
     setSaving(true); resetFeedback();
     try {
-      await stockService.transfer({
-        product_id: transferForm.product_id, from_location_id: transferForm.from_location_id,
-        to_location_id: transferForm.to_location_id, quantity: parseInt(transferForm.quantity),
-        container_status: transferForm.container_status || undefined, notes: transferForm.notes || undefined,
+      await stockService.transferBulk({
+        from_location_id: transferShared.from_location_id,
+        to_location_id: transferShared.to_location_id,
+        notes: transferShared.notes || undefined,
+        items: transferItems.map((item) => ({
+          product_id: item.product_id,
+          quantity: parseInt(item.quantity),
+          container_status: item.container_status || undefined,
+        })),
       });
-      setTransferForm({ product_id: '', from_location_id: '', to_location_id: '', quantity: '', container_status: '', notes: '' });
+      setTransferShared({ from_location_id: '', to_location_id: '', notes: '' });
+      setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
       setSaveSuccess(true); load();
     } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
     finally { setSaving(false); }
+  }
+
+  // -- Receive item helpers --
+  function updateReceiveItem(key: string, patch: Partial<ReceiveItem>) {
+    setReceiveItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+  }
+  function removeReceiveItem(key: string) {
+    setReceiveItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
+  }
+  function addReceiveItem() {
+    setReceiveItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
+  }
+
+  // -- Transfer item helpers --
+  function updateTransferItem(key: string, patch: Partial<TransferItem>) {
+    setTransferItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+  }
+  function removeTransferItem(key: string) {
+    setTransferItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
+  }
+  function addTransferItem() {
+    setTransferItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
   }
 
   async function handleDefect() {
@@ -136,9 +175,9 @@ export function StockPage() {
     ...(!isKasir ? [{ key: 'movements' as Tab, label: 'Riwayat' }] : []),
     ...(isOwner  ? [{ key: 'receive'    as Tab, label: 'Terima Stok' }] : []),
     ...(!isKasir ? [{ key: 'vendor'     as Tab, label: 'Tukar Agent' }] : []),
+    ...(isOwner  ? [{ key: 'production' as Tab, label: 'Produksi' }] : []),
     ...(!isKasir ? [{ key: 'transfer'   as Tab, label: 'Transfer' }] : []),
     ...(isOwner  ? [{ key: 'defect'     as Tab, label: 'Defek/Rusak' }] : []),
-    ...(isOwner  ? [{ key: 'production' as Tab, label: 'Produksi' }] : []),
   ];
 
   // --- Levels helpers ----------------------------------------------------------
@@ -292,17 +331,33 @@ export function StockPage() {
         {!loading && tab === 'receive' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Terima Stok Baru</h2>
-            <p className={styles.formSubtitle}>Stok baru dari luar sistem (pembelian, stok awal). Tidak memotong kontainer kosong.</p>
+            <p className={styles.formSubtitle}>Stok baru dari luar sistem (pembelian, stok awal). Tidak memotong kontainer kosong. Bisa tambah beberapa produk sekaligus.</p>
             {saveSuccess && <div className={styles.successBanner}>Stok berhasil diterima.</div>}
             {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
-              <Select label="Produk" value={receiveForm.product_id} onChange={(e) => setReceiveForm(p => ({ ...p, product_id: e.target.value }))} options={productOptions} placeholder="Pilih produk..." required />
-              <Select label="Lokasi Tujuan" value={receiveForm.to_location_id} onChange={(e) => setReceiveForm(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
-              <Input label="Jumlah" type="number" min="1" value={receiveForm.quantity} onChange={(e) => setReceiveForm(p => ({ ...p, quantity: e.target.value }))} required />
-              <Select label="Status Kontainer (opsional)" value={receiveForm.container_status} onChange={(e) => setReceiveForm(p => ({ ...p, container_status: e.target.value }))} options={containerOptions} placeholder="— Pilih —" />
-              <Input label="Biaya Pembelian (Rp, opsional)" type="number" min="0" value={receiveForm.purchase_cost} onChange={(e) => setReceiveForm(p => ({ ...p, purchase_cost: e.target.value }))} />
-              <Input label="Catatan (opsional)" value={receiveForm.notes} onChange={(e) => setReceiveForm(p => ({ ...p, notes: e.target.value }))} />
-              <Button onClick={handleReceive} loading={saving} fullWidth>Simpan</Button>
+              <Select label="Lokasi Tujuan" value={receiveShared.to_location_id} onChange={(e) => setReceiveShared(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
+              <div className={styles.itemList}>
+                {receiveItems.map((item) => (
+                  <div key={item._key} className={styles.itemRow}>
+                    <div className={styles.itemRowHeader}>
+                      <Select label="Produk" value={item.product_id} onChange={(e) => updateReceiveItem(item._key, { product_id: e.target.value })} options={productOptions} placeholder="Pilih produk..." required />
+                      <button className={styles.removeItemBtn} onClick={() => removeReceiveItem(item._key)} disabled={receiveItems.length === 1} aria-label="Hapus item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className={styles.itemRowControls}>
+                      <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateReceiveItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateReceiveItem(item._key, { quantity: e.target.value })} required />
+                    </div>
+                    <Input label="Biaya Pembelian (Rp, opsional)" type="number" min="0" value={item.purchase_cost} onChange={(e) => updateReceiveItem(item._key, { purchase_cost: e.target.value })} />
+                  </div>
+                ))}
+              </div>
+              <button className={styles.addItemBtn} onClick={addReceiveItem} type="button">+ Tambah Produk</button>
+              <Input label="Catatan (opsional)" value={receiveShared.notes} onChange={(e) => setReceiveShared(p => ({ ...p, notes: e.target.value }))} />
+              <Button onClick={handleReceive} loading={saving} fullWidth>Terima Semua Stok</Button>
             </div>
           </div>
         )}
@@ -311,16 +366,33 @@ export function StockPage() {
         {!loading && tab === 'transfer' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Transfer Stok (Muat / Kembali)</h2>
+            <p className={styles.formSubtitle}>Pindahkan stok antar lokasi. Gunakan untuk muat truk (gudang → kendaraan) atau barang kembali (kendaraan → gudang). Bisa tambah beberapa produk sekaligus.</p>
             {saveSuccess && <div className={styles.successBanner}>Transfer stok berhasil.</div>}
             {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
-              <Select label="Produk" value={transferForm.product_id} onChange={(e) => setTransferForm(p => ({ ...p, product_id: e.target.value }))} options={productOptions} placeholder="Pilih produk..." required />
-              <Select label="Dari Lokasi" value={transferForm.from_location_id} onChange={(e) => setTransferForm(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih asal..." required />
-              <Select label="Ke Lokasi" value={transferForm.to_location_id} onChange={(e) => setTransferForm(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih tujuan..." required />
-              <Input label="Jumlah" type="number" min="1" value={transferForm.quantity} onChange={(e) => setTransferForm(p => ({ ...p, quantity: e.target.value }))} required />
-              <Select label="Status Kontainer (opsional)" value={transferForm.container_status} onChange={(e) => setTransferForm(p => ({ ...p, container_status: e.target.value }))} options={containerOptions} placeholder="— Pilih —" />
-              <Input label="Catatan (opsional)" value={transferForm.notes} onChange={(e) => setTransferForm(p => ({ ...p, notes: e.target.value }))} />
-              <Button onClick={handleTransfer} loading={saving} fullWidth>Simpan</Button>
+              <Select label="Dari Lokasi" value={transferShared.from_location_id} onChange={(e) => setTransferShared(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih asal..." required />
+              <Select label="Ke Lokasi" value={transferShared.to_location_id} onChange={(e) => setTransferShared(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih tujuan..." required />
+              <div className={styles.itemList}>
+                {transferItems.map((item) => (
+                  <div key={item._key} className={styles.itemRow}>
+                    <div className={styles.itemRowHeader}>
+                      <Select label="Produk" value={item.product_id} onChange={(e) => updateTransferItem(item._key, { product_id: e.target.value })} options={productOptions} placeholder="Pilih produk..." required />
+                      <button className={styles.removeItemBtn} onClick={() => removeTransferItem(item._key)} disabled={transferItems.length === 1} aria-label="Hapus item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className={styles.itemRowControls}>
+                      <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateTransferItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateTransferItem(item._key, { quantity: e.target.value })} required />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className={styles.addItemBtn} onClick={addTransferItem} type="button">+ Tambah Produk</button>
+              <Input label="Catatan (opsional)" value={transferShared.notes} onChange={(e) => setTransferShared(p => ({ ...p, notes: e.target.value }))} />
+              <Button onClick={handleTransfer} loading={saving} fullWidth>Transfer Stok</Button>
             </div>
           </div>
         )}
