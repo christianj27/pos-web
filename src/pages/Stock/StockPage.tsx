@@ -553,7 +553,7 @@ export function StockPage() {
                                 <div className={styles.containerLoanInfo}>
                                   <span className={styles.containerLoanProduct}>{e.productName}</span>
                                   <span className={`${styles.containerLoanNet} ${styles.containerLoanNetPositive}`}>
-                                    {e.net} unit belum dikembalikan
+                                    <strong>{e.net}</strong> unit belum dikembalikan
                                   </span>
                                 </div>
                                 <div className={styles.containerReturnControl}>
@@ -595,8 +595,8 @@ export function StockPage() {
                               <div className={styles.containerLoanInfo}>
                                 <span className={styles.containerLoanProduct}>{e.productName}</span>
                                 <span className={`${styles.containerLoanNet} ${styles.containerLoanNetNegative}`}>
-                                  {Math.abs(e.net)} unit kontainer mereka ada di truk kami
-                                </span>
+                                    <strong>{Math.abs(e.net)}</strong> unit kontainer mereka ada di truk kami
+                                  </span>
                                 <span className={styles.containerLoanNoteInfo}>
                                   Kirim kembali sebagai galon terisi di pengiriman berikutnya
                                 </span>
