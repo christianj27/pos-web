@@ -107,6 +107,12 @@ export const mockDb = {
     { id: 'mov-4', movement_type: 'receive',   product_id: 'prod-5', product_name: 'Gas LPG 12 kg', to_location_id: 'loc-1', to_location_name: 'Gudang Utama', quantity: 15, container_status: 'filled', purchase_cost: 1275000, notes: 'Restock bulanan',      created_by_name: 'Budi Santoso', created_at: '2025-04-03T09:00:00.000Z' },
     { id: 'mov-5', movement_type: 'defect',    product_id: 'prod-4', product_name: 'Gas LPG 3 kg',  from_location_id: 'loc-3', from_location_name: 'Truk Rudi', quantity: 2, container_status: 'filled', notes: 'Tabung bocor saat pengiriman', created_by_name: 'Rudi Kurir',   created_at: '2025-04-05T14:30:00.000Z' },
     { id: 'mov-6', movement_type: 'production',product_id: 'prod-3', product_name: 'Galon Isi Ulang', from_location_id: 'loc-1', from_location_name: 'Gudang Utama', quantity: 10, container_status: 'filled', purchase_cost: 30000,   notes: '[Produksi] Isi ulang 10 galon', created_by_name: 'Budi Santoso', created_at: '2025-04-06T09:00:00.000Z' },
+    // Delivery tx-6: Andi antar 10 Galon Aqua ke Bu Ani, terima 20 galon kosong
+    { id: 'mov-7', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 10, container_status: 'filled', notes: 'Penjualan tx-6 — Toko Bu Ani', created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:30:00.000Z' },
+    { id: 'mov-8', movement_type: 'receive',    product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 20, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Toko Bu Ani (tx-6)', created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:35:00.000Z' },
+    // Delivery tx-7: Andi antar 20 Galon Aqua ke Pak Joko, terima 10 galon kosong
+    { id: 'mov-9', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 20, container_status: 'filled', notes: 'Penjualan tx-7 — Warung Pak Joko', created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:00:00.000Z' },
+    { id: 'mov-10', movement_type: 'receive',   product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 10, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Warung Pak Joko (tx-7)', created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:05:00.000Z' },
   ] as StockMovement[],
 
   transactions: [
@@ -152,6 +158,28 @@ export const mockDb = {
       total_amount: 100000, paid_amount: 100000, status: 'completed',
       created_by_name: 'Budi Santoso', created_at: '2025-04-14T15:00:00.000Z', completed_at: '2025-04-14T15:00:00.000Z',
     },
+    {
+      // Kasus 1: Andi antar 10 Galon Aqua ke Bu Ani, Bu Ani kembalikan 20 galon kosong
+      // Net Bu Ani (prod-1): loan-1(+3) + loan-3(+10) + loan-4(-20) = -7
+      // Artinya: kita memegang 7 galon milik Bu Ani di truk, harus dikembalikan terisi
+      id: 'tx-6', type: 'delivery',
+      customer_id: 'cust-1', customer_name: 'Toko Bu Ani',
+      location_id: 'loc-2', location_name: 'Truk Andi',
+      items: [{ product_id: 'prod-1', product_name: 'Galon Aqua', quantity: 10, unit_price: 4500, subtotal: 45000 }],
+      total_amount: 45000, paid_amount: 45000, status: 'completed',
+      created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:30:00.000Z', completed_at: '2025-04-20T09:30:00.000Z',
+    },
+    {
+      // Kasus 2: Andi antar 20 Galon Aqua ke Pak Joko, Pak Joko kembalikan 10 galon kosong
+      // Net Pak Joko (prod-1): loan-5(+20) + loan-6(-10) = +10
+      // Artinya: Pak Joko masih memegang 10 galon milik kita yang belum dikembalikan
+      id: 'tx-7', type: 'delivery',
+      customer_id: 'cust-2', customer_name: 'Warung Pak Joko',
+      location_id: 'loc-2', location_name: 'Truk Andi',
+      items: [{ product_id: 'prod-1', product_name: 'Galon Aqua', quantity: 20, unit_price: 5000, subtotal: 100000 }],
+      total_amount: 100000, paid_amount: 100000, status: 'completed',
+      created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:00:00.000Z', completed_at: '2025-04-20T11:00:00.000Z',
+    },
   ] as Transaction[],
 
   debtPayments: [
@@ -161,8 +189,14 @@ export const mockDb = {
   ] as DebtPayment[],
 
   containerLoans: [
-    { id: 'loan-1', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',    product_id: 'prod-1', product_name: 'Galon Aqua',    quantity: 3, notes: 'Pinjam galon cadangan',    created_by_name: 'Sari Kasir',   created_at: '2025-04-01T08:00:00.000Z' },
-    { id: 'loan-2', customer_id: 'cust-3', customer_name: 'Restoran Sedap', product_id: 'prod-4', product_name: 'Gas LPG 3 kg',  quantity: 5, notes: 'Tabung cadangan restoran', created_by_name: 'Budi Santoso', created_at: '2025-04-05T10:00:00.000Z' },
+    { id: 'loan-1', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',    product_id: 'prod-1', product_name: 'Galon Aqua',    quantity:  3, notes: 'Pinjam galon cadangan',    created_by_name: 'Sari Kasir',   created_at: '2025-04-01T08:00:00.000Z' },
+    { id: 'loan-2', customer_id: 'cust-3', customer_name: 'Restoran Sedap', product_id: 'prod-4', product_name: 'Gas LPG 3 kg',  quantity:  5, notes: 'Tabung cadangan restoran', created_by_name: 'Budi Santoso', created_at: '2025-04-05T10:00:00.000Z' },
+    // tx-6: Andi antar 10 Galon Aqua ke Bu Ani, terima 20 galon kosong
+    { id: 'loan-3', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',    product_id: 'prod-1', product_name: 'Galon Aqua', quantity: +10, transaction_id: 'tx-6', notes: 'Antar 10 galon terisi',              created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:30:00.000Z' },
+    { id: 'loan-4', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',    product_id: 'prod-1', product_name: 'Galon Aqua', quantity: -20, transaction_id: 'tx-6', notes: 'Terima 20 galon kosong dari Bu Ani', created_by_name: 'Andi Kurir', created_at: '2025-04-20T09:35:00.000Z' },
+    // tx-7: Andi antar 20 Galon Aqua ke Pak Joko, terima 10 galon kosong
+    { id: 'loan-5', customer_id: 'cust-2', customer_name: 'Warung Pak Joko', product_id: 'prod-1', product_name: 'Galon Aqua', quantity: +20, transaction_id: 'tx-7', notes: 'Antar 20 galon terisi',               created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:00:00.000Z' },
+    { id: 'loan-6', customer_id: 'cust-2', customer_name: 'Warung Pak Joko', product_id: 'prod-1', product_name: 'Galon Aqua', quantity: -10, transaction_id: 'tx-7', notes: 'Terima 10 galon kosong dari Pak Joko', created_by_name: 'Andi Kurir', created_at: '2025-04-20T11:05:00.000Z' },
   ] as ContainerLoan[],
 
   dashboardStats: {

@@ -50,7 +50,7 @@ export const transactionService = {
     if (customer && debt > 0) {
       customer.outstanding_debt = (customer.outstanding_debt ?? 0) + debt;
     }
-    // Record ContainerLoans for refillable items (positive = lent)
+    // Record ContainerLoans for refillable items (positive = lent) + dispatch StockMovements
     if (customer) {
       data.items.forEach((item) => {
         const prod = mockDb.products.find((p) => p.id === item.product_id);
@@ -61,9 +61,21 @@ export const transactionService = {
             quantity: item.quantity, transaction_id: tx.id,
             created_by_name: 'Demo User', created_at: new Date().toISOString(),
           });
+          // Dispatch movement: filled stock leaving the source location
+          mockDb.stockMovements.push({
+            id: uid(),
+            movement_type: 'dispatch',
+            product_id: item.product_id, product_name: prod.name,
+            from_location_id: tx.location_id ?? '',
+            from_location_name: tx.location_name ?? '',
+            quantity: item.quantity,
+            container_status: 'filled',
+            notes: `Penjualan ${tx.id} — ${customer.name}`,
+            created_by_name: 'Demo User', created_at: new Date().toISOString(),
+          });
         }
       });
-      // Record container returns (negative ContainerLoans)
+      // Record container returns (negative ContainerLoans) + receive StockMovements
       if (data.container_returns) {
         data.container_returns.forEach((ret) => {
           if (ret.quantity > 0) {
@@ -72,6 +84,18 @@ export const transactionService = {
               id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
               product_id: ret.product_id, product_name: retProd?.name ?? '',
               quantity: -ret.quantity, transaction_id: tx.id,
+              created_by_name: 'Demo User', created_at: new Date().toISOString(),
+            });
+            // Receive movement: empty containers arriving at source location
+            mockDb.stockMovements.push({
+              id: uid(),
+              movement_type: 'receive',
+              product_id: ret.product_id, product_name: retProd?.name ?? '',
+              to_location_id: tx.location_id ?? '',
+              to_location_name: tx.location_name ?? '',
+              quantity: ret.quantity,
+              container_status: 'empty',
+              notes: `Kontainer kosong diterima dari ${customer.name} (${tx.id})`,
               created_by_name: 'Demo User', created_at: new Date().toISOString(),
             });
           }

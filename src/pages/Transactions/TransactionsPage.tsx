@@ -627,13 +627,14 @@ export function TransactionsPage() {
                 {/* Container return section */}
                 {selectedCustomer && cart.some((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable') && (
                   <div className={styles.containerReturnSection}>
-                    <p className={styles.containerReturnTitle}>Kembalian Kontainer (opsional)</p>
+                    <p className={styles.containerReturnTitle}>Kontainer Kosong Diterima dari Pelanggan (opsional)</p>
                     {cart
                       .filter((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable')
                       .map((c) => (
                         <Input
                           key={c.product_id}
-                          label={`Kontainer kosong dikembalikan — ${c.product_name}`}
+                          label={`${c.product_name}`}
+                          hint="Bisa lebih dari jumlah yang dijual jika pelanggan memberikan kontainer ekstra"
                           type="number"
                           min="0"
                           value={containerReturns[c.product_id] ?? ''}

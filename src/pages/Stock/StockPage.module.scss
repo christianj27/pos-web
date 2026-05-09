@@ -45,12 +45,20 @@
 
 // Container loans tab
 .containerLoansTable { display: flex; flex-direction: column; gap: 20px; }
+.containerLoanSectionTitle { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-whisper-gray); padding: 4px 0; }
 .containerLoanGroup { border: 1px solid var(--color-light-violet-stroke); border-radius: 10px; overflow: hidden; }
+.containerLoanGroupPositive { border-color: #f59e0b40; }
+.containerLoanGroupNegative { border-color: #3b82f640; }
 .containerLoanCustomer { font-weight: 700; font-size: 14px; color: var(--color-deep-space-violet); background: var(--color-cloud-gray); padding: 10px 14px; border-bottom: 1px solid var(--color-light-violet-stroke); }
+.containerLoanGroupPositive .containerLoanCustomer { background: #fffbeb; border-bottom-color: #f59e0b40; }
+.containerLoanGroupNegative .containerLoanCustomer { background: #eff6ff; border-bottom-color: #3b82f640; }
 .containerLoanRow { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--color-light-violet-stroke); &:last-child { border-bottom: none; } }
 .containerLoanInfo { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .containerLoanProduct { font-size: 15px; font-weight: 600; color: var(--color-deep-space-violet); }
 .containerLoanNet { font-size: 13px; color: var(--color-whisper-gray); }
+.containerLoanNetPositive { color: #b45309; font-weight: 600; }
+.containerLoanNetNegative { color: #1d4ed8; font-weight: 600; }
+.containerLoanNoteInfo { font-size: 12px; color: #6b7280; font-style: italic; margin-top: 2px; }
 .containerReturnControl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 .containerReturnInput { width: 64px; padding: 8px 10px; border: 1px solid var(--color-light-violet-stroke); border-radius: 8px; font-size: 15px; text-align: center; background: var(--color-white-canvas); -moz-appearance: textfield; &::-webkit-outer-spin-button, &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; } &:focus { outline: none; border-color: var(--color-digital-violet); } }
 

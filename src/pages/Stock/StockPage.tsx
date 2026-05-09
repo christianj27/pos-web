@@ -176,13 +176,13 @@ export function StockPage() {
   // --- Tab config -------------------------------------------------------------
   const tabs: { key: Tab; label: string }[] = [
     { key: 'levels',          label: 'Level Stok' },
+    ...(isOwner  ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
     ...(!isKasir ? [{ key: 'movements'      as Tab, label: 'Riwayat' }] : []),
     ...(isOwner  ? [{ key: 'receive'        as Tab, label: 'Terima Stok' }] : []),
     ...(!isKasir ? [{ key: 'vendor'         as Tab, label: 'Tukar Agent' }] : []),
     ...(isOwner  ? [{ key: 'production'     as Tab, label: 'Produksi' }] : []),
     ...(!isKasir ? [{ key: 'transfer'       as Tab, label: 'Transfer' }] : []),
     ...(isOwner  ? [{ key: 'defect'         as Tab, label: 'Defek/Rusak' }] : []),
-    ...(isOwner  ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
   ];
 
   async function loadContainerLoans() {
@@ -490,15 +490,17 @@ export function StockPage() {
         {tab === 'container_loans' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Pinjaman Kontainer</h2>
-            <p className={styles.formSubtitle}>Daftar kontainer yang sedang dipinjam pelanggan. Catat pengembalian di sini.</p>
+            <p className={styles.formSubtitle}>
+              Saldo kontainer per pelanggan. <strong>Oranye:</strong> pelanggan masih memegang kontainer kami. <strong>Biru:</strong> kami memegang kontainer mereka — kembalikan terisi di pengiriman berikutnya.
+            </p>
             {saveSuccess && <div className={styles.successBanner}>Pengembalian berhasil dicatat.</div>}
             {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             {containerLoansLoading ? (
               <div className={styles.loadingWrap}><Spinner /></div>
             ) : (() => {
               // Aggregate net loans per customer+product
-              type LoanKey = { customerId: string; customerName: string; productId: string; productName: string };
-              const netMap = new Map<string, LoanKey & { net: number }>();
+              type LoanEntry = { customerId: string; customerName: string; productId: string; productName: string; net: number };
+              const netMap = new Map<string, LoanEntry>();
               containerLoans.forEach((loan) => {
                 const key = `${loan.customer_id}__${loan.product_id}`;
                 if (!netMap.has(key)) {
@@ -512,53 +514,99 @@ export function StockPage() {
                 }
                 netMap.get(key)!.net += loan.quantity;
               });
-              const outstanding = Array.from(netMap.values()).filter((e) => e.net > 0);
-              if (outstanding.length === 0) {
-                return <EmptyState message="Tidak ada kontainer yang sedang dipinjam." />;
+              // Show all non-zero net balances
+              const allEntries = Array.from(netMap.values()).filter((e) => e.net !== 0);
+              if (allEntries.length === 0) {
+                return <EmptyState message="Tidak ada transaksi kontainer aktif." />;
               }
+              const positiveEntries = allEntries.filter((e) => e.net > 0);
+              const negativeEntries = allEntries.filter((e) => e.net < 0);
+
               // Group by customer
-              const byCustomer = new Map<string, typeof outstanding>();
-              outstanding.forEach((e) => {
-                if (!byCustomer.has(e.customerId)) byCustomer.set(e.customerId, []);
-                byCustomer.get(e.customerId)!.push(e);
-              });
+              function groupByCustomer(entries: LoanEntry[]) {
+                const map = new Map<string, LoanEntry[]>();
+                entries.forEach((e) => {
+                  if (!map.has(e.customerId)) map.set(e.customerId, []);
+                  map.get(e.customerId)!.push(e);
+                });
+                return map;
+              }
+              const positiveByCustomer = groupByCustomer(positiveEntries);
+              const negativeByCustomer = groupByCustomer(negativeEntries);
+
               return (
                 <div className={styles.containerLoansTable}>
-                  {Array.from(byCustomer.entries()).map(([custId, entries]) => (
-                    <div key={custId} className={styles.containerLoanGroup}>
-                      <div className={styles.containerLoanCustomer}>{entries[0].customerName}</div>
-                      {entries.map((e) => {
-                        const mapKey = `${e.customerId}-${e.productId}`;
-                        const inputVal = returnQtyMap[mapKey] ?? '';
-                        return (
-                          <div key={e.productId} className={styles.containerLoanRow}>
-                            <div className={styles.containerLoanInfo}>
-                              <span className={styles.containerLoanProduct}>{e.productName}</span>
-                              <span className={styles.containerLoanNet}>{e.net} unit dipinjam</span>
+                  {/* Net > 0: customer holds our containers */}
+                  {positiveEntries.length > 0 && (
+                    <>
+                      <div className={styles.containerLoanSectionTitle}>
+                        Pelanggan memegang kontainer kami
+                      </div>
+                      {Array.from(positiveByCustomer.entries()).map(([custId, entries]) => (
+                        <div key={custId} className={`${styles.containerLoanGroup} ${styles.containerLoanGroupPositive}`}>
+                          <div className={styles.containerLoanCustomer}>{entries[0].customerName}</div>
+                          {entries.map((e) => {
+                            const mapKey = `${e.customerId}-${e.productId}`;
+                            const inputVal = returnQtyMap[mapKey] ?? '';
+                            return (
+                              <div key={e.productId} className={styles.containerLoanRow}>
+                                <div className={styles.containerLoanInfo}>
+                                  <span className={styles.containerLoanProduct}>{e.productName}</span>
+                                  <span className={`${styles.containerLoanNet} ${styles.containerLoanNetPositive}`}>
+                                    {e.net} unit belum dikembalikan
+                                  </span>
+                                </div>
+                                <div className={styles.containerReturnControl}>
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    placeholder="0"
+                                    value={inputVal}
+                                    className={styles.containerReturnInput}
+                                    onChange={(ev) => setReturnQtyMap((prev) => ({ ...prev, [mapKey]: ev.target.value }))}
+                                  />
+                                  <Button
+                                    onClick={() => handleContainerReturn(e.customerId, e.productId, e.productName, parseInt(inputVal) || 0)}
+                                    loading={saving}
+                                    disabled={!inputVal || parseInt(inputVal) <= 0}
+                                  >
+                                    Catat
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {/* Net < 0: we hold customer's containers, we owe them filled containers */}
+                  {negativeEntries.length > 0 && (
+                    <>
+                      <div className={styles.containerLoanSectionTitle}>
+                        Kontainer pelanggan ada di truk kami
+                      </div>
+                      {Array.from(negativeByCustomer.entries()).map(([custId, entries]) => (
+                        <div key={custId} className={`${styles.containerLoanGroup} ${styles.containerLoanGroupNegative}`}>
+                          <div className={styles.containerLoanCustomer}>{entries[0].customerName}</div>
+                          {entries.map((e) => (
+                            <div key={e.productId} className={styles.containerLoanRow}>
+                              <div className={styles.containerLoanInfo}>
+                                <span className={styles.containerLoanProduct}>{e.productName}</span>
+                                <span className={`${styles.containerLoanNet} ${styles.containerLoanNetNegative}`}>
+                                  {Math.abs(e.net)} unit kontainer mereka ada di truk kami
+                                </span>
+                                <span className={styles.containerLoanNoteInfo}>
+                                  Kirim kembali sebagai galon terisi di pengiriman berikutnya
+                                </span>
+                              </div>
                             </div>
-                            <div className={styles.containerReturnControl}>
-                              <input
-                                type="number"
-                                min="0"
-                                max={e.net}
-                                placeholder="0"
-                                value={inputVal}
-                                className={styles.containerReturnInput}
-                                onChange={(ev) => setReturnQtyMap((prev) => ({ ...prev, [mapKey]: ev.target.value }))}
-                              />
-                              <Button
-                                onClick={() => handleContainerReturn(e.customerId, e.productId, e.productName, parseInt(inputVal) || 0)}
-                                loading={saving}
-                                disabled={!inputVal || parseInt(inputVal) <= 0}
-                              >
-                                Catat
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
+                          ))}
+                        </div>
+                      ))}
+                    </>
+                  )}
                 </div>
               );
             })()}
