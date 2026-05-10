@@ -315,6 +315,12 @@
   gap: 10px 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--color-light-violet-stroke);
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover {
+    background: var(--color-cloud-gray);
+  }
 
   &:last-child {
     border-bottom: none;
@@ -448,5 +454,173 @@
   font-weight: 700;
   background: #fef3c7;
   color: #92400e;
+}
+
+// ─── Customer debt ────────────────────────────────────────────────────────────
+
+.debtList {
+  background: var(--color-white-canvas);
+  border: 1px solid var(--color-light-violet-stroke);
+}
+
+.debtRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.debtInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.debtName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.debtAmount {
+  font-family: var(--font-object-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-danger);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+// ─── Transaction detail modal ─────────────────────────────────────────────────
+
+.detailSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-light-violet-stroke);
+  margin-bottom: 16px;
+}
+
+.detailRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.detailLabel {
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+  flex-shrink: 0;
+  min-width: 96px;
+}
+
+.detailValue {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  text-align: right;
+}
+
+.detailItems {
+  border: 1px solid var(--color-light-violet-stroke);
+  margin-bottom: 16px;
+}
+
+.detailItemHeader {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 8px 14px;
+  background: var(--color-cloud-gray);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--color-whisper-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+}
+
+.detailItemRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+  align-items: baseline;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.detailItemName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+}
+
+.detailItemQty {
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+  white-space: nowrap;
+}
+
+.detailItemAmt {
+  font-family: var(--font-object-sans);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.detailTotals {
+  border: 1px solid var(--color-light-violet-stroke);
+}
+
+.detailTotalRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--color-slate-text);
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  strong {
+    font-family: var(--font-object-sans);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--color-deep-space-violet);
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.detailTotalDebt {
+  color: var(--color-danger);
+
+  strong {
+    color: var(--color-danger);
+  }
 }
 

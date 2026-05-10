@@ -176,6 +176,12 @@ export interface RecentTransaction {
   status: TransactionStatus;
 }
 
+export interface CustomerDebtSummary {
+  customer_id: string;
+  customer_name: string;
+  outstanding_debt: number;
+}
+
 export interface DashboardStats {
   today_revenue: number;
   today_transactions: number;
@@ -187,6 +193,7 @@ export interface DashboardStats {
   weekly_chart: WeeklyChartEntry[];
   recent_transactions: RecentTransaction[];
   warehouse_stock: StockLevel[];
+  customer_debts: CustomerDebtSummary[];
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

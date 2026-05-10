@@ -194,5 +194,21 @@ export const stockService = {
       Promise.resolve() as Promise<void>,
     );
   },
+
+  /** Exchange containers with vendor for multiple products in one operation.
+   *  Real API: POST /api/stock/vendor-exchange/bulk
+   *  Mock: delegates to vendorExchange() for each item sequentially.
+   */
+  vendorExchangeBulk: (data: {
+    location_id: string;
+    notes?: string;
+    items: { product_id: string; empty_quantity: number; filled_quantity: number; purchase_cost: number }[];
+  }): Promise<void> => {
+    // return apiClient.post('/api/stock/vendor-exchange/bulk', data).then((r) => r.data);
+    return data.items.reduce(
+      (p, item) => p.then(() => stockService.vendorExchange({ ...item, location_id: data.location_id, notes: data.notes })),
+      Promise.resolve() as Promise<void>,
+    );
+  },
 };
 

@@ -11,17 +11,22 @@ import {
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { dashboardService } from '../../services/dashboardService';
+import { transactionService } from '../../services/transactionService';
 import { usePolling } from '../../hooks/usePolling';
 import { Spinner } from '../../components/common/Spinner/Spinner';
+import { Modal } from '../../components/common/Modal/Modal';
+import { Button } from '../../components/common/Button/Button';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction } from '../../types';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 // FR-DSH-001: dashboard polls every 5 seconds (distinct from shared POLLING_INTERVAL)
 const DASHBOARD_POLLING_INTERVAL = 5000;
+
+const PAYMENT_METHOD_LABELS: Record<string, string> = { cash: 'Tunai', transfer: 'Transfer', qris: 'QRIS' };
 
 // --- Design tokens (must match SCSS variables) --------------------------------
 const COLOR_DIGITAL_VIOLET   = '#576cdb';
@@ -228,7 +233,7 @@ function WeeklyChart({
 
 // --- Recent transactions ------------------------------------------------------
 
-function RecentTransactionRow({ tx }: { tx: RecentTransaction }) {
+function RecentTransactionRow({ tx, onClick }: { tx: RecentTransaction; onClick: () => void }) {
   const time = new Intl.DateTimeFormat('id-ID', {
     hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short',
     timeZone: 'Asia/Jakarta',
@@ -237,7 +242,13 @@ function RecentTransactionRow({ tx }: { tx: RecentTransaction }) {
   const debt = tx.total_amount - tx.paid_amount;
 
   return (
-    <div className={styles.recentRow}>
+    <div
+      className={styles.recentRow}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+    >
       <span className={styles.recentTime}>{time}</span>
       <div className={styles.recentMeta}>
         <span className={styles.recentCustomer}>{tx.customer_name ?? 'Tanpa Pelanggan'}</span>
@@ -256,6 +267,19 @@ function RecentTransactionRow({ tx }: { tx: RecentTransaction }) {
           <div className={styles.recentDebt}>Utang {formatCurrency(debt)}</div>
         )}
       </div>
+    </div>
+  );
+}
+
+// --- Customer debt ------------------------------------------------------------
+
+function CustomerDebtRow({ item }: { item: CustomerDebtSummary }) {
+  return (
+    <div className={styles.debtRow}>
+      <div className={styles.debtInfo}>
+        <span className={styles.debtName}>{item.customer_name}</span>
+      </div>
+      <span className={styles.debtAmount}>{formatCurrency(item.outstanding_debt)}</span>
     </div>
   );
 }
@@ -294,6 +318,8 @@ export function DashboardPage() {
   const [lastUpdated, setLastUpdated]           = useState<Date | null>(null);
   const [clickedEntry, setClickedEntry]         = useState<WeeklyChartEntry | null>(null);
   const [, forceRender]                         = useState(0);
+  const [detailTx, setDetailTx]                 = useState<Transaction | null>(null);
+  const [detailLoading, setDetailLoading]       = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -324,11 +350,22 @@ export function DashboardPage() {
 
   const isToday = selectedDate === getTodayWIB();
 
+  async function handleTxRowClick(id: string) {
+    setDetailLoading(true);
+    try {
+      const tx = await transactionService.get(id);
+      setDetailTx(tx);
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   const handleBarClick = (entry: WeeklyChartEntry) => {
     setClickedEntry((prev) => prev?.date === entry.date ? null : entry);
   };
 
   return (
+    <>
     <div className={styles.page}>
       <div className={styles.container}>
 
@@ -474,14 +511,29 @@ export function DashboardPage() {
         {/* Recent transactions — FR-DSH-003 */}
         <section>
           <h2 className={styles.sectionTitle}>Transaksi Terkini</h2>
+          {detailLoading && <div style={{ padding: '8px 0' }}><Spinner size="sm" /></div>}
           {stats?.recent_transactions && stats.recent_transactions.length > 0 ? (
             <div className={styles.recentList}>
               {stats.recent_transactions.map((tx) => (
-                <RecentTransactionRow key={tx.id} tx={tx} />
+                <RecentTransactionRow key={tx.id} tx={tx} onClick={() => handleTxRowClick(tx.id)} />
               ))}
             </div>
           ) : (
             <p className={styles.recentEmpty}>Belum ada transaksi tercatat pada tanggal ini.</p>
+          )}
+        </section>
+
+        {/* Customer debt — FR-DSH-009 */}
+        <section>
+          <h2 className={styles.sectionTitle}>Hutang Pelanggan</h2>
+          {stats?.customer_debts && stats.customer_debts.length > 0 ? (
+            <div className={styles.debtList}>
+              {stats.customer_debts.map((item) => (
+                <CustomerDebtRow key={item.customer_id} item={item} />
+              ))}
+            </div>
+          ) : (
+            <p className={styles.recentEmpty}>Tidak ada hutang pelanggan aktif.</p>
           )}
         </section>
 
@@ -501,5 +553,95 @@ export function DashboardPage() {
 
       </div>
     </div>
+
+      {/* Transaction Detail Modal — FR-DSH-008 */}
+      {detailTx && (
+        <Modal
+          isOpen={!!detailTx}
+          onClose={() => setDetailTx(null)}
+          title="Detail Transaksi"
+          footer={<Button variant="ghost" onClick={() => setDetailTx(null)}>Tutup</Button>}
+        >
+          <div className={styles.detailSection}>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Tipe</span>
+              <span className={styles.detailValue}>{TRANSACTION_TYPE_LABELS[detailTx.type]}</span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Status</span>
+              <span className={[styles.badge, detailTx.status === 'completed' ? styles.badgeCompleted : styles.badgeCancelled].join(' ')}>
+                {detailTx.status === 'completed' ? 'Selesai' : 'Dibatalkan'}
+              </span>
+            </div>
+            <div className={styles.detailRow}>
+              <span className={styles.detailLabel}>Tanggal</span>
+              <span className={styles.detailValue}>
+                {new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(detailTx.created_at))}
+              </span>
+            </div>
+            {detailTx.customer_name && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Pelanggan</span>
+                <span className={styles.detailValue}>{detailTx.customer_name}</span>
+              </div>
+            )}
+            {detailTx.location_name && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Lokasi Stok</span>
+                <span className={styles.detailValue}>{detailTx.location_name}</span>
+              </div>
+            )}
+            {detailTx.payment_method && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Pembayaran</span>
+                <span className={styles.detailValue}>{PAYMENT_METHOD_LABELS[detailTx.payment_method] ?? detailTx.payment_method}</span>
+              </div>
+            )}
+            {detailTx.created_by_name && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Dibuat oleh</span>
+                <span className={styles.detailValue}>{detailTx.created_by_name}</span>
+              </div>
+            )}
+            {detailTx.notes && (
+              <div className={styles.detailRow}>
+                <span className={styles.detailLabel}>Catatan</span>
+                <span className={styles.detailValue}>{detailTx.notes}</span>
+              </div>
+            )}
+          </div>
+          <div className={styles.detailItems}>
+            <div className={styles.detailItemHeader}>
+              <span>Produk</span>
+              <span>Qty</span>
+              <span style={{ textAlign: 'right' }}>Subtotal</span>
+            </div>
+            {detailTx.items.map((item) => (
+              <div key={item.product_id} className={styles.detailItemRow}>
+                <span className={styles.detailItemName}>{item.product_name}</span>
+                <span className={styles.detailItemQty}>{item.quantity} &times; {formatCurrency(item.unit_price)}</span>
+                <span className={styles.detailItemAmt}>{formatCurrency(item.subtotal)}</span>
+              </div>
+            ))}
+          </div>
+          <div className={styles.detailTotals}>
+            <div className={styles.detailTotalRow}>
+              <span>Total</span>
+              <strong>{formatCurrency(detailTx.total_amount)}</strong>
+            </div>
+            <div className={styles.detailTotalRow}>
+              <span>Dibayar</span>
+              <span>{formatCurrency(detailTx.paid_amount)}</span>
+            </div>
+            {detailTx.total_amount - detailTx.paid_amount > 0 && (
+              <div className={[styles.detailTotalRow, styles.detailTotalDebt].join(' ')}>
+                <span>Sisa Hutang</span>
+                <strong>{formatCurrency(detailTx.total_amount - detailTx.paid_amount)}</strong>
+              </div>
+            )}
+          </div>
+        </Modal>
+      )}
+    </>
   );
 }

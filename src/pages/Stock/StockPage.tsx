@@ -13,6 +13,7 @@ import styles from './StockPage.module.scss';
 type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'container_loans';
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
+interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; purchase_cost: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
 function getTodayWIB(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
@@ -37,7 +38,9 @@ export function StockPage() {
   const [transferShared, setTransferShared] = useState({ from_location_id: '', to_location_id: '', notes: '' });
   const [transferItems, setTransferItems] = useState<TransferItem[]>([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
   const [defectForm, setDefectForm] = useState({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
-  const [vendorForm, setVendorForm] = useState({ product_id: '', location_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '', notes: '' });
+  // Forms — Vendor Exchange (multi-item cart)
+  const [vendorShared, setVendorShared] = useState({ location_id: '', notes: '' });
+  const [vendorItems, setVendorItems] = useState<VendorItem[]>([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
   const [containerLoans, setContainerLoans] = useState<ContainerLoan[]>([]);
   const [containerLoansLoading, setContainerLoansLoading] = useState(false);
@@ -160,15 +163,32 @@ export function StockPage() {
   async function handleVendorExchange() {
     setSaving(true); resetFeedback();
     try {
-      await stockService.vendorExchange({
-        product_id: vendorForm.product_id, location_id: vendorForm.location_id,
-        empty_quantity: parseInt(vendorForm.empty_quantity), filled_quantity: parseInt(vendorForm.filled_quantity),
-        purchase_cost: parseFloat(vendorForm.purchase_cost), notes: vendorForm.notes || undefined,
+      await stockService.vendorExchangeBulk({
+        location_id: vendorShared.location_id,
+        notes: vendorShared.notes || undefined,
+        items: vendorItems.map((item) => ({
+          product_id: item.product_id,
+          empty_quantity: parseInt(item.empty_quantity) || 0,
+          filled_quantity: parseInt(item.filled_quantity) || 0,
+          purchase_cost: parseFloat(item.purchase_cost) || 0,
+        })),
       });
-      setVendorForm({ product_id: '', location_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '', notes: '' });
+      setVendorShared({ location_id: '', notes: '' });
+      setVendorItems([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
       setSaveSuccess(true); load();
     } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
     finally { setSaving(false); }
+  }
+
+  // -- Vendor item helpers --
+  function updateVendorItem(key: string, patch: Partial<VendorItem>) {
+    setVendorItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+  }
+  function removeVendorItem(key: string) {
+    setVendorItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
+  }
+  function addVendorItem() {
+    setVendorItems((prev) => [...prev, { _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
   }
 
   async function handleProduction() {
@@ -408,7 +428,7 @@ export function StockPage() {
                         </svg>
                       </button>
                     </div>
-                    <div className={styles.itemRowControls}>
+                    <div className={styles.itemRowControls2}>
                       <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateReceiveItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateReceiveItem(item._key, { quantity: e.target.value })} required />
                     </div>
@@ -444,7 +464,7 @@ export function StockPage() {
                         </svg>
                       </button>
                     </div>
-                    <div className={styles.itemRowControls}>
+                    <div className={styles.itemRowControls2}>
                       <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateTransferItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateTransferItem(item._key, { quantity: e.target.value })} required />
                     </div>
@@ -479,16 +499,38 @@ export function StockPage() {
         {!loading && tab === 'vendor' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Tukar Kontainer ke Agent</h2>
-            <p className={styles.formSubtitle}>Serahkan kontainer kosong ke agent, terima kontainer terisi + catat biaya beli.</p>
+            <p className={styles.formSubtitle}>Serahkan kontainer kosong ke agent, terima kontainer terisi + catat biaya beli. Bisa tambah beberapa produk sekaligus.</p>
             {saveSuccess && <div className={styles.successBanner}>Tukar agent berhasil dicatat.</div>}
             {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
-              <Select label="Produk" value={vendorForm.product_id} onChange={(e) => setVendorForm(p => ({ ...p, product_id: e.target.value }))} options={productOptions} placeholder="Pilih produk..." required />
-              <Select label="Lokasi (truk / gudang)" value={vendorForm.location_id} onChange={(e) => setVendorForm(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
-              <Input label="Jumlah Kosong Diserahkan" type="number" min="0" value={vendorForm.empty_quantity} onChange={(e) => setVendorForm(p => ({ ...p, empty_quantity: e.target.value }))} required />
-              <Input label="Jumlah Terisi Diterima" type="number" min="1" value={vendorForm.filled_quantity} onChange={(e) => setVendorForm(p => ({ ...p, filled_quantity: e.target.value }))} required />
-              <Input label="Biaya Pembelian (Rp)" type="number" min="0" value={vendorForm.purchase_cost} onChange={(e) => setVendorForm(p => ({ ...p, purchase_cost: e.target.value }))} required />
-              <Input label="Catatan (opsional)" value={vendorForm.notes} onChange={(e) => setVendorForm(p => ({ ...p, notes: e.target.value }))} />
+              <Select label="Lokasi (truk / gudang)" value={vendorShared.location_id} onChange={(e) => setVendorShared(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
+              <div className={styles.itemList}>
+                {vendorItems.map((item) => (
+                  <div key={item._key} className={styles.itemRow}>
+                    <div className={styles.itemRowHeader}>
+                      <Select label="Produk" value={item.product_id} onChange={(e) => updateVendorItem(item._key, { product_id: e.target.value })} options={productOptions} placeholder="Pilih produk..." required />
+                      <button className={styles.removeItemBtn} onClick={() => removeVendorItem(item._key)} disabled={vendorItems.length === 1} aria-label="Hapus item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className={styles.itemRowControls2}>
+                      <Input label="Jml Kosong Diserahkan" type="number" min="0" value={item.empty_quantity} onChange={(e) => updateVendorItem(item._key, { empty_quantity: e.target.value })} required />
+                      <Input label="Jml Terisi Diterima" type="number" min="1" value={item.filled_quantity} onChange={(e) => updateVendorItem(item._key, { filled_quantity: e.target.value })} required />
+                    </div>
+                    <div className={styles.itemRowControls}>
+                       <Input label="Biaya Pembelian (Rp)" type="number" min="0" value={item.purchase_cost} onChange={(e) => updateVendorItem(item._key, { purchase_cost: e.target.value })} required />
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <button className={styles.addItemBtn} onClick={addVendorItem} type="button">+ Tambah Produk</button>
+              <Input label="Catatan (opsional)" value={vendorShared.notes} onChange={(e) => setVendorShared(p => ({ ...p, notes: e.target.value }))} />
+              <div className={styles.vendorTotal}>
+                <span>Total Biaya Pembelian</span>
+                <strong>{formatCurrency(vendorItems.reduce((s, i) => s + (parseFloat(i.purchase_cost) || 0), 0))}</strong>
+              </div>
               <Button onClick={handleVendorExchange} loading={saving} fullWidth>Simpan Pertukaran</Button>
             </div>
           </div>
