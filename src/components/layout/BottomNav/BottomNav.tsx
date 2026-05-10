@@ -83,10 +83,10 @@ const KURIR_NAV: NavItem[] = [
 ];
 
 const KASIR_NAV: NavItem[] = [
-  { to: '/transactions',  label: 'Transaksi', icon: <TxIcon /> },
-  { to: '/customers',     label: 'Pelanggan', icon: <CustomerIcon /> },
-  { to: '/debt-payments', label: 'Hutang',    icon: <DebtIcon /> },
-  { to: '/profile',       label: 'Profil',    icon: <ProfileIcon /> },
+  { to: '/transactions', label: 'Transaksi', icon: <TxIcon /> },
+  { to: '/stock',        label: 'Stok',      icon: <StockIcon /> },
+  { to: '/customers',    label: 'Pelanggan', icon: <CustomerIcon /> },
+  { to: '/profile',      label: 'Profil',    icon: <ProfileIcon /> },
 ];
 
 const NAV_BY_ROLE: Record<string, NavItem[]> = {
