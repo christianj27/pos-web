@@ -196,6 +196,49 @@ export interface DashboardStats {
   customer_debts: CustomerDebtSummary[];
 }
 
+// ─── Debt History ─────────────────────────────────────────────────────────────
+/** A transaction that created or partially created debt for a customer */
+export interface DebtTransaction {
+  id: string;
+  created_at: string;
+  type: TransactionType;
+  total_amount: number;
+  paid_amount: number;
+  debt_amount: number;
+  created_by_name: string;
+}
+
+export interface CustomerDebtHistory {
+  customer_id: string;
+  customer_name: string;
+  outstanding_debt: number;
+  debt_transactions: DebtTransaction[];
+  payments: DebtPayment[];
+}
+
+// ─── Cash Flow ────────────────────────────────────────────────────────────────
+export type CashFlowType = 'cash_in' | 'cash_out' | 'new_debt';
+export type CashFlowCategory = 'sale_payment' | 'debt_payment' | 'stock_purchase' | 'debt_created';
+
+export interface CashFlowEntry {
+  id: string;
+  flow_type: CashFlowType;
+  category: CashFlowCategory;
+  amount: number;
+  description: string;
+  reference_id?: string;
+  created_by_name: string;
+  created_at: string;
+}
+
+export interface CashFlowSummary {
+  total_cash_in: number;
+  total_cash_out: number;
+  net_cash: number;
+  total_new_debt: number;
+  entries: CashFlowEntry[];
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 export interface ApiError {
   message: string;

@@ -11,7 +11,9 @@ import { CustomersPage } from './pages/Customers/CustomersPage';
 import { StockPage } from './pages/Stock/StockPage';
 import { TransactionsPage } from './pages/Transactions/TransactionsPage';
 import { DebtPaymentsPage } from './pages/DebtPayments/DebtPaymentsPage';
-import { SettingsPage } from './pages/Settings/SettingsPage';
+import { CustomerDebtDetailPage } from './pages/DebtPayments/CustomerDebtDetailPage';
+import { LainnyaPage } from './pages/Lainnya/LainnyaPage';
+import { CashFlowPage } from './pages/CashFlow/CashFlowPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { Spinner } from './components/common';
 import type { UserRole } from './types';
@@ -74,12 +76,20 @@ export default function App() {
               <RequireAuth allowedRoles={['owner', 'kasir']}><DebtPaymentsPage /></RequireAuth>
             } />
 
-            <Route path="/settings" element={
-              <RequireAuth allowedRoles={['owner']}><SettingsPage /></RequireAuth>
+            <Route path="/debt-payments/:customerId" element={
+              <RequireAuth allowedRoles={['owner', 'kasir']}><CustomerDebtDetailPage /></RequireAuth>
+            } />
+
+            <Route path="/lainnya" element={
+              <RequireAuth allowedRoles={['owner']}><LainnyaPage /></RequireAuth>
             } />
 
             <Route path="/profile" element={
               <RequireAuth><ProfilePage /></RequireAuth>
+            } />
+
+            <Route path="/cash-flow" element={
+              <RequireAuth allowedRoles={['owner']}><CashFlowPage /></RequireAuth>
             } />
           </Route>
 

@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
-import styles from './SettingsPage.module.scss';
+import styles from './LainnyaPage.module.scss';
 
 function UsersIcon() {
   return (
@@ -40,6 +40,15 @@ function DebtIcon() {
   );
 }
 
+function CashFlowIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28" aria-hidden="true">
+      <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+      <polyline points="17 6 23 6 23 12" />
+    </svg>
+  );
+}
+
 interface MasterCard {
   label: string;
   description: string;
@@ -47,7 +56,7 @@ interface MasterCard {
   icon: React.ReactNode;
 }
 
-export function SettingsPage() {
+export function LainnyaPage() {
   const { logout } = useAuth();
   const navigate = useNavigate();
 
@@ -56,12 +65,13 @@ export function SettingsPage() {
     { label: 'Produk', description: 'Kelola katalog produk', to: '/products', icon: <ProductIcon /> },
     { label: 'Lokasi', description: 'Kelola lokasi stok & kurir', to: '/locations', icon: <LocationIcon /> },
     { label: 'Pembayaran Hutang', description: 'Riwayat pembayaran hutang', to: '/debt-payments', icon: <DebtIcon /> },
+    { label: 'Arus Kas', description: 'Riwayat arus kas harian', to: '/cash-flow', icon: <CashFlowIcon /> },
   ];
 
   return (
     <div className={styles.page}>
       <div className={styles.container}>
-        <h1 className={styles.title}>Pengaturan</h1>
+        <h1 className={styles.title}>Lainnya</h1>
 
         {/* Menu Section */}
         <div className={styles.section}>

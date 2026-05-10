@@ -1,0 +1,119 @@
+.page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
+.loadingWrap { display: flex; justify-content: center; padding: 48px; }
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.titleGroup { display: flex; align-items: flex-start; gap: 10px; }
+.backArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: var(--color-slate-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  margin-top: 2px;
+  transition: background-color 0.15s;
+  &:hover { background: var(--color-cloud-gray); }
+}
+.title {
+  font-family: var(--font-object-sans);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  letter-spacing: -0.48px;
+  line-height: 1.2;
+}
+.subtitle { font-size: 13px; color: var(--color-whisper-gray); margin-top: 2px; }
+
+// ── Debt banner ───────────────────────────────────────────────────────────────
+.debtBanner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-radius: 12px;
+  gap: 12px;
+}
+.debtBannerActive {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  .debtBannerLabel { color: var(--color-danger); }
+  .debtBannerAmount { color: var(--color-danger); }
+}
+.debtBannerClear {
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  .debtBannerLabel { color: var(--color-success); }
+  .debtBannerAmount { color: var(--color-success); }
+}
+.debtBannerLabel { font-size: 14px; font-weight: 600; }
+.debtBannerAmount { font-family: var(--font-object-sans); font-size: 22px; font-weight: 700; }
+
+// ── Section ───────────────────────────────────────────────────────────────────
+.sectionTitle {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-whisper-gray);
+  margin-bottom: 10px;
+}
+.emptyText { font-size: 14px; color: var(--color-whisper-gray); padding: 16px 0; }
+
+// ── Debt transaction card ─────────────────────────────────────────────────────
+.cardList { display: flex; flex-direction: column; gap: 8px; }
+
+.txCard {
+  padding: 14px 16px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 10px;
+  background: var(--color-white-canvas);
+}
+.txCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.txCardInfo { display: flex; flex-direction: column; gap: 3px; }
+.txCardType { font-size: 13px; font-weight: 600; color: var(--color-deep-space-violet); }
+.txCardDate { font-size: 12px; color: var(--color-whisper-gray); }
+.txCardBy { font-size: 12px; color: var(--color-whisper-gray); }
+.txCardAmounts { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.txCardTotal { font-family: var(--font-object-sans); font-size: 15px; font-weight: 700; color: var(--color-deep-space-violet); }
+.txCardPaid { font-size: 12px; color: var(--color-success); }
+.txCardDebt { font-size: 13px; font-weight: 700; color: var(--color-danger); }
+
+// ── Payment card ──────────────────────────────────────────────────────────────
+.payCard {
+  padding: 14px 16px;
+  border: 1px solid #d1fae5;
+  border-radius: 10px;
+  background: #f0fdf4;
+}
+.payCardTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.payCardInfo { display: flex; flex-direction: column; gap: 3px; }
+.payCardNotes { font-size: 14px; color: var(--color-charcoal-text); }
+.payCardMeta { font-size: 12px; color: var(--color-whisper-gray); }
+.payCardAmount { font-family: var(--font-object-sans); font-size: 18px; font-weight: 700; color: var(--color-success); flex-shrink: 0; }
+
+// ── Create form ───────────────────────────────────────────────────────────────
+.createForm { display: flex; flex-direction: column; gap: 16px; }
+.errorBanner { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; font-size: 14px; color: var(--color-danger); border-radius: 6px; }

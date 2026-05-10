@@ -113,6 +113,10 @@ export const mockDb = {
     // Delivery tx-7: Andi antar 20 Galon Aqua ke Pak Joko, terima 10 galon kosong
     { id: 'mov-9', movement_type: 'dispatch',   product_id: 'prod-1', product_name: 'Galon Aqua', from_location_id: 'loc-2', from_location_name: 'Truk Andi', quantity: 20, container_status: 'filled', notes: 'Penjualan tx-7 — Warung Pak Joko', created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:00:00.000Z' },
     { id: 'mov-10', movement_type: 'receive',   product_id: 'prod-1', product_name: 'Galon Aqua', to_location_id: 'loc-2', to_location_name: 'Truk Andi', quantity: 10, container_status: 'empty',  notes: 'Kontainer kosong diterima dari Warung Pak Joko (tx-7)', created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:05:00.000Z' },
+    // Vendor exchange: Budi bawa galon kosong ke supplier, terima galon terisi + bayar biaya
+    { id: 'mov-11', movement_type: 'vendor_exchange', product_id: 'prod-1', product_name: 'Galon Aqua',      to_location_id: 'loc-1', to_location_name: 'Gudang Utama', quantity: 50, container_status: 'filled', purchase_cost: 450000, notes: 'Tukar galon kosong ke depot', created_by_name: 'Budi Santoso', created_at: '2026-05-10T00:00:00.000Z' },
+    { id: 'mov-12', movement_type: 'receive',         product_id: 'prod-4', product_name: 'Gas LPG 3 kg',    to_location_id: 'loc-1', to_location_name: 'Gudang Utama', quantity: 20, container_status: 'filled', purchase_cost: 320000, notes: 'Restock LPG 3 kg dari agen', created_by_name: 'Budi Santoso', created_at: '2026-05-10T00:30:00.000Z' },
+    { id: 'mov-13', movement_type: 'production',      product_id: 'prod-3', product_name: 'Galon Isi Ulang', from_location_id: 'loc-1', from_location_name: 'Gudang Utama', quantity: 15, container_status: 'filled', purchase_cost: 45000, notes: '[Produksi] Isi ulang 15 galon', created_by_name: 'Budi Santoso', created_at: '2026-05-10T00:45:00.000Z' },
   ] as StockMovement[],
 
   transactions: [
@@ -180,12 +184,41 @@ export const mockDb = {
       total_amount: 100000, paid_amount: 100000, status: 'completed',
       created_by_name: 'Andi Kurir', created_at: '2026-05-10T11:00:00.000Z', completed_at: '2026-05-10T11:00:00.000Z',
     },
+    {
+      // Kasir: Restoran Sedap beli 3 Gas LPG 3 kg, bayar sebagian
+      id: 'tx-8', type: 'counter',
+      customer_id: 'cust-3', customer_name: 'Restoran Sedap',
+      location_id: 'loc-1', location_name: 'Gudang Utama',
+      items: [{ product_id: 'prod-4', product_name: 'Gas LPG 3 kg', quantity: 3, unit_price: 20000, subtotal: 60000 }],
+      total_amount: 60000, paid_amount: 30000, status: 'completed',
+      created_by_name: 'Sari Kasir', created_at: '2026-05-10T01:00:00.000Z', completed_at: '2026-05-10T01:00:00.000Z',
+    },
+    {
+      // Kasir: penjualan tunai anonim (cup air)
+      id: 'tx-9', type: 'counter',
+      location_id: 'loc-1', location_name: 'Gudang Utama',
+      items: [{ product_id: 'prod-6', product_name: 'Air Isi Ulang 240ml', quantity: 20, unit_price: 500, subtotal: 10000 }],
+      total_amount: 10000, paid_amount: 10000, status: 'completed',
+      created_by_name: 'Sari Kasir', created_at: '2026-05-10T06:00:00.000Z', completed_at: '2026-05-10T06:00:00.000Z',
+    },
+    {
+      // Rudi antar Gas LPG 12 kg ke Toko Bu Ani, belum dibayar (piutang penuh)
+      id: 'tx-10', type: 'delivery',
+      customer_id: 'cust-1', customer_name: 'Toko Bu Ani',
+      location_id: 'loc-3', location_name: 'Truk Rudi',
+      items: [{ product_id: 'prod-5', product_name: 'Gas LPG 12 kg', quantity: 2, unit_price: 85000, subtotal: 170000 }],
+      total_amount: 170000, paid_amount: 0, status: 'completed',
+      created_by_name: 'Rudi Kurir', created_at: '2026-05-10T08:30:00.000Z', completed_at: '2026-05-10T08:30:00.000Z',
+    },
   ] as Transaction[],
 
   debtPayments: [
     { id: 'debt-1', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',     amount: 25000,  notes: 'Bayar sebagian',          created_by_name: 'Sari Kasir',   created_at: '2025-04-08T10:00:00.000Z' },
     { id: 'debt-2', customer_id: 'cust-3', customer_name: 'Restoran Sedap',  amount: 100000, notes: 'DP cicilan bulan ini',     created_by_name: 'Budi Santoso', created_at: '2025-04-09T14:00:00.000Z' },
     { id: 'debt-3', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',     amount: 10000,  notes: 'Bayar sisa transaksi lama', created_by_name: 'Sari Kasir',  created_at: '2025-04-15T09:00:00.000Z' },
+    { id: 'debt-4', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',     amount: 50000,  notes: 'Pelunasan hutang galon',   created_by_name: 'Sari Kasir',   created_at: '2026-05-10T02:30:00.000Z' },
+    { id: 'debt-5', customer_id: 'cust-2', customer_name: 'Warung Pak Joko', amount: 75000,  notes: 'Cicilan minggu ini',       created_by_name: 'Budi Santoso', created_at: '2026-05-10T04:00:00.000Z' },
+    { id: 'debt-6', customer_id: 'cust-3', customer_name: 'Restoran Sedap',  amount: 100000, notes: undefined,                 created_by_name: 'Sari Kasir',   created_at: '2026-05-10T07:15:00.000Z' },
   ] as DebtPayment[],
 
   containerLoans: [

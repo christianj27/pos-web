@@ -1,0 +1,139 @@
+.page { padding: 24px 16px; @media (min-width: 768px) { padding: 32px 24px; } }
+.container { max-width: var(--max-width); margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+.loadingWrap { display: flex; justify-content: center; padding: 48px; }
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.titleGroup { display: flex; align-items: center; gap: 8px; }
+.backArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--color-slate-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s;
+  &:hover { background: var(--color-cloud-gray); }
+}
+.title {
+  font-family: var(--font-object-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  letter-spacing: -0.56px;
+}
+
+// ── Date filter ───────────────────────────────────────────────────────────────
+.filterRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.dateInput {
+  padding: 8px 12px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--color-deep-space-violet);
+  background: var(--color-white-canvas);
+  cursor: pointer;
+  &:focus { outline: 2px solid var(--color-digital-violet); outline-offset: 2px; }
+}
+.todayBtn {
+  padding: 8px 14px;
+  border: 1px solid var(--color-digital-violet);
+  border-radius: 8px;
+  background: none;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-digital-violet);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  &:hover { background: rgba(87, 108, 219, 0.08); }
+}
+
+// ── Summary cards ─────────────────────────────────────────────────────────────
+.summaryGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.summaryCard {
+  padding: 14px 16px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.summaryLabel { font-size: 12px; font-weight: 600; }
+.summaryValue { font-family: var(--font-object-sans); font-size: 18px; font-weight: 700; }
+
+.summaryIn    { background: #f0fdf4; border: 1px solid #bbf7d0; .summaryLabel { color: #16a34a; } .summaryValue { color: #16a34a; } }
+.summaryOut   { background: #fef2f2; border: 1px solid #fecaca; .summaryLabel { color: var(--color-danger); } .summaryValue { color: var(--color-danger); } }
+.summaryNet   { background: #eff6ff; border: 1px solid #bfdbfe; .summaryLabel { color: #2563eb; } .summaryValue { color: #2563eb; } }
+.summaryNetNeg { background: #fef2f2; border: 1px solid #fecaca; .summaryLabel { color: var(--color-danger); } .summaryValue { color: var(--color-danger); } }
+.summaryDebt  { background: #fffbeb; border: 1px solid #fde68a; .summaryLabel { color: #d97706; } .summaryValue { color: #d97706; } }
+
+// ── Legend ────────────────────────────────────────────────────────────────────
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.legendDot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+.dotIn    { background: #16a34a; }
+.dotOut   { background: var(--color-danger); }
+.dotDebt  { background: #d97706; }
+.legendLabel { font-size: 12px; color: var(--color-whisper-gray); margin-right: 6px; }
+
+// ── Entry list ────────────────────────────────────────────────────────────────
+.entryList {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  gap: 12px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+  &:last-child { border-bottom: none; }
+}
+.rowCashIn  { border-left: 3px solid #16a34a; }
+.rowCashOut { border-left: 3px solid var(--color-danger); }
+.rowNewDebt { border-left: 3px solid #d97706; }
+
+.rowLeft { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rowBadge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  width: fit-content;
+
+  .rowCashIn  & { background: #d1fae5; color: #065f46; }
+  .rowCashOut & { background: #fee2e2; color: #991b1b; }
+  .rowNewDebt & { background: #fef3c7; color: #92400e; }
+}
+.rowDesc { font-size: 14px; color: var(--color-deep-space-violet); font-weight: 500; }
+.rowMeta { font-size: 12px; color: var(--color-whisper-gray); }
+.rowAmount { font-family: var(--font-object-sans); font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.amountIn   { color: #16a34a; }
+.amountOut  { color: var(--color-danger); }
+.amountDebt { color: #d97706; }
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+.emptyWrap { padding: 40px 0; text-align: center; }
+.emptyText { font-size: 14px; color: var(--color-whisper-gray); }
+
+// ── Error ─────────────────────────────────────────────────────────────────────
+.errorBanner { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; font-size: 14px; color: var(--color-danger); border-radius: 6px; }

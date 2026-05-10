@@ -41,19 +41,13 @@ function CustomerIcon() {
     </svg>
   );
 }
-function SettingsIcon() {
+function LainnyaIcon() {
   return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" />
-    </svg>
-  );
-}
-function DebtIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-      <line x1="12" y1="1" x2="12" y2="23" />
-      <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+    <svg viewBox="0 0 24 24" fill="currentColor" width="22" height="22" aria-hidden="true">
+      <rect x="3"  y="3"  width="8" height="8" rx="2" />
+      <rect x="13" y="3"  width="8" height="8" rx="2" />
+      <rect x="3"  y="13" width="8" height="8" rx="2" />
+      <rect x="13" y="13" width="8" height="8" rx="2" />
     </svg>
   );
 }
@@ -72,7 +66,7 @@ const OWNER_NAV: NavItem[] = [
   { to: '/transactions', label: 'Transaksi',  icon: <TxIcon /> },
   { to: '/stock',        label: 'Stok',       icon: <StockIcon /> },
   { to: '/customers',    label: 'Pelanggan',  icon: <CustomerIcon /> },
-  { to: '/settings',     label: 'Pengaturan', icon: <SettingsIcon /> },
+  { to: '/lainnya',     label: 'Lainnya',     icon: <LainnyaIcon /> },
 ];
 
 const KURIR_NAV: NavItem[] = [
@@ -95,7 +89,7 @@ const NAV_BY_ROLE: Record<string, NavItem[]> = {
   kasir: KASIR_NAV,
 };
 
-const SETTINGS_SUB_PATHS = ['/users', '/products', '/locations', '/debt-payments', '/profile'];
+const SETTINGS_SUB_PATHS = ['/users', '/products', '/locations', '/debt-payments', '/profile', '/cash-flow'];
 
 export function BottomNav() {
   const { user } = useAuth();
@@ -109,7 +103,7 @@ export function BottomNav() {
       {visible.map((item) => {
         const isSettingsSubPath =
           role === 'owner' &&
-          item.to === '/settings' &&
+          item.to === '/lainnya' &&
           SETTINGS_SUB_PATHS.some((p) => location.pathname === p || location.pathname.startsWith(p + '/'));
 
         return (

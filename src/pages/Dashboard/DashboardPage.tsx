@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -273,13 +274,24 @@ function RecentTransactionRow({ tx, onClick }: { tx: RecentTransaction; onClick:
 
 // --- Customer debt ------------------------------------------------------------
 
-function CustomerDebtRow({ item }: { item: CustomerDebtSummary }) {
+function CustomerDebtRow({ item, onClick }: { item: CustomerDebtSummary; onClick: () => void }) {
   return (
-    <div className={styles.debtRow}>
+    <div
+      className={styles.debtRow}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+    >
       <div className={styles.debtInfo}>
         <span className={styles.debtName}>{item.customer_name}</span>
       </div>
-      <span className={styles.debtAmount}>{formatCurrency(item.outstanding_debt)}</span>
+      <div className={styles.debtRight}>
+        <span className={styles.debtAmount}>{formatCurrency(item.outstanding_debt)}</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className={styles.debtChevron}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
     </div>
   );
 }
@@ -311,6 +323,7 @@ function WarehouseStockRow({ item }: { item: StockLevel }) {
 // --- Page ---------------------------------------------------------------------
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [stats, setStats]                       = useState<DashboardStats | null>(null);
   const [loading, setLoading]                   = useState(true);
   const [error, setError]                       = useState<string | null>(null);
@@ -529,7 +542,11 @@ export function DashboardPage() {
           {stats?.customer_debts && stats.customer_debts.length > 0 ? (
             <div className={styles.debtList}>
               {stats.customer_debts.map((item) => (
-                <CustomerDebtRow key={item.customer_id} item={item} />
+                <CustomerDebtRow
+                  key={item.customer_id}
+                  item={item}
+                  onClick={() => navigate(`/debt-payments/${item.customer_id}`)}
+                />
               ))}
             </div>
           ) : (
