@@ -9,6 +9,7 @@ import {
   type ChartEvent,
   type ActiveElement,
   type TooltipItem,
+  type Plugin,
 } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 import { dashboardService } from '../../services/dashboardService';
@@ -23,6 +24,25 @@ import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, T
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
+
+// Draws formatted revenue value above each bar
+const barDatalabelPlugin: Plugin<'bar'> = {
+  id: 'barDatalabels',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      const value = chart.data.datasets[0].data[i];
+      if (typeof value !== 'number' || value === 0) return;
+      ctx.save();
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillStyle = '#6c7693';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'bottom';
+      ctx.fillText(formatRevenueShort(value), bar.x, bar.y - 4);
+      ctx.restore();
+    });
+  },
+};
 
 // FR-DSH-001: dashboard polls every 5 seconds (distinct from shared POLLING_INTERVAL)
 const DASHBOARD_POLLING_INTERVAL = 5000;
@@ -188,6 +208,7 @@ function WeeklyChart({
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    layout: { padding: { top: 24 } },
     onClick: (_event: ChartEvent, elements: ActiveElement[]) => {
       if (elements.length > 0) {
         const idx = elements[0].index;
@@ -208,14 +229,7 @@ function WeeklyChart({
         ticks: { color: '#6c7693', font: { size: 12 } },
       },
       y: {
-        grid: { color: '#eaedf6' },
-        border: { dash: [3, 3] },
-        ticks: {
-          color: '#6c7693',
-          font: { size: 11 },
-          callback: (value: number | string) =>
-            typeof value === 'number' ? formatRevenueShort(value) : value,
-        },
+        display: false,
       },
     },
     animation: { duration: 300 },
@@ -227,7 +241,7 @@ function WeeklyChart({
 
   return (
     <div className={styles.chartCanvas}>
-      <Bar ref={chartRef} data={data} options={options} />
+      <Bar ref={chartRef} data={data} options={options} plugins={[barDatalabelPlugin]} />
     </div>
   );
 }
