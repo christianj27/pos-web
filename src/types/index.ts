@@ -67,7 +67,7 @@ export interface CustomerPricingItem {
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
 export type ContainerStatus = 'filled' | 'empty';
-export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production';
+export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production' | 'vendor_exchange';
 
 export interface StockLevel {
   product_id: string;
@@ -129,6 +129,30 @@ export interface Transaction {
   created_by_name: string;
   created_at: string;
   completed_at?: string;
+}
+
+// ─── Delivery Assignment ─────────────────────────────────────────────────────
+export type DeliveryAssignmentStatus = 'pending' | 'fulfilled' | 'cancelled';
+
+export interface DeliveryAssignmentItem {
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+}
+
+export interface DeliveryAssignment {
+  id: string;
+  kurir_id: string;
+  kurir_name: string;
+  customer_id: string;
+  customer_name: string;
+  items: DeliveryAssignmentItem[];
+  notes?: string;
+  status: DeliveryAssignmentStatus;
+  created_by_name: string;
+  created_at: string;
+  transaction_id?: string;
 }
 
 // ─── Debt Payment ─────────────────────────────────────────────────────────────

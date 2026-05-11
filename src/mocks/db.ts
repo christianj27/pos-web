@@ -14,6 +14,7 @@
 import type {
   AuthUser, User, Location, Product, Customer, CustomerPricingItem,
   StockLevel, StockMovement, Transaction, DebtPayment, ContainerLoan, DashboardStats,
+  DeliveryAssignment,
 } from '../types';
 
 // ─── Auth credentials ─────────────────────────────────────────────────────────
@@ -220,6 +221,34 @@ export const mockDb = {
     { id: 'debt-5', customer_id: 'cust-2', customer_name: 'Warung Pak Joko', amount: 75000,  notes: 'Cicilan minggu ini',       created_by_name: 'Budi Santoso', created_at: '2026-05-10T04:00:00.000Z' },
     { id: 'debt-6', customer_id: 'cust-3', customer_name: 'Restoran Sedap',  amount: 100000, notes: undefined,                 created_by_name: 'Sari Kasir',   created_at: '2026-05-10T07:15:00.000Z' },
   ] as DebtPayment[],
+
+  assignments: [
+    {
+      id: 'asgn-1',
+      kurir_id: 'user-2', kurir_name: 'Andi Kurir',
+      customer_id: 'cust-1', customer_name: 'Toko Bu Ani',
+      items: [
+        { product_id: 'prod-1', product_name: 'Galon Aqua',  quantity: 2, unit_price: 4500 },
+        { product_id: 'prod-4', product_name: 'Gas LPG 3 kg', quantity: 1, unit_price: 20000 },
+      ],
+      notes: 'Prioritas pagi — Bu Ani minta sebelum jam 10',
+      status: 'pending',
+      created_by_name: 'Budi Santoso',
+      created_at: '2026-05-11T07:00:00.000Z',
+    },
+    {
+      id: 'asgn-2',
+      kurir_id: 'user-4', kurir_name: 'Rudi Kurir',
+      customer_id: 'cust-2', customer_name: 'Warung Pak Joko',
+      items: [
+        { product_id: 'prod-2', product_name: 'Galon Vit', quantity: 3, unit_price: 4800 },
+      ],
+      notes: undefined,
+      status: 'pending',
+      created_by_name: 'Sari Kasir',
+      created_at: '2026-05-11T07:30:00.000Z',
+    },
+  ] as DeliveryAssignment[],
 
   containerLoans: [
     { id: 'loan-1', customer_id: 'cust-1', customer_name: 'Toko Bu Ani',    product_id: 'prod-1', product_name: 'Galon Aqua',    quantity:  3, notes: 'Pinjam galon cadangan',    created_by_name: 'Sari Kasir',   created_at: '2025-04-01T08:00:00.000Z' },

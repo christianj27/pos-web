@@ -23,6 +23,7 @@ export function StockPage() {
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
   const isKasir = user?.role === 'kasir';
+  const isKurir = user?.role === 'kurir';
 
   const [tab, setTab] = useState<Tab>('levels');
   const [levels, setLevels] = useState<StockLevel[]>([]);
@@ -209,14 +210,15 @@ export function StockPage() {
   // --- Tab config -------------------------------------------------------------
   const tabs: { key: Tab; label: string }[] = [
     { key: 'levels',          label: 'Level Stok' },
-    ...(isOwner  ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
-    ...(!isKasir ? [{ key: 'movements'      as Tab, label: 'Riwayat' }] : []),
-    ...(isOwner  ? [{ key: 'receive'        as Tab, label: 'Terima Stok' }] : []),
-    ...(!isKasir ? [{ key: 'vendor'         as Tab, label: 'Tukar Agent' }] : []),
-    ...(isOwner  ? [{ key: 'production'     as Tab, label: 'Produksi' }] : []),
-    ...(!isKasir ? [{ key: 'transfer'       as Tab, label: 'Transfer' }] : []),
-    ...(isOwner  ? [{ key: 'defect'         as Tab, label: 'Defek/Rusak' }] : []),
+    ...(isOwner                ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
+    { key: 'movements' as Tab, label: 'Riwayat' },
+    ...(isOwner                ? [{ key: 'receive'         as Tab, label: 'Terima Stok' }] : []),
+    ...(isOwner                ? [{ key: 'vendor'          as Tab, label: 'Tukar Agent' }] : []),
+    ...(isOwner || isKasir     ? [{ key: 'production'      as Tab, label: 'Produksi' }] : []),
+    ...(isOwner || isKasir     ? [{ key: 'transfer'        as Tab, label: 'Transfer' }] : []),
+    ...(isOwner                ? [{ key: 'defect'          as Tab, label: 'Defek/Rusak' }] : []),
   ];
+  void isKurir; // used via role-based tab logic above
 
   async function loadContainerLoans() {
     setContainerLoansLoading(true);
@@ -398,7 +400,11 @@ export function StockPage() {
                       </div>
                     </div>
                     <div className={styles.cardBottom}>
-                      <span className={styles.cardCost}>{m.purchase_cost ? formatCurrency(m.purchase_cost) : '—'}</span>
+                      <span className={styles.cardCost}>
+                        {m.purchase_cost && !(m.movement_type === 'vendor_exchange' && !isOwner)
+                          ? formatCurrency(m.purchase_cost)
+                          : '—'}
+                      </span>
                       <span className={styles.cardDate}>{formatDate(m.created_at)}</span>
                     </div>
                   </div>

@@ -3,11 +3,13 @@ import { transactionService } from '../../services/transactionService';
 import { productService } from '../../services/productService';
 import { customerService } from '../../services/customerService';
 import { locationService } from '../../services/locationService';
+import { userService } from '../../services/userService';
+import { assignmentService } from '../../services/assignmentService';
 import { Button, Badge, Modal, Input, Select, EmptyState, Spinner, ConfirmDialog } from '../../components/common';
-import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS } from '../../utils/constants';
+import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS, ASSIGNMENT_STATUS_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
-import type { Transaction, Product, Customer, Location } from '../../types';
+import type { Transaction, Product, Customer, Location, User, DeliveryAssignment } from '../../types';
 import styles from './TransactionsPage.module.scss';
 
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
@@ -21,6 +23,7 @@ const STATUS_TABS = [
   { value: 'all', label: 'Semua' },
   { value: 'completed', label: 'Selesai' },
   { value: 'cancelled', label: 'Dibatalkan' },
+  { value: 'penugasan', label: 'Penugasan' },
 ] as const;
 
 const PAYMENT_LABELS: Record<PaymentMethod, string> = {
@@ -47,12 +50,35 @@ export function TransactionsPage() {
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(getTodayWIB());
 
+  const [assignments, setAssignments] = useState<DeliveryAssignment[]>([]);
+  const [kurirUsers, setKurirUsers] = useState<User[]>([]);
+
   const [detailTx, setDetailTx] = useState<Transaction | null>(null);
   const [paymentTx, setPaymentTx] = useState<Transaction | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [cancelTx, setCancelTx] = useState<Transaction | null>(null);
   const [cancelling, setCancelling] = useState(false);
   const [saving, setSaving] = useState(false);
+
+  // ── Assignment cancel state ──────────────────────────────────────────────────
+  const [cancelAssignment, setCancelAssignment] = useState<DeliveryAssignment | null>(null);
+  const [cancellingAssignment, setCancellingAssignment] = useState(false);
+
+  // ── Fulfillment mode ─────────────────────────────────────────────────────────
+  const [fulfillAssignment, setFulfillAssignment] = useState<DeliveryAssignment | null>(null);
+
+  // ── Assignment creation overlay ──────────────────────────────────────────────
+  const [assignmentOverlayOpen, setAssignmentOverlayOpen] = useState(false);
+  const [assignStep, setAssignStep] = useState<1 | 2>(1);
+  const [assignKurir, setAssignKurir] = useState<User | null>(null);
+  const [assignCustomer, setAssignCustomer] = useState<Customer | null>(null);
+  const [assignKurirSearch, setAssignKurirSearch] = useState('');
+  const [assignCustomerSearch, setAssignCustomerSearch] = useState('');
+  const [assignCart, setAssignCart] = useState<CartItem[]>([]);
+  const [assignProductSearch, setAssignProductSearch] = useState('');
+  const [assignNotes, setAssignNotes] = useState('');
+  const [assignSaving, setAssignSaving] = useState(false);
+  const [assignSaveError, setAssignSaveError] = useState<string | null>(null);
 
   // ── Overlay (3-step) state ───────────────────────────────────────────────────
   const [overlayOpen, setOverlayOpen] = useState(false);
@@ -74,20 +100,29 @@ export function TransactionsPage() {
   const [containerReturns, setContainerReturns] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
-    const [txs, prods, custs, locs] = await Promise.all([
+    const [txs, prods, custs, locs, asgns, usrs] = await Promise.all([
       transactionService.list(selectedDate).catch(() => []),
       productService.list().catch(() => []),
       customerService.list().catch(() => []),
       locationService.list().catch(() => []),
+      assignmentService.list(role, user?.id).catch(() => []),
+      userService.list().catch(() => []),
     ]);
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.is_active));
     setCustomers((custs as Customer[]).filter((c) => c.is_active));
     setLocations((locs as Location[]).filter((l) => l.is_active));
+    setAssignments(asgns as DeliveryAssignment[]);
+    setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.is_active));
     setLoading(false);
-  }, [selectedDate]);
+  }, [selectedDate, role, user?.id]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Default to Penugasan tab for kurir
+  useEffect(() => {
+    if (isKurir) setStatusFilter('penugasan');
+  }, [isKurir]);
 
   // ── Filtered list ────────────────────────────────────────────────────────────
   const filteredTxs = useMemo(() => {
@@ -118,7 +153,7 @@ export function TransactionsPage() {
     setOverlayOpen(true);
   }
 
-  function closeOverlay() { setOverlayOpen(false); }
+  function closeOverlay() { setOverlayOpen(false); setFulfillAssignment(null); }
 
   function goBack() {
     if (step === 2) setStep(1);
@@ -194,17 +229,28 @@ export function TransactionsPage() {
       .map(([product_id, qty]) => ({ product_id, quantity: parseInt(qty) }));
     const debtAmt = parseFloat(debtPaymentAmount);
     try {
-      await transactionService.create({
-        type: txType,
-        customer_id: selectedCustomer?.id,
-        location_id: locationId || undefined,
-        items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
-        paid_amount: paid,
-        payment_method: paymentMethod,
-        notes: notes.trim() || undefined,
-        container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
-        debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
-      });
+      if (fulfillAssignment) {
+        await assignmentService.fulfill(fulfillAssignment.id, {
+          items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
+          paid_amount: paid,
+          payment_method: paymentMethod,
+          notes: notes.trim() || undefined,
+          container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
+          debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
+        });
+      } else {
+        await transactionService.create({
+          type: txType,
+          customer_id: selectedCustomer?.id,
+          location_id: locationId || undefined,
+          items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
+          paid_amount: paid,
+          payment_method: paymentMethod,
+          notes: notes.trim() || undefined,
+          container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
+          debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
+        });
+      }
       closeOverlay();
       load();
     } catch {
@@ -234,6 +280,108 @@ export function TransactionsPage() {
     } finally { setCancelling(false); }
   }
 
+  // ── Fulfillment (open overlay pre-filled with assignment) ────────────────────
+  function openFulfillment(assignment: DeliveryAssignment) {
+    const customer = customers.find((c) => c.id === assignment.customer_id) ?? null;
+    setFulfillAssignment(assignment);
+    setSelectedCustomer(customer);
+    setCustomerSearch('');
+    setCart(assignment.items.map((i) => ({
+      product_id: i.product_id, product_name: i.product_name, quantity: i.quantity, unit_price: i.unit_price,
+    })));
+    setProductSearch('');
+    setTxType('delivery');
+    const truck = locations.find((l) => l.type === 'vehicle' && l.assigned_to === user?.id && l.is_active);
+    setLocationId(truck?.id ?? '');
+    setPaymentMethod('cash');
+    setPaidAmount('');
+    setNotes('');
+    setSaveError(null);
+    setSkipCustomer(false);
+    setDebtPaymentAmount('');
+    setContainerReturns({});
+    setStep(2);
+    setOverlayOpen(true);
+  }
+
+  // ── Assignment overlay helpers ────────────────────────────────────────────────
+  function openAssignmentOverlay() {
+    setAssignStep(1);
+    setAssignKurir(null);
+    setAssignCustomer(null);
+    setAssignKurirSearch('');
+    setAssignCustomerSearch('');
+    setAssignCart([]);
+    setAssignProductSearch('');
+    setAssignNotes('');
+    setAssignSaveError(null);
+    setAssignmentOverlayOpen(true);
+  }
+
+  function closeAssignmentOverlay() { setAssignmentOverlayOpen(false); }
+
+  function incrementAssignQty(prod: Product) {
+    setAssignCart((prev) => {
+      const existing = prev.find((c) => c.product_id === prod.id);
+      if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
+      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.base_price }];
+    });
+  }
+
+  function decrementAssignQty(productId: string) {
+    setAssignCart((prev) => {
+      const existing = prev.find((c) => c.product_id === productId);
+      if (!existing) return prev;
+      if (existing.quantity <= 1) return prev.filter((c) => c.product_id !== productId);
+      return prev.map((c) => c.product_id === productId ? { ...c, quantity: c.quantity - 1 } : c);
+    });
+  }
+
+  function setAssignQtyDirect(prod: Product, val: number) {
+    if (val <= 0) {
+      setAssignCart((prev) => prev.filter((c) => c.product_id !== prod.id));
+    } else {
+      setAssignCart((prev) => {
+        const existing = prev.find((c) => c.product_id === prod.id);
+        if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
+        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.base_price }];
+      });
+    }
+  }
+
+  function assignCartQty(productId: string): number {
+    return assignCart.find((c) => c.product_id === productId)?.quantity ?? 0;
+  }
+
+  async function handleCreateAssignment() {
+    if (!assignKurir || !assignCustomer) { setAssignSaveError('Pilih kurir dan pelanggan.'); return; }
+    if (assignCart.length === 0) { setAssignSaveError('Tambahkan minimal satu produk.'); return; }
+    setAssignSaving(true); setAssignSaveError(null);
+    try {
+      await assignmentService.create({
+        kurir_id: assignKurir.id,
+        customer_id: assignCustomer.id,
+        items: assignCart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
+        notes: assignNotes.trim() || undefined,
+      });
+      closeAssignmentOverlay();
+      load();
+    } catch {
+      setAssignSaveError('Gagal membuat penugasan.');
+    } finally {
+      setAssignSaving(false);
+    }
+  }
+
+  async function handleCancelAssignmentConfirm() {
+    if (!cancelAssignment) return;
+    setCancellingAssignment(true);
+    try {
+      await assignmentService.cancel(cancelAssignment.id);
+      setCancelAssignment(null); load();
+    } finally { setCancellingAssignment(false); }
+  }
+
   // ── Derived ──────────────────────────────────────────────────────────────────
   const typeOptions = [
     ...(isOwner || isKasir ? [{ value: 'counter', label: 'Kasir (Counter)' }] : []),
@@ -250,16 +398,37 @@ export function TransactionsPage() {
     p.name.toLowerCase().includes(productSearch.toLowerCase())
   );
 
+  const filteredAssignKurirUsers = kurirUsers.filter((u) =>
+    u.name.toLowerCase().includes(assignKurirSearch.toLowerCase())
+  );
+
+  const filteredAssignCustomers = customers.filter((c) =>
+    c.name.toLowerCase().includes(assignCustomerSearch.toLowerCase()) ||
+    (c.phone ?? '').includes(assignCustomerSearch)
+  );
+
+  const filteredAssignProducts = products.filter((p) =>
+    p.name.toLowerCase().includes(assignProductSearch.toLowerCase())
+  );
+
+  const assignTotal = assignCart.reduce((s, c) => s + c.quantity * c.unit_price, 0);
+
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className={styles.page}>
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Transaksi</h1>
-          <Button onClick={openOverlay} size="sm">+ Transaksi Baru</Button>
+          <div className={styles.headerActions}>
+            {(isOwner || isKasir) && (
+              <Button variant="secondary" size="sm" onClick={openAssignmentOverlay}>+ Penugasan</Button>
+            )}
+            <Button onClick={openOverlay} size="sm">+ Transaksi Baru</Button>
+          </div>
         </div>
 
         {/* Date filter — FR-TXN-015 */}
+        {statusFilter !== 'penugasan' && (
         <div className={styles.dateFilterRow}>
           <input
             type="date"
@@ -274,6 +443,7 @@ export function TransactionsPage() {
             </button>
           )}
         </div>
+        )}
 
         {/* Status filter tabs */}
         <div className={styles.tabsRow}>
@@ -289,7 +459,7 @@ export function TransactionsPage() {
         </div>
 
         {/* Owner type filter */}
-        {isOwner && (
+        {isOwner && statusFilter !== 'penugasan' && (
           <div className={styles.filterRow}>
             <Select
               label=""
@@ -306,9 +476,57 @@ export function TransactionsPage() {
 
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
 
-        {!loading && filteredTxs.length === 0 && <EmptyState message="Belum ada transaksi." />}
+        {/* Assignment list */}
+        {!loading && statusFilter === 'penugasan' && assignments.length === 0 && (
+          <EmptyState message="Belum ada penugasan." />
+        )}
+        {!loading && statusFilter === 'penugasan' && assignments.length > 0 && (
+          <div className={styles.assignmentList}>
+            {assignments.map((a) => (
+              <div key={a.id} className={styles.assignmentCard}>
+                <div className={styles.txTop}>
+                  <Badge variant={a.status === 'pending' ? 'pending' : a.status === 'fulfilled' ? 'completed' : 'cancelled'}>
+                    {ASSIGNMENT_STATUS_LABELS[a.status]}
+                  </Badge>
+                  <span className={styles.txDate}>{formatDate(a.created_at)}</span>
+                </div>
+                <div className={styles.assignmentBody}>
+                  <p className={styles.assignmentCustomer}>{a.customer_name}</p>
+                  <p className={styles.assignmentKurir}>Kurir: {a.kurir_name}</p>
+                  <p className={styles.assignmentItemsText}>
+                    {a.items.map((i) => `${i.quantity}× ${i.product_name}`).join(', ')}
+                  </p>
+                  {a.notes && <p className={styles.assignmentNotes}>{a.notes}</p>}
+                </div>
+                {a.status === 'pending' && (
+                  <div className={styles.txActions}>
+                    {isKurir && (
+                      <button
+                        className={[styles.txActionBtn, styles.payBtn].join(' ')}
+                        onClick={() => openFulfillment(a)}
+                      >
+                        Proses
+                      </button>
+                    )}
+                    {(isOwner || isKasir) && (
+                      <button
+                        className={[styles.txActionBtn, styles.cancelBtn].join(' ')}
+                        onClick={() => setCancelAssignment(a)}
+                      >
+                        Batalkan
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
 
-        {!loading && filteredTxs.length > 0 && (
+        {/* Transaction list */}
+        {!loading && statusFilter !== 'penugasan' && filteredTxs.length === 0 && <EmptyState message="Belum ada transaksi." />}
+
+        {!loading && statusFilter !== 'penugasan' && filteredTxs.length > 0 && (
           <div className={styles.txList}>
             {filteredTxs.map((tx) => {
               const debtAmt = tx.total_amount - tx.paid_amount;
@@ -383,8 +601,12 @@ export function TransactionsPage() {
             </button>
             <span className={styles.overlayTitle}>
               {step === 1 ? 'Pilih Pelanggan' : step === 2
-                ? (selectedCustomer ? `Produk — ${selectedCustomer.name}` : 'Pilih Produk')
-                : (selectedCustomer ? `Konfirmasi — ${selectedCustomer.name}` : 'Konfirmasi (Tanpa Pelanggan)')}
+                ? (fulfillAssignment
+                    ? `Proses — ${fulfillAssignment.customer_name}`
+                    : selectedCustomer ? `Produk — ${selectedCustomer.name}` : 'Pilih Produk')
+                : (fulfillAssignment
+                    ? `Konfirmasi — ${fulfillAssignment.customer_name}`
+                    : selectedCustomer ? `Konfirmasi — ${selectedCustomer.name}` : 'Konfirmasi (Tanpa Pelanggan)')}
             </span>
             <div className={styles.steps}>
               {([1, 2, 3] as const).map((s, i) => (
@@ -765,6 +987,213 @@ export function TransactionsPage() {
         confirmText="Ya, Batalkan"
         loading={cancelling}
       />
+
+      {/* Cancel Assignment Confirm */}
+      <ConfirmDialog
+        isOpen={!!cancelAssignment}
+        onClose={() => setCancelAssignment(null)}
+        onConfirm={handleCancelAssignmentConfirm}
+        title="Batalkan Penugasan"
+        message="Batalkan penugasan ini? Tindakan ini tidak dapat diurungkan."
+        confirmText="Ya, Batalkan"
+        loading={cancellingAssignment}
+      />
+
+      {/* ── Assignment Creation Overlay (2-step) ─────────────────────────────────── */}
+      {assignmentOverlayOpen && (
+        <div className={styles.overlay}>
+          <div className={styles.overlayHeader}>
+            <button
+              className={styles.overlayBack}
+              onClick={() => assignStep === 2 ? setAssignStep(1) : closeAssignmentOverlay()}
+              aria-label="Kembali"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="20" height="20">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+            <span className={styles.overlayTitle}>
+              {assignStep === 1 ? 'Buat Penugasan' : 'Pilih Produk'}
+            </span>
+            <div className={styles.steps}>
+              {([1, 2] as const).map((s, i) => (
+                <div key={s} className={styles.stepGroup}>
+                  {i > 0 && (
+                    <div className={[styles.stepLine, assignStep > s - 1 ? styles.stepLineDone : ''].join(' ')} />
+                  )}
+                  <div className={[
+                    styles.stepDot,
+                    assignStep === s ? styles.stepActive : assignStep > s ? styles.stepDone : '',
+                  ].join(' ')}>
+                    {assignStep > s ? '✓' : s}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Assign Step 1: Select Kurir + Customer */}
+          {assignStep === 1 && (
+            <>
+              <div className={styles.overlayBody}>
+                <p className={styles.lockedLabel} style={{ fontWeight: 600, marginBottom: 4 }}>Pilih Kurir</p>
+                <div className={styles.searchWrap}>
+                  <Input
+                    label=""
+                    placeholder="Cari kurir..."
+                    value={assignKurirSearch}
+                    onChange={(e) => setAssignKurirSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                {filteredAssignKurirUsers.length === 0 && <EmptyState message="Tidak ada kurir aktif." />}
+                <ul className={styles.customerList}>
+                  {filteredAssignKurirUsers.map((u) => (
+                    <li key={u.id}>
+                      <button
+                        className={[styles.customerRow, assignKurir?.id === u.id ? styles.customerRowSelected : ''].join(' ')}
+                        onClick={() => setAssignKurir(u)}
+                      >
+                        <div className={styles.customerInfo}>
+                          <span className={styles.customerName}>{u.name}</span>
+                        </div>
+                        {assignKurir?.id === u.id && (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" className={styles.checkIcon}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className={styles.lockedLabel} style={{ fontWeight: 600, marginTop: 16, marginBottom: 4 }}>Pilih Pelanggan</p>
+                <div className={styles.searchWrap}>
+                  <Input
+                    label=""
+                    placeholder="Cari nama atau nomor HP..."
+                    value={assignCustomerSearch}
+                    onChange={(e) => setAssignCustomerSearch(e.target.value)}
+                  />
+                </div>
+                {filteredAssignCustomers.length === 0 && <EmptyState message="Tidak ada pelanggan." />}
+                <ul className={styles.customerList}>
+                  {filteredAssignCustomers.map((c) => (
+                    <li key={c.id}>
+                      <button
+                        className={[styles.customerRow, assignCustomer?.id === c.id ? styles.customerRowSelected : ''].join(' ')}
+                        onClick={() => setAssignCustomer(c)}
+                      >
+                        <div className={styles.customerInfo}>
+                          <span className={styles.customerName}>{c.name}</span>
+                          {c.phone && <span className={styles.customerPhone}>{c.phone}</span>}
+                          {(c.outstanding_debt ?? 0) > 0 && (
+                            <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstanding_debt!)}</span>
+                          )}
+                        </div>
+                        {assignCustomer?.id === c.id && (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" className={styles.checkIcon}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className={styles.overlayFooter}>
+                <Button
+                  onClick={() => setAssignStep(2)}
+                  disabled={!assignKurir || !assignCustomer}
+                  style={{ width: '100%' }}
+                >
+                  {assignKurir && assignCustomer
+                    ? `Lanjut: ${assignKurir.name} → ${assignCustomer.name}`
+                    : 'Pilih kurir dan pelanggan'}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Assign Step 2: Products + Notes */}
+          {assignStep === 2 && (
+            <>
+              <div className={styles.overlayBody}>
+                {assignSaveError && <div className={styles.errorBanner}>{assignSaveError}</div>}
+                <div className={styles.lockedFields}>
+                  <div className={styles.lockedField}>
+                    <span className={styles.lockedLabel}>Kurir</span>
+                    <span className={styles.lockedValue}>{assignKurir?.name}</span>
+                  </div>
+                  <div className={styles.lockedField}>
+                    <span className={styles.lockedLabel}>Pelanggan</span>
+                    <span className={styles.lockedValue}>{assignCustomer?.name}</span>
+                  </div>
+                </div>
+                <div className={styles.searchWrap}>
+                  <Input
+                    label=""
+                    placeholder="Cari produk..."
+                    value={assignProductSearch}
+                    onChange={(e) => setAssignProductSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                {filteredAssignProducts.length === 0 && <EmptyState message="Tidak ada produk aktif." />}
+                <ul className={styles.productList}>
+                  {filteredAssignProducts.map((prod) => {
+                    const qty = assignCartQty(prod.id);
+                    return (
+                      <li key={prod.id} className={styles.productRow}>
+                        <div className={styles.productInfo}>
+                          <span className={styles.productName}>{prod.name}</span>
+                          <span className={styles.productPrice}>{formatCurrency(prod.base_price)} / {prod.unit}</span>
+                        </div>
+                        <div className={styles.qtyControl}>
+                          <button className={styles.qtyBtn} onClick={() => decrementAssignQty(prod.id)} disabled={qty === 0} aria-label="Kurangi">−</button>
+                          <input
+                            type="number"
+                            className={styles.qtyInput}
+                            value={qty === 0 ? '' : qty}
+                            min={0}
+                            onChange={(e) => setAssignQtyDirect(prod, parseInt(e.target.value) || 0)}
+                            aria-label={`Jumlah ${prod.name}`}
+                          />
+                          <button className={styles.qtyBtn} onClick={() => incrementAssignQty(prod)} aria-label="Tambah">+</button>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className={styles.notesWrap}>
+                  <label className={styles.notesLabel}>Catatan untuk kurir (opsional)</label>
+                  <textarea
+                    className={styles.notesArea}
+                    value={assignNotes}
+                    onChange={(e) => setAssignNotes(e.target.value)}
+                    rows={3}
+                    placeholder="Mis: prioritas pagi, minta bukti foto, dsb."
+                  />
+                </div>
+              </div>
+              <div className={styles.overlayFooter}>
+                <div className={styles.footerTotal}>
+                  <span>Estimasi Total</span>
+                  <strong>{formatCurrency(assignTotal)}</strong>
+                </div>
+                <Button
+                  onClick={handleCreateAssignment}
+                  loading={assignSaving}
+                  disabled={assignCart.length === 0}
+                  style={{ width: '100%' }}
+                >
+                  {assignCart.length === 0 ? 'Pilih minimal satu produk' : 'Simpan Penugasan'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

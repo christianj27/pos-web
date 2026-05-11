@@ -46,6 +46,13 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   dispatch: 'Penjualan',
   defect: 'Rusak/Defek',
   production: 'Produksi',
+  vendor_exchange: 'Tukar Agent',
+};
+
+export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {
+  pending: 'Menunggu',
+  fulfilled: 'Terpenuhi',
+  cancelled: 'Dibatalkan',
 };
 
 export const UNIT_OPTIONS = [
