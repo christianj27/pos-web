@@ -8,7 +8,7 @@ import logoSrc from '../../assets/logo.png';
 import styles from './LoginPage.module.scss';
 
 const TEST_ACCOUNTS = [
-  { label: 'Owner',  username: 'owner',  password: 'owner123',  desc: 'Dashboard, semua menu' },
+  //{ label: 'Owner',  username: 'owner',  password: 'owner123',  desc: 'Dashboard, semua menu' },
   { label: 'Kurir',  username: 'kurir1', password: 'kurir123',  desc: 'Transaksi, Stok, Pelanggan' },
   { label: 'Kasir',  username: 'kasir1', password: 'kasir123',  desc: 'Transaksi, Pelanggan, Hutang' },
 ];
