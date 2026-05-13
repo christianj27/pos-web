@@ -2,13 +2,14 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getRoleDefaultPath } from '../../context/AuthContext';
+import { USE_MOCK } from '../../mocks/db';
 import { Button } from '../../components/common/Button/Button';
 import { Input } from '../../components/common/Input/Input';
 import logoSrc from '../../assets/logo.png';
 import styles from './LoginPage.module.scss';
 
 const TEST_ACCOUNTS = [
-  //{ label: 'Owner',  username: 'owner',  password: 'owner123',  desc: 'Dashboard, semua menu' },
+  { label: 'Owner',  username: 'owner',  password: 'owner123',  desc: 'Dashboard, semua menu' },
   { label: 'Kurir',  username: 'kurir1', password: 'kurir123',  desc: 'Transaksi, Stok, Pelanggan' },
   { label: 'Kasir',  username: 'kasir1', password: 'kasir123',  desc: 'Transaksi, Pelanggan, Hutang' },
 ];
@@ -97,7 +98,8 @@ export function LoginPage() {
         </form>
 
         {/* ── Demo Mode: Test Accounts ───────────────────────────────────── */}
-        <div className={styles.testAccounts}>
+        {USE_MOCK && (
+          <div className={styles.testAccounts}>
           <p className={styles.testTitle}>🧪 Mode Demo — Akun Uji Coba</p>
           <div className={styles.testList}>
             {TEST_ACCOUNTS.map((a) => (
@@ -113,7 +115,8 @@ export function LoginPage() {
               </button>
             ))}
           </div>
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

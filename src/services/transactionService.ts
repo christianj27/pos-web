@@ -1,5 +1,5 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, uid, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { Transaction } from '../types';
 
 export interface CreateTransactionPayload {
@@ -20,20 +20,20 @@ function toWIBDate(isoString: string): string {
 
 export const transactionService = {
   list: (date?: string): Promise<Transaction[]> => {
-    // return apiClient.get<Transaction[]>(`/api/transactions${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<Transaction[]>(`/api/transactions${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const all = [...mockDb.transactions].reverse();
     const filtered = date ? all.filter((tx) => toWIBDate(tx.created_at) === date) : all;
     return delay(filtered);
   },
 
   get: (id: string): Promise<Transaction> => {
-    // return apiClient.get<Transaction>(`/api/transactions/${id}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<Transaction>(`/api/transactions/${id}`).then((r) => r.data);
     const tx = mockDb.transactions.find((t) => t.id === id)!;
     return delay({ ...tx });
   },
 
   create: (data: CreateTransactionPayload): Promise<Transaction> => {
-    // return apiClient.post<Transaction>('/api/transactions', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post<Transaction>('/api/transactions', data).then((r) => r.data);
     const customer = data.customer_id ? mockDb.customers.find((c) => c.id === data.customer_id) : undefined;
     const location = data.location_id ? mockDb.locations.find((l) => l.id === data.location_id) : undefined;
     const items = data.items.map((i) => {
@@ -122,7 +122,7 @@ export const transactionService = {
   },
 
   updateStatus: (id: string, status: string): Promise<void> => {
-    // return apiClient.put(`/api/transactions/${id}/status`, { status }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.put(`/api/transactions/${id}/status`, { status }).then((r) => r.data);
     const tx = mockDb.transactions.find((t) => t.id === id);
     if (tx && status === 'cancelled') {
       tx.status = 'cancelled';
@@ -168,7 +168,7 @@ export const transactionService = {
   },
 
   addPayment: (id: string, amount: number): Promise<void> => {
-    // return apiClient.post(`/api/transactions/${id}/payments`, { amount }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post(`/api/transactions/${id}/payments`, { amount }).then((r) => r.data);
     const tx = mockDb.transactions.find((t) => t.id === id);
     if (tx) {
       tx.paid_amount = Math.min(tx.total_amount, tx.paid_amount + amount);

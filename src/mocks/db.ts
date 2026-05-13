@@ -1,15 +1,18 @@
 /**
  * ─── MOCK DATABASE ─────────────────────────────────────────────────────────────
  * In-memory store used while the real API is not available.
- * To restore real API calls: set VITE_USE_MOCK=false in .env
- * and uncomment the apiClient lines in each service file.
+ * To switch between mock and real API, set VITE_USE_MOCK in .env.local:
+ *   VITE_USE_MOCK=true  → uses in-memory mock data (default for development)
+ *   VITE_USE_MOCK=false → calls the real backend API
  *
- * Test accounts:
+ * Test accounts (mock mode only):
  *   owner  / owner123   → full access (Dashboard, all menus)
  *   kurir1 / kurir123   → Transaksi, Stok, Pelanggan
  *   kasir1 / kasir123   → Transaksi, Pelanggan, Hutang
  * ─────────────────────────────────────────────────────────────────────────────
  */
+
+export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 
 import type {
   AuthUser, User, Location, Product, Customer, CustomerPricingItem,

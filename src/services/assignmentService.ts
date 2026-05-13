@@ -1,5 +1,5 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, uid, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import { transactionService } from './transactionService';
 import type { DeliveryAssignment, DeliveryAssignmentItem } from '../types';
 
@@ -21,6 +21,7 @@ export interface FulfillAssignmentPayload {
 
 export const assignmentService = {
   list: (role: string, userId?: string): Promise<DeliveryAssignment[]> => {
+    if (!USE_MOCK) return apiClient.get<DeliveryAssignment[]>('/api/assignments').then((r) => r.data);
     const all = [...mockDb.assignments].reverse();
     if (role === 'kurir') {
       return delay(all.filter((a) => a.kurir_id === userId));
@@ -29,6 +30,7 @@ export const assignmentService = {
   },
 
   create: (payload: CreateAssignmentPayload): Promise<DeliveryAssignment> => {
+    if (!USE_MOCK) return apiClient.post<DeliveryAssignment>('/api/assignments', payload).then((r) => r.data);
     const kurir = mockDb.users.find((u) => u.id === payload.kurir_id);
     const customer = mockDb.customers.find((c) => c.id === payload.customer_id);
 
@@ -63,6 +65,7 @@ export const assignmentService = {
   },
 
   fulfill: async (id: string, payload: FulfillAssignmentPayload): Promise<void> => {
+    if (!USE_MOCK) { await apiClient.post(`/api/assignments/${id}/fulfill`, payload); return; }
     const assignment = mockDb.assignments.find((a) => a.id === id);
     if (!assignment) throw new Error('Penugasan tidak ditemukan.');
 
@@ -88,6 +91,7 @@ export const assignmentService = {
   },
 
   cancel: (id: string): Promise<void> => {
+    if (!USE_MOCK) return apiClient.put(`/api/assignments/${id}/cancel`).then((r) => r.data);
     const assignment = mockDb.assignments.find((a) => a.id === id);
     if (!assignment) throw new Error('Penugasan tidak ditemukan.');
     assignment.status = 'cancelled';

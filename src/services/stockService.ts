@@ -1,5 +1,5 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, uid, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { StockLevel, StockMovement } from '../types';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -33,8 +33,10 @@ function toWIBDate(isoString: string): string {
 
 export const stockService = {
   getLevels: (locationId?: string): Promise<StockLevel[]> => {
-    // const params = locationId ? { location_id: locationId } : undefined;
-    // return apiClient.get<StockLevel[]>('/api/stock/levels', { params }).then((r) => r.data);
+    if (!USE_MOCK) {
+      const params = locationId ? { location_id: locationId } : undefined;
+      return apiClient.get<StockLevel[]>('/api/stock/levels', { params }).then((r) => r.data);
+    }
     const levels = locationId
       ? mockDb.stockLevels.filter((l) => l.location_id === locationId)
       : [...mockDb.stockLevels];
@@ -42,14 +44,14 @@ export const stockService = {
   },
 
   getMovements: (date?: string): Promise<StockMovement[]> => {
-    // return apiClient.get<StockMovement[]>(`/api/stock/movements${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<StockMovement[]>(`/api/stock/movements${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const all = [...mockDb.stockMovements].reverse();
     const filtered = date ? all.filter((m) => toWIBDate(m.created_at) === date) : all;
     return delay(filtered);
   },
 
   receive: (data: { product_id: string; to_location_id: string; quantity: number; container_status?: string; purchase_cost?: number; notes?: string }): Promise<void> => {
-    // return apiClient.post('/api/stock/movements', { ...data, movement_type: 'receive' }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/movements', { ...data, movement_type: 'receive' }).then((r) => r.data);
     const prod = mockDb.products.find((p) => p.id === data.product_id);
     const loc  = mockDb.locations.find((l) => l.id === data.to_location_id);
     mockDb.stockMovements.push({
@@ -71,7 +73,7 @@ export const stockService = {
   },
 
   defect: (data: { product_id: string; from_location_id: string; quantity: number; container_status?: string; notes?: string }): Promise<void> => {
-    // return apiClient.post('/api/stock/movements', { ...data, movement_type: 'defect' }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/movements', { ...data, movement_type: 'defect' }).then((r) => r.data);
     const prod = mockDb.products.find((p) => p.id === data.product_id);
     const loc  = mockDb.locations.find((l) => l.id === data.from_location_id);
     mockDb.stockMovements.push({
@@ -92,7 +94,7 @@ export const stockService = {
   },
 
   transfer: (data: { product_id: string; from_location_id: string; to_location_id: string; quantity: number; container_status?: string; notes?: string }): Promise<void> => {
-    // return apiClient.post('/api/stock/transfer', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/transfer', data).then((r) => r.data);
     const prod    = mockDb.products.find((p) => p.id === data.product_id);
     const fromLoc = mockDb.locations.find((l) => l.id === data.from_location_id);
     const toLoc   = mockDb.locations.find((l) => l.id === data.to_location_id);
@@ -122,7 +124,7 @@ export const stockService = {
   },
 
   vendorExchange: (data: { product_id: string; location_id: string; empty_quantity: number; filled_quantity: number; purchase_cost: number; notes?: string }): Promise<void> => {
-    // return apiClient.post('/api/stock/vendor-exchange', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/vendor-exchange', data).then((r) => r.data);
     const prod  = mockDb.products.find((p) => p.id === data.product_id);
     const loc   = mockDb.locations.find((l) => l.id === data.location_id);
     const level = findOrCreateLevel(data.product_id, data.location_id);
@@ -141,7 +143,7 @@ export const stockService = {
 
   /** Atomically converts empty containers → filled for self_produced refillable products. */
   production: (data: { product_id: string; location_id: string; quantity: number; production_cost?: number; notes?: string }): Promise<void> => {
-    // return apiClient.post('/api/stock/production', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/production', data).then((r) => r.data);
     const prod  = mockDb.products.find((p) => p.id === data.product_id);
     const loc   = mockDb.locations.find((l) => l.id === data.location_id);
     const level = findOrCreateLevel(data.product_id, data.location_id);

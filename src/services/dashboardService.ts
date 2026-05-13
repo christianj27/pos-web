@@ -1,10 +1,10 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, delay } from '../mocks/db';
 import type { DashboardStats } from '../types';
 
 export const dashboardService = {
   getStats: (_date?: string): Promise<DashboardStats> => {
-    // return apiClient.get<DashboardStats>(`/api/dashboard${_date ? `?date=${_date}` : ''}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<DashboardStats>(`/api/dashboard${_date ? `?date=${_date}` : ''}`).then((r) => r.data);
     // Compute live totals from mock state
     const totalDebt       = mockDb.customers.reduce((s, c) => s + (c.outstanding_debt ?? 0), 0);
     const debtCollected   = mockDb.debtPayments.reduce((s, p) => s + p.amount, 0);

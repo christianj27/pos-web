@@ -1,9 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-// import axios from 'axios'; // MOCK MODE
-import { MOCK_AUTH_USERS } from '../mocks/db';
+import axios from 'axios';
+import { USE_MOCK, MOCK_AUTH_USERS } from '../mocks/db';
 import type { AuthUser, UserRole } from '../types';
 
-// const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'; // MOCK MODE
+const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 interface AuthContextType {
   user: AuthUser | null;
@@ -28,29 +28,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(authUser);
   }, []);
 
-  // On mount: MOCK MODE — skip token refresh, just mark as ready
+  // On mount: attempt silent token refresh (real API) or skip (mock)
   useEffect(() => {
-    // REAL API: attempt silent refresh from HttpOnly cookie
-    // const attemptRefresh = async () => {
-    //   try {
-    //     const res = await axios.post(`${API_BASE}/api/auth/refresh`, {}, { withCredentials: true });
-    //     const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
-    //     tokenRef.current = access_token;
-    //     setAccessTokenState(access_token);
-    //     setUser(authUser);
-    //   } catch { /* No valid session — stay logged out */ }
-    //   finally { setIsLoading(false); }
-    // };
-    // attemptRefresh();
-    setIsLoading(false); // MOCK MODE
+    if (USE_MOCK) {
+      setIsLoading(false);
+      return;
+    }
+    const attemptRefresh = async () => {
+      try {
+        const res = await axios.post(`${API_BASE}/api/auth/refresh`, {}, { withCredentials: true });
+        const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
+        tokenRef.current = access_token;
+        setAccessTokenState(access_token);
+        setUser(authUser);
+      } catch { /* No valid session — stay logged out */ }
+      finally { setIsLoading(false); }
+    };
+    attemptRefresh();
   }, []);
 
   const login = useCallback(async (username: string, password: string) => {
-    // REAL API:
-    // const res = await axios.post(`${API_BASE}/api/auth/login`, { username, password }, { withCredentials: true });
-    // const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
+    if (!USE_MOCK) {
+      const res = await axios.post(`${API_BASE}/api/auth/login`, { username, password }, { withCredentials: true });
+      const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
+      tokenRef.current = access_token;
+      setAccessTokenState(access_token);
+      setUser(authUser);
+      return authUser;
+    }
 
-    // MOCK MODE:
     await new Promise((r) => setTimeout(r, 500)); // simulate network delay
     const found = MOCK_AUTH_USERS.find((u) => u.username === username && u.password === password);
     if (!found) throw Object.assign(new Error('Invalid credentials'), { response: { status: 401 } });
@@ -64,15 +70,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    // REAL API:
-    // try {
-    //   await axios.post(`${API_BASE}/api/auth/logout`, {}, {
-    //     withCredentials: true,
-    //     headers: tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {},
-    //   });
-    // } catch { /* Ignore logout errors */ }
+    if (!USE_MOCK) {
+      try {
+        await axios.post(`${API_BASE}/api/auth/logout`, {}, {
+          withCredentials: true,
+          headers: tokenRef.current ? { Authorization: `Bearer ${tokenRef.current}` } : {},
+        });
+      } catch { /* Ignore logout errors */ }
+    }
 
-    // MOCK MODE: just clear state
     tokenRef.current = null;
     setAccessTokenState(null);
     setUser(null);

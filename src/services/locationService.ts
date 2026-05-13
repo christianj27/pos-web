@@ -1,14 +1,13 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, uid, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { Location } from '../types';
 
 export const locationService = {
   list: (): Promise<Location[]> =>
-    // apiClient.get<Location[]>('/api/locations').then((r) => r.data),
-    delay([...mockDb.locations]),
+    USE_MOCK ? delay([...mockDb.locations]) : apiClient.get<Location[]>('/api/locations').then((r) => r.data),
 
   create: (data: { name: string; type: string; assigned_to?: string }): Promise<Location> => {
-    // return apiClient.post<Location>('/api/locations', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post<Location>('/api/locations', data).then((r) => r.data);
     const assignedUser = data.assigned_to ? mockDb.users.find((u) => u.id === data.assigned_to) : undefined;
     const loc: Location = {
       id: uid(), name: data.name, type: data.type as Location['type'],
@@ -20,7 +19,7 @@ export const locationService = {
   },
 
   update: (id: string, data: { name?: string; assigned_to?: string }): Promise<Location> => {
-    // return apiClient.put<Location>(`/api/locations/${id}`, data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.put<Location>(`/api/locations/${id}`, data).then((r) => r.data);
     const idx = mockDb.locations.findIndex((l) => l.id === id);
     if (idx !== -1) {
       if (data.name) mockDb.locations[idx].name = data.name;
@@ -34,7 +33,7 @@ export const locationService = {
   },
 
   deactivate: (id: string): Promise<void> => {
-    // return apiClient.put(`/api/locations/${id}`, { is_active: false }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.put(`/api/locations/${id}`, { is_active: false }).then((r) => r.data);
     const l = mockDb.locations.find((l) => l.id === id);
     if (l) l.is_active = false;
     return delay(undefined);

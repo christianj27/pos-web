@@ -1,5 +1,5 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, uid, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { DebtPayment, CustomerDebtHistory } from '../types';
 
 function toWIBDate(isoString: string): string {
@@ -8,14 +8,14 @@ function toWIBDate(isoString: string): string {
 
 export const debtService = {
   list: (date?: string): Promise<DebtPayment[]> => {
-    // return apiClient.get<DebtPayment[]>(`/api/debt-payments${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<DebtPayment[]>(`/api/debt-payments${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const all = [...mockDb.debtPayments].reverse();
     const filtered = date ? all.filter((p) => toWIBDate(p.created_at) === date) : all;
     return delay(filtered);
   },
 
   create: (data: { customer_id: string; amount: number; notes?: string }): Promise<DebtPayment> => {
-    // return apiClient.post<DebtPayment>('/api/debt-payments', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post<DebtPayment>('/api/debt-payments', data).then((r) => r.data);
     const customer = mockDb.customers.find((c) => c.id === data.customer_id);
     const payment: DebtPayment = {
       id: uid(), customer_id: data.customer_id, customer_name: customer?.name ?? '',
@@ -29,7 +29,7 @@ export const debtService = {
   },
 
   getCustomerHistory: (customerId: string): Promise<CustomerDebtHistory> => {
-    // return apiClient.get<CustomerDebtHistory>(`/api/customers/${customerId}/debt-history`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<CustomerDebtHistory>(`/api/customers/${customerId}/debt-history`).then((r) => r.data);
     const customer = mockDb.customers.find((c) => c.id === customerId);
     // Transactions that created debt for this customer
     const debtTransactions = mockDb.transactions

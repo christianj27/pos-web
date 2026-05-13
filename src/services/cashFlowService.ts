@@ -1,5 +1,5 @@
-// import { apiClient } from '../hooks/useApi'; // MOCK MODE
-import { mockDb, delay } from '../mocks/db';
+import { apiClient } from '../hooks/useApi';
+import { USE_MOCK, mockDb, delay } from '../mocks/db';
 import type { CashFlowEntry, CashFlowSummary } from '../types';
 
 function toWIBDate(isoString: string): string {
@@ -8,7 +8,7 @@ function toWIBDate(isoString: string): string {
 
 export const cashFlowService = {
   getSummary: (date?: string): Promise<CashFlowSummary> => {
-    // return apiClient.get<CashFlowSummary>(`/api/cash-flow${date ? `?date=${date}` : ''}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.get<CashFlowSummary>(`/api/cash-flow${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const entries: CashFlowEntry[] = [];
 
     // 1. Transactions → cash_in (paid_amount) + new_debt (unpaid remainder)
