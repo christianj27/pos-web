@@ -72,13 +72,7 @@ apiClient.interceptors.response.use(
  * Hook that returns an API client bound to the current auth session.
  */
 export function useApi() {
-  const { accessToken, logout, setAccessToken } = useAuthContext();
-
-  // Wire up handlers each render (cheap ref updates)
-  setApiCredentialHandlers(
-    () => accessToken,
-    () => { logout(); }
-  );
+  const { setAccessToken } = useAuthContext();
 
   const get = useCallback(<T>(url: string, params?: Record<string, unknown>) =>
     apiClient.get<T>(url, { params }).then((r) => r.data), []);

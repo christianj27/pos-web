@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import axios from 'axios';
 import { USE_MOCK, MOCK_AUTH_USERS } from '../mocks/db';
+import { setApiCredentialHandlers } from '../hooks/useApi';
 import type { AuthUser, UserRole } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
@@ -91,6 +92,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setAccessTokenState(null);
     setUser(null);
   }, []);
+
+  // Wire the shared apiClient interceptor to always use the latest token via tokenRef.
+  // This ensures all service calls include the Authorization header, even without useApi().
+  useEffect(() => {
+    setApiCredentialHandlers(
+      () => tokenRef.current,
+      () => { logout(); }
+    );
+  }, [logout]);
 
   return (
     <AuthContext.Provider value={{ user, accessToken, isLoading, login, logout, setAccessToken }}>
