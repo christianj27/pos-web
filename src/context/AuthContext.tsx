@@ -37,9 +37,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const attemptRefresh = async () => {
       try {
         const res = await axios.post(`${API_BASE}/api/auth/refresh`, {}, { withCredentials: true });
-        const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
-        tokenRef.current = access_token;
-        setAccessTokenState(access_token);
+        const { accessToken } = res.data as { accessToken: string };
+        const claims = JSON.parse(atob(accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')));
+        const authUser: AuthUser = {
+          id: claims['sub'],
+          name: claims['name'],
+          username: claims['unique_name'],
+          role: claims['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] as AuthUser['role'],
+        };
+        tokenRef.current = accessToken;
+        setAccessTokenState(accessToken);
         setUser(authUser);
       } catch { /* No valid session — stay logged out */ }
       finally { setIsLoading(false); }
@@ -50,9 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = useCallback(async (username: string, password: string) => {
     if (!USE_MOCK) {
       const res = await axios.post(`${API_BASE}/api/auth/login`, { username, password }, { withCredentials: true });
-      const { access_token, user: authUser } = res.data as { access_token: string; user: AuthUser };
-      tokenRef.current = access_token;
-      setAccessTokenState(access_token);
+      const { accessToken, userId, name, username: uname, role } = res.data as { accessToken: string; userId: string; name: string; username: string; role: AuthUser['role'] };
+      const authUser: AuthUser = { id: userId, name, username: uname, role };
+      tokenRef.current = accessToken;
+      setAccessTokenState(accessToken);
       setUser(authUser);
       return authUser;
     }
