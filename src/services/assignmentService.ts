@@ -4,19 +4,19 @@ import { transactionService } from './transactionService';
 import type { DeliveryAssignment, DeliveryAssignmentItem } from '../types';
 
 export interface CreateAssignmentPayload {
-  kurir_id: string;
-  customer_id: string;
-  items: { product_id: string; quantity: number; unit_price: number }[];
+  kurirId: string;
+  customerId: string;
+  items: { productId: string; quantity: number; unitPrice: number }[];
   notes?: string;
 }
 
 export interface FulfillAssignmentPayload {
-  items: { product_id: string; quantity: number; unit_price: number }[];
-  paid_amount: number;
-  payment_method?: 'cash' | 'transfer' | 'qris';
+  items: { productId: string; quantity: number; unitPrice: number }[];
+  paidAmount: number;
+  paymentMethod?: 'cash' | 'transfer' | 'qris';
   notes?: string;
-  container_returns?: { product_id: string; quantity: number }[];
-  debt_payment_amount?: number;
+  containerReturns?: { productId: string; quantity: number }[];
+  debtPaymentAmount?: number;
 }
 
 export const assignmentService = {
@@ -24,40 +24,40 @@ export const assignmentService = {
     if (!USE_MOCK) return apiClient.get<DeliveryAssignment[]>('/api/assignments').then((r) => r.data);
     const all = [...mockDb.assignments].reverse();
     if (role === 'kurir') {
-      return delay(all.filter((a) => a.kurir_id === userId));
+      return delay(all.filter((a) => a.kurirId === userId));
     }
     return delay(all);
   },
 
   create: (payload: CreateAssignmentPayload): Promise<DeliveryAssignment> => {
     if (!USE_MOCK) return apiClient.post<DeliveryAssignment>('/api/assignments', payload).then((r) => r.data);
-    const kurir = mockDb.users.find((u) => u.id === payload.kurir_id);
-    const customer = mockDb.customers.find((c) => c.id === payload.customer_id);
+    const kurir = mockDb.users.find((u) => u.id === payload.kurirId);
+    const customer = mockDb.customers.find((c) => c.id === payload.customerId);
 
     if (!kurir) throw new Error('Kurir tidak ditemukan.');
     if (!customer) throw new Error('Pelanggan tidak ditemukan.');
 
     const items: DeliveryAssignmentItem[] = payload.items.map((i) => {
-      const prod = mockDb.products.find((p) => p.id === i.product_id);
+      const prod = mockDb.products.find((p) => p.id === i.productId);
       return {
-        product_id: i.product_id,
-        product_name: prod?.name ?? '',
+        productId: i.productId,
+        productName: prod?.name ?? '',
         quantity: i.quantity,
-        unit_price: i.unit_price,
+        unitPrice: i.unitPrice,
       };
     });
 
     const assignment: DeliveryAssignment = {
       id: uid(),
-      kurir_id: kurir.id,
-      kurir_name: kurir.name,
-      customer_id: customer.id,
-      customer_name: customer.name,
+      kurirId: kurir.id,
+      kurirName: kurir.name,
+      customerId: customer.id,
+      customerName: customer.name,
       items,
       notes: payload.notes,
       status: 'pending',
-      created_by_name: 'Demo User',
-      created_at: new Date().toISOString(),
+      createdByName: 'Demo User',
+      createdAt: new Date().toISOString(),
     };
 
     mockDb.assignments.push(assignment);
@@ -70,24 +70,24 @@ export const assignmentService = {
     if (!assignment) throw new Error('Penugasan tidak ditemukan.');
 
     const truck = mockDb.locations.find(
-      (l) => l.type === 'vehicle' && l.assigned_to === assignment.kurir_id && l.is_active,
+      (l) => l.type === 'vehicle' && l.assignedTo === assignment.kurirId && l.isActive,
     );
     if (!truck) throw new Error('Kurir ini belum memiliki kendaraan aktif.');
 
     const tx = await transactionService.create({
       type: 'delivery',
-      customer_id: assignment.customer_id,
-      location_id: truck.id,
+      customerId: assignment.customerId,
+      locationId: truck.id,
       items: payload.items,
-      paid_amount: payload.paid_amount,
-      payment_method: payload.payment_method,
+      paidAmount: payload.paidAmount,
+      paymentMethod: payload.paymentMethod,
       notes: payload.notes,
-      container_returns: payload.container_returns,
-      debt_payment_amount: payload.debt_payment_amount,
+      containerReturns: payload.containerReturns,
+      debtPaymentAmount: payload.debtPaymentAmount,
     });
 
     assignment.status = 'fulfilled';
-    assignment.transaction_id = tx.id;
+    assignment.transactionId = tx.id;
   },
 
   cancel: (id: string): Promise<void> => {

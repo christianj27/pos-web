@@ -8,7 +8,7 @@ export const customerService = {
 
   create: (data: { name: string; phone?: string; address?: string }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.post<Customer>('/api/customers', data).then((r) => r.data);
-    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, is_active: true, outstanding_debt: 0, created_at: new Date().toISOString() };
+    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, isActive: true, outstandingDebt: 0, createdAt: new Date().toISOString() };
     mockDb.customers.push(c);
     return delay({ ...c });
   },
@@ -21,9 +21,9 @@ export const customerService = {
   },
 
   deactivate: (id: string): Promise<void> => {
-    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, { is_active: false }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, { isActive: false }).then((r) => r.data);
     const c = mockDb.customers.find((c) => c.id === id);
-    if (c) c.is_active = false;
+    if (c) c.isActive = false;
     return delay(undefined);
   },
 
@@ -33,30 +33,30 @@ export const customerService = {
     if (pricing) return delay([...pricing]);
     // Return all active products with no custom price for customers without saved pricing
     const items: CustomerPricingItem[] = mockDb.products
-      .filter((p) => p.is_active)
-      .map((p) => ({ product_id: p.id, product_name: p.name, base_price: p.base_price, custom_price: undefined }));
+      .filter((p) => p.isActive)
+      .map((p) => ({ productId: p.id, productName: p.name, basePrice: p.basePrice, customPrice: undefined }));
     return delay(items);
   },
 
-  updatePricing: (id: string, items: { product_id: string; custom_price?: number }[]): Promise<void> => {
+  updatePricing: (id: string, items: { productId: string; customPrice?: number }[]): Promise<void> => {
     if (!USE_MOCK) return apiClient.put(`/api/customers/${id}/pricing`, { items }).then((r) => r.data);
     const existing = mockDb.customerPricing[id] ?? [];
-    items.forEach(({ product_id, custom_price }) => {
-      const row = existing.find((r) => r.product_id === product_id);
-      if (row) row.custom_price = custom_price;
+    items.forEach(({ productId, customPrice }) => {
+      const row = existing.find((r) => r.productId === productId);
+      if (row) row.customPrice = customPrice;
     });
     mockDb.customerPricing[id] = existing;
     return delay(undefined);
   },
 
-  getDebt: (id: string): Promise<{ outstanding_debt: number }> => {
-    if (!USE_MOCK) return apiClient.get<{ outstanding_debt: number }>(`/api/customers/${id}/debt`).then((r) => r.data);
+  getDebt: (id: string): Promise<{ outstandingDebt: number }> => {
+    if (!USE_MOCK) return apiClient.get<{ outstandingDebt: number }>(`/api/customers/${id}/debt`).then((r) => r.data);
     const c = mockDb.customers.find((c) => c.id === id);
-    return delay({ outstanding_debt: c?.outstanding_debt ?? 0 });
+    return delay({ outstandingDebt: c?.outstandingDebt ?? 0 });
   },
 
   getContainerLoans: (id: string) => {
     if (!USE_MOCK) return apiClient.get(`/api/customers/${id}/container-loans`).then((r) => r.data);
-    return delay(mockDb.containerLoans.filter((l) => l.customer_id === id));
+    return delay(mockDb.containerLoans.filter((l) => l.customerId === id));
   },
 };

@@ -152,16 +152,16 @@ function ChartDetailPanel({ entry, onClose }: { entry: WeeklyChartEntry; onClose
         </div>
         <div className={styles.chartDetailItem}>
           <span className={styles.chartDetailLabel}>Transaksi</span>
-          <span className={styles.chartDetailValue}>{entry.transaction_count}</span>
+          <span className={styles.chartDetailValue}>{entry.transactionCount}</span>
         </div>
         <div className={styles.chartDetailItem}>
           <span className={styles.chartDetailLabel}>Biaya Pembelian</span>
-          <span className={styles.chartDetailValue}>{formatCurrency(entry.purchase_cost)}</span>
+          <span className={styles.chartDetailValue}>{formatCurrency(entry.purchaseCost)}</span>
         </div>
         <div className={styles.chartDetailItem}>
           <span className={styles.chartDetailLabel}>Rata-rata / Transaksi</span>
           <span className={styles.chartDetailValue}>
-            {entry.transaction_count > 0 ? formatCurrency(entry.revenue / entry.transaction_count) : '—'}
+            {entry.transactionCount > 0 ? formatCurrency(entry.revenue / entry.transactionCount) : '—'}
           </span>
         </div>
       </div>
@@ -253,9 +253,9 @@ function RecentTransactionRow({ tx, onClick }: { tx: RecentTransaction; onClick:
   const time = new Intl.DateTimeFormat('id-ID', {
     hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short',
     timeZone: 'Asia/Jakarta',
-  }).format(new Date(tx.created_at));
+  }).format(new Date(tx.createdAt));
 
-  const debt = tx.total_amount - tx.paid_amount;
+  const debt = tx.totalAmount - tx.paidAmount;
 
   return (
     <div
@@ -267,8 +267,8 @@ function RecentTransactionRow({ tx, onClick }: { tx: RecentTransaction; onClick:
     >
       <span className={styles.recentTime}>{time}</span>
       <div className={styles.recentMeta}>
-        <span className={styles.recentCustomer}>{tx.customer_name ?? 'Tanpa Pelanggan'}</span>
-        <span className={styles.recentStaff}>{tx.created_by_name} {'·'} {' '}
+        <span className={styles.recentCustomer}>{tx.customerName ?? 'Tanpa Pelanggan'}</span>
+        <span className={styles.recentStaff}>{tx.createdByName} {'\u00B7'} {' '}
           <span className={[
             styles.badge,
             tx.type === 'delivery' ? styles.badgeDelivery : styles.badgeCounter,
@@ -278,7 +278,7 @@ function RecentTransactionRow({ tx, onClick }: { tx: RecentTransaction; onClick:
         </span>
       </div>
       <div style={{ textAlign: 'right' }}>
-        <div className={styles.recentAmount}>{formatCurrency(tx.total_amount)}</div>
+        <div className={styles.recentAmount}>{formatCurrency(tx.totalAmount)}</div>
         {debt > 0 && (
           <div className={styles.recentDebt}>Utang {formatCurrency(debt)}</div>
         )}
@@ -299,10 +299,10 @@ function CustomerDebtRow({ item, onClick }: { item: CustomerDebtSummary; onClick
       onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
     >
       <div className={styles.debtInfo}>
-        <span className={styles.debtName}>{item.customer_name}</span>
+        <span className={styles.debtName}>{item.customerName}</span>
       </div>
       <div className={styles.debtRight}>
-        <span className={styles.debtAmount}>{formatCurrency(item.outstanding_debt)}</span>
+        <span className={styles.debtAmount}>{formatCurrency(item.outstandingDebt)}</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className={styles.debtChevron}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
         </svg>
@@ -314,20 +314,20 @@ function CustomerDebtRow({ item, onClick }: { item: CustomerDebtSummary; onClick
 // --- Warehouse stock ----------------------------------------------------------
 
 function WarehouseStockRow({ item }: { item: StockLevel }) {
-  const isRefillable = item.product_category === 'refillable';
-  const filledQty = item.quantity_filled ?? 0;
-  const totalQty  = item.quantity_total ?? 0;
+  const isRefillable = item.productCategory === 'refillable';
+  const filledQty = item.quantityFilled ?? 0;
+  const totalQty  = item.quantityTotal ?? 0;
   const isLow     = isRefillable ? filledQty <= 5 : totalQty <= 5;
 
   return (
     <div className={styles.stockRow}>
       <div>
-        <div className={styles.stockName}>{item.product_name}</div>
-        <div className={styles.stockUnit}>{item.product_unit}</div>
+        <div className={styles.stockName}>{item.productName}</div>
+        <div className={styles.stockUnit}>{item.productUnit}</div>
       </div>
       <div className={[styles.stockQty, isLow ? styles.lowStock : ''].join(' ')}>
         {isRefillable
-          ? `${filledQty} isi \u00B7 ${item.quantity_empty ?? 0} kosong`
+          ? `${filledQty} isi \u00B7 ${item.quantityEmpty ?? 0} kosong`
           : `${totalQty}`}
         {isLow && <span className={styles.stockWarnBadge}>{'⚠'} Rendah</span>}
       </div>
@@ -435,10 +435,10 @@ export function DashboardPage() {
           <div className={styles.statsGrid}>
             <StatCard
               label="Pendapatan"
-              value={stats ? formatCurrency(stats.today_revenue) : '\u2014'}
+              value={stats ? formatCurrency(stats.todayRevenue) : '\u2014'}
               colorClass={styles.iconGreen}
               delta={stats ? (
-                <RevDelta current={stats.today_revenue} previous={stats.previous_day_revenue} />
+                <RevDelta current={stats.todayRevenue} previous={stats.previousDayRevenue} />
               ) : undefined}
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -449,7 +449,7 @@ export function DashboardPage() {
             />
             <StatCard
               label="Biaya Pembelian"
-              value={stats ? formatCurrency(stats.today_purchase_cost) : '\u2014'}
+              value={stats ? formatCurrency(stats.todayPurchaseCost) : '\u2014'}
               colorClass={styles.iconOrange}
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -461,7 +461,7 @@ export function DashboardPage() {
             />
             <StatCard
               label="Pembayaran Hutang Diterima"
-              value={stats ? formatCurrency(stats.today_debt_collected) : '\u2014'}
+              value={stats ? formatCurrency(stats.todayDebtCollected) : '\u2014'}
               colorClass={styles.iconBlue}
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -472,7 +472,7 @@ export function DashboardPage() {
             />
             <StatCard
               label="Total Hutang Pelanggan"
-              value={stats ? formatCurrency(stats.total_outstanding_debt) : '\u2014'}
+              value={stats ? formatCurrency(stats.totalOutstandingDebt) : '\u2014'}
               valueClass={styles.danger}
               colorClass={styles.iconRed}
               icon={
@@ -486,7 +486,7 @@ export function DashboardPage() {
             />
             <StatCard
               label="Transaksi"
-              value={stats ? String(stats.today_transactions) : '\u2014'}
+              value={stats ? String(stats.todayTransactions) : '\u2014'}
               colorClass={styles.iconViolet}
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -497,9 +497,9 @@ export function DashboardPage() {
             />
             <StatCard
               label="Stok Rendah"
-              value={stats ? String(stats.low_stock_count) : '\u2014'}
-              valueClass={stats && stats.low_stock_count > 0 ? styles.warning : undefined}
-              badge={stats && stats.low_stock_count > 0 ? 'Perlu Restock' : undefined}
+              value={stats ? String(stats.lowStockCount) : '\u2014'}
+              valueClass={stats && stats.lowStockCount > 0 ? styles.warning : undefined}
+              badge={stats && stats.lowStockCount > 0 ? 'Perlu Restock' : undefined}
               colorClass={styles.iconYellow}
               icon={
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
@@ -516,10 +516,10 @@ export function DashboardPage() {
         <section>
           <h2 className={styles.sectionTitle}>Pendapatan 7 Hari</h2>
           <div className={styles.chartWrapper}>
-            {stats?.weekly_chart ? (
+            {stats?.weeklyChart ? (
               <>
                 <WeeklyChart
-                  entries={stats.weekly_chart}
+                  entries={stats.weeklyChart}
                   selectedDate={selectedDate}
                   onBarClick={handleBarClick}
                 />
@@ -540,9 +540,9 @@ export function DashboardPage() {
         <section>
           <h2 className={styles.sectionTitle}>Transaksi Terkini</h2>
           {detailLoading && <div style={{ padding: '8px 0' }}><Spinner size="sm" /></div>}
-          {stats?.recent_transactions && stats.recent_transactions.length > 0 ? (
+          {stats?.recentTransactions && stats.recentTransactions.length > 0 ? (
             <div className={styles.recentList}>
-              {stats.recent_transactions.map((tx) => (
+              {stats.recentTransactions.map((tx) => (
                 <RecentTransactionRow key={tx.id} tx={tx} onClick={() => handleTxRowClick(tx.id)} />
               ))}
             </div>
@@ -554,13 +554,13 @@ export function DashboardPage() {
         {/* Customer debt — FR-DSH-009 */}
         <section>
           <h2 className={styles.sectionTitle}>Hutang Pelanggan</h2>
-          {stats?.customer_debts && stats.customer_debts.length > 0 ? (
+          {stats?.customerDebts && stats.customerDebts.length > 0 ? (
             <div className={styles.debtList}>
-              {stats.customer_debts.map((item) => (
+              {stats.customerDebts.map((item) => (
                 <CustomerDebtRow
-                  key={item.customer_id}
+                  key={item.customerId}
                   item={item}
-                  onClick={() => navigate(`/debt-payments/${item.customer_id}`)}
+                  onClick={() => navigate(`/debt-payments/${item.customerId}`)}
                 />
               ))}
             </div>
@@ -572,10 +572,10 @@ export function DashboardPage() {
         {/* Warehouse stock summary — FR-DSH-004 */}
         <section>
           <h2 className={styles.sectionTitle}>Stok Gudang</h2>
-          {stats?.warehouse_stock && stats.warehouse_stock.length > 0 ? (
+          {stats?.warehouseStock && stats.warehouseStock.length > 0 ? (
             <div className={styles.stockList}>
-              {stats.warehouse_stock.map((item) => (
-                <WarehouseStockRow key={item.product_id} item={item} />
+              {stats.warehouseStock.map((item) => (
+                <WarehouseStockRow key={item.productId} item={item} />
               ))}
             </div>
           ) : (
@@ -597,7 +597,7 @@ export function DashboardPage() {
           <div className={styles.detailSection}>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Tipe</span>
-              <span className={styles.detailValue}>{TRANSACTION_TYPE_LABELS[detailTx.transaction_type]}</span>
+              <span className={styles.detailValue}>{TRANSACTION_TYPE_LABELS[detailTx.transactionType]}</span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Status</span>
@@ -608,31 +608,31 @@ export function DashboardPage() {
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Tanggal</span>
               <span className={styles.detailValue}>
-                {new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(detailTx.created_at))}
+                {new Intl.DateTimeFormat('id-ID', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Jakarta' }).format(new Date(detailTx.createdAt))}
               </span>
             </div>
-            {detailTx.customer_name && (
+            {detailTx.customerName && (
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Pelanggan</span>
-                <span className={styles.detailValue}>{detailTx.customer_name}</span>
+                <span className={styles.detailValue}>{detailTx.customerName}</span>
               </div>
             )}
-            {detailTx.location_name && (
+            {detailTx.locationName && (
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Lokasi Stok</span>
-                <span className={styles.detailValue}>{detailTx.location_name}</span>
+                <span className={styles.detailValue}>{detailTx.locationName}</span>
               </div>
             )}
-            {detailTx.payment_method && (
+            {detailTx.paymentMethod && (
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Pembayaran</span>
-                <span className={styles.detailValue}>{PAYMENT_METHOD_LABELS[detailTx.payment_method] ?? detailTx.payment_method}</span>
+                <span className={styles.detailValue}>{PAYMENT_METHOD_LABELS[detailTx.paymentMethod] ?? detailTx.paymentMethod}</span>
               </div>
             )}
-            {detailTx.staff_name && (
+            {detailTx.staffName && (
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Dibuat oleh</span>
-                <span className={styles.detailValue}>{detailTx.staff_name}</span>
+                <span className={styles.detailValue}>{detailTx.staffName}</span>
               </div>
             )}
             {detailTx.notes && (
@@ -649,9 +649,9 @@ export function DashboardPage() {
               <span style={{ textAlign: 'right' }}>Subtotal</span>
             </div>
             {detailTx.items.map((item) => (
-              <div key={item.product_id} className={styles.detailItemRow}>
-                <span className={styles.detailItemName}>{item.product_name}</span>
-                <span className={styles.detailItemQty}>{item.quantity} &times; {formatCurrency(item.unit_price)}</span>
+              <div key={item.productId} className={styles.detailItemRow}>
+                <span className={styles.detailItemName}>{item.productName}</span>
+                <span className={styles.detailItemQty}>{item.quantity} &times; {formatCurrency(item.unitPrice)}</span>
                 <span className={styles.detailItemAmt}>{formatCurrency(item.subtotal)}</span>
               </div>
             ))}
@@ -659,16 +659,16 @@ export function DashboardPage() {
           <div className={styles.detailTotals}>
             <div className={styles.detailTotalRow}>
               <span>Total</span>
-              <strong>{formatCurrency(detailTx.total_amount)}</strong>
+              <strong>{formatCurrency(detailTx.totalAmount)}</strong>
             </div>
             <div className={styles.detailTotalRow}>
               <span>Dibayar</span>
-              <span>{formatCurrency(detailTx.paid_amount)}</span>
+              <span>{formatCurrency(detailTx.paidAmount)}</span>
             </div>
-            {detailTx.total_amount - detailTx.paid_amount > 0 && (
+            {detailTx.totalAmount - detailTx.paidAmount > 0 && (
               <div className={[styles.detailTotalRow, styles.detailTotalDebt].join(' ')}>
                 <span>Sisa Hutang</span>
-                <strong>{formatCurrency(detailTx.total_amount - detailTx.paid_amount)}</strong>
+                <strong>{formatCurrency(detailTx.totalAmount - detailTx.paidAmount)}</strong>
               </div>
             )}
           </div>

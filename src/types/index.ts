@@ -53,16 +53,16 @@ export interface Customer {
   name: string;
   phone?: string;
   address?: string;
-  is_active: boolean;
-  outstanding_debt?: number;
-  created_at: string;
+  isActive: boolean;
+  outstandingDebt?: number;
+  createdAt: string;
 }
 
 export interface CustomerPricingItem {
-  product_id: string;
-  product_name: string;
-  base_price: number;
-  custom_price?: number;
+  productId: string;
+  productName: string;
+  basePrice: number;
+  customPrice?: number;
 }
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
@@ -70,35 +70,35 @@ export type ContainerStatus = 'filled' | 'empty';
 export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production' | 'vendor_exchange';
 
 export interface StockLevel {
-  product_id: string;
-  product_name: string;
-  product_unit: string;
-  product_category: ProductCategory;
-  location_id: string;
-  location_name: string;
+  productId: string;
+  productName: string;
+  productUnit: string;
+  productCategory: ProductCategory;
+  locationId: string;
+  locationName: string;
   /** null for simple products */
-  quantity_filled: number | null;
+  quantityFilled: number | null;
   /** null for simple products */
-  quantity_empty: number | null;
+  quantityEmpty: number | null;
   /** null for refillable products */
-  quantity_total: number | null;
+  quantityTotal: number | null;
 }
 
 export interface StockMovement {
   id: string;
-  movement_type: MovementType;
-  product_id: string;
-  product_name: string;
-  from_location_id?: string;
-  from_location_name?: string;
-  to_location_id?: string;
-  to_location_name?: string;
+  movementType: MovementType;
+  productId: string;
+  productName: string;
+  fromLocationId?: string;
+  fromLocationName?: string;
+  toLocationId?: string;
+  toLocationName?: string;
   quantity: number;
-  container_status?: ContainerStatus;
-  purchase_cost?: number;
+  containerStatus?: ContainerStatus;
+  purchaseCost?: number;
   note?: string;
-  created_by_name: string;
-  created_at: string;
+  createdByName: string;
+  createdAt: string;
 }
 
 // ─── Transaction ──────────────────────────────────────────────────────────────
@@ -106,140 +106,140 @@ export type TransactionType = 'delivery' | 'counter';
 export type TransactionStatus = 'completed' | 'cancelled';
 
 export interface TransactionItem {
-  product_id: string;
-  product_name: string;
+  productId: string;
+  productName: string;
   quantity: number;
-  unit_price: number;
+  unitPrice: number;
   subtotal: number;
 }
 
 export interface Transaction {
   id: string;
-  transaction_type: TransactionType;
-  customer_id?: string;
-  customer_name?: string;
-  staff_id: string;
-  staff_name: string;
-  location_id?: string;
-  location_name?: string;
+  transactionType: TransactionType;
+  customerId?: string;
+  customerName?: string;
+  staffId: string;
+  staffName: string;
+  locationId?: string;
+  locationName?: string;
   items: TransactionItem[];
-  total_amount: number;
-  paid_amount: number;
-  payment_method?: 'cash' | 'transfer' | 'qris';
+  totalAmount: number;
+  paidAmount: number;
+  paymentMethod?: 'cash' | 'transfer' | 'qris';
   notes?: string;
   status: TransactionStatus;
-  created_at: string;
-  completed_at?: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
 // ─── Delivery Assignment ─────────────────────────────────────────────────────
 export type DeliveryAssignmentStatus = 'pending' | 'fulfilled' | 'cancelled';
 
 export interface DeliveryAssignmentItem {
-  product_id: string;
-  product_name: string;
+  productId: string;
+  productName: string;
   quantity: number;
-  unit_price: number;
+  unitPrice: number;
 }
 
 export interface DeliveryAssignment {
   id: string;
-  kurir_id: string;
-  kurir_name: string;
-  customer_id: string;
-  customer_name: string;
+  kurirId: string;
+  kurirName: string;
+  customerId: string;
+  customerName: string;
   items: DeliveryAssignmentItem[];
   notes?: string;
   status: DeliveryAssignmentStatus;
-  created_by_name: string;
-  created_at: string;
-  transaction_id?: string;
+  createdByName: string;
+  createdAt: string;
+  transactionId?: string;
 }
 
 // ─── Debt Payment ─────────────────────────────────────────────────────────────
 export interface DebtPayment {
   id: string;
-  customer_id: string;
-  customer_name: string;
+  customerId: string;
+  customerName: string;
   amount: number;
   method: 'cash' | 'transfer' | 'qris';
-  reference_no?: string;
-  transaction_id?: string;
+  referenceNo?: string;
+  transactionId?: string;
   note?: string;
-  created_by_name: string;
-  created_at: string;
+  createdByName: string;
+  createdAt: string;
 }
 
 // ─── Container Loan ───────────────────────────────────────────────────────────
 export interface ContainerLoan {
   id: string;
-  customer_id: string;
-  customer_name: string;
-  product_id: string;
-  product_name: string;
+  customerId: string;
+  customerName: string;
+  productId: string;
+  productName: string;
   quantity: number;
-  transaction_id?: string;
+  transactionId?: string;
   notes?: string;
-  created_by_name: string;
-  created_at: string;
+  createdByName: string;
+  createdAt: string;
 }
 
 // ─── Dashboard ────────────────────────────────────────────────────────────────
 export interface WeeklyChartEntry {
   date: string; // YYYY-MM-DD
   revenue: number;
-  transaction_count: number;
-  purchase_cost: number;
+  transactionCount: number;
+  purchaseCost: number;
 }
 
 export interface RecentTransaction {
   id: string;
-  created_at: string;
-  customer_name?: string;
-  created_by_name: string;
+  createdAt: string;
+  customerName?: string;
+  createdByName: string;
   type: TransactionType;
-  total_amount: number;
-  paid_amount: number;
+  totalAmount: number;
+  paidAmount: number;
   status: TransactionStatus;
 }
 
 export interface CustomerDebtSummary {
-  customer_id: string;
-  customer_name: string;
-  outstanding_debt: number;
+  customerId: string;
+  customerName: string;
+  outstandingDebt: number;
 }
 
 export interface DashboardStats {
-  today_revenue: number;
-  today_transactions: number;
-  today_purchase_cost: number;
-  today_debt_collected: number;
-  low_stock_count: number;
-  total_outstanding_debt: number;
-  previous_day_revenue: number;
-  weekly_chart: WeeklyChartEntry[];
-  recent_transactions: RecentTransaction[];
-  warehouse_stock: StockLevel[];
-  customer_debts: CustomerDebtSummary[];
+  todayRevenue: number;
+  todayTransactions: number;
+  todayPurchaseCost: number;
+  todayDebtCollected: number;
+  lowStockCount: number;
+  totalOutstandingDebt: number;
+  previousDayRevenue: number;
+  weeklyChart: WeeklyChartEntry[];
+  recentTransactions: RecentTransaction[];
+  warehouseStock: StockLevel[];
+  customerDebts: CustomerDebtSummary[];
 }
 
 // ─── Debt History ─────────────────────────────────────────────────────────────
 /** A transaction that created or partially created debt for a customer */
 export interface DebtTransaction {
   id: string;
-  created_at: string;
+  createdAt: string;
   type: TransactionType;
-  total_amount: number;
-  paid_amount: number;
-  debt_amount: number;
-  created_by_name: string;
+  totalAmount: number;
+  paidAmount: number;
+  debtAmount: number;
+  createdByName: string;
 }
 
 export interface CustomerDebtHistory {
-  customer_id: string;
-  customer_name: string;
-  outstanding_debt: number;
-  debt_transactions: DebtTransaction[];
+  customerId: string;
+  customerName: string;
+  outstandingDebt: number;
+  debtTransactions: DebtTransaction[];
   payments: DebtPayment[];
 }
 
@@ -249,20 +249,20 @@ export type CashFlowCategory = 'sale_payment' | 'debt_payment' | 'stock_purchase
 
 export interface CashFlowEntry {
   id: string;
-  flow_type: CashFlowType;
+  flowType: CashFlowType;
   category: CashFlowCategory;
   amount: number;
   description: string;
-  reference_id?: string;
-  created_by_name: string;
-  created_at: string;
+  referenceId?: string;
+  createdByName: string;
+  createdAt: string;
 }
 
 export interface CashFlowSummary {
-  total_cash_in: number;
-  total_cash_out: number;
-  net_cash: number;
-  total_new_debt: number;
+  totalCashIn: number;
+  totalCashOut: number;
+  netCash: number;
+  totalNewDebt: number;
   entries: CashFlowEntry[];
 }
 

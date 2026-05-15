@@ -11,86 +11,86 @@ export const cashFlowService = {
     if (!USE_MOCK) return apiClient.get<CashFlowSummary>(`/api/cash-flow${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const entries: CashFlowEntry[] = [];
 
-    // 1. Transactions → cash_in (paid_amount) + new_debt (unpaid remainder)
+    // 1. Transactions → cash_in (paidAmount) + new_debt (unpaid remainder)
     for (const tx of mockDb.transactions) {
       if (tx.status === 'cancelled') continue;
-      if (date && toWIBDate(tx.created_at) !== date) continue;
+      if (date && toWIBDate(tx.createdAt) !== date) continue;
 
-      const customerLabel = tx.customer_name ? ` — ${tx.customer_name}` : '';
-      const typeLabel = tx.transaction_type === 'delivery' ? 'Pengiriman' : 'Kasir';
+      const customerLabel = tx.customerName ? ` — ${tx.customerName}` : '';
+      const typeLabel = tx.transactionType === 'delivery' ? 'Pengiriman' : 'Kasir';
 
-      if (tx.paid_amount > 0) {
+      if (tx.paidAmount > 0) {
         entries.push({
           id: `${tx.id}-cash`,
-          flow_type: 'cash_in',
+          flowType: 'cash_in',
           category: 'sale_payment',
-          amount: tx.paid_amount,
+          amount: tx.paidAmount,
           description: `${typeLabel}${customerLabel}`,
-          reference_id: tx.id,
-          created_by_name: tx.staff_name,
-          created_at: tx.created_at,
+          referenceId: tx.id,
+          createdByName: tx.staffName,
+          createdAt: tx.createdAt,
         });
       }
 
-      const debtAmount = tx.total_amount - tx.paid_amount;
+      const debtAmount = tx.totalAmount - tx.paidAmount;
       if (debtAmount > 0) {
         entries.push({
           id: `${tx.id}-debt`,
-          flow_type: 'new_debt',
+          flowType: 'new_debt',
           category: 'debt_created',
           amount: debtAmount,
-          description: `Piutang Baru — ${tx.customer_name ?? 'Pelanggan'}`,
-          reference_id: tx.id,
-          created_by_name: tx.staff_name,
-          created_at: tx.created_at,
+          description: `Piutang Baru — ${tx.customerName ?? 'Pelanggan'}`,
+          referenceId: tx.id,
+          createdByName: tx.staffName,
+          createdAt: tx.createdAt,
         });
       }
     }
 
     // 2. Standalone debt payments → cash_in
     for (const p of mockDb.debtPayments) {
-      if (date && toWIBDate(p.created_at) !== date) continue;
+      if (date && toWIBDate(p.createdAt) !== date) continue;
       entries.push({
         id: `dp-${p.id}`,
-        flow_type: 'cash_in',
+        flowType: 'cash_in',
         category: 'debt_payment',
         amount: p.amount,
-        description: `Bayar Hutang — ${p.customer_name}`,
-        reference_id: p.id,
-        created_by_name: p.created_by_name,
-        created_at: p.created_at,
+        description: `Bayar Hutang — ${p.customerName}`,
+        referenceId: p.id,
+        createdByName: p.createdByName,
+        createdAt: p.createdAt,
       });
     }
 
-    // 3. Stock movements with purchase_cost → cash_out
+    // 3. Stock movements with purchaseCost → cash_out
     for (const m of mockDb.stockMovements) {
-      if (!m.purchase_cost || m.purchase_cost <= 0) continue;
-      if (date && toWIBDate(m.created_at) !== date) continue;
-      const typeLabel = m.movement_type === 'production' ? 'Produksi' : 'Beli Stok';
+      if (!m.purchaseCost || m.purchaseCost <= 0) continue;
+      if (date && toWIBDate(m.createdAt) !== date) continue;
+      const typeLabel = m.movementType === 'production' ? 'Produksi' : 'Beli Stok';
       entries.push({
         id: `sm-${m.id}`,
-        flow_type: 'cash_out',
+        flowType: 'cash_out',
         category: 'stock_purchase',
-        amount: m.purchase_cost,
-        description: `${typeLabel} — ${m.product_name}`,
-        reference_id: m.id,
-        created_by_name: m.created_by_name,
-        created_at: m.created_at,
+        amount: m.purchaseCost,
+        description: `${typeLabel} — ${m.productName}`,
+        referenceId: m.id,
+        createdByName: m.createdByName,
+        createdAt: m.createdAt,
       });
     }
 
     // Sort newest first
-    entries.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
-    const total_cash_in  = entries.filter((e) => e.flow_type === 'cash_in').reduce((s, e) => s + e.amount, 0);
-    const total_cash_out = entries.filter((e) => e.flow_type === 'cash_out').reduce((s, e) => s + e.amount, 0);
-    const total_new_debt = entries.filter((e) => e.flow_type === 'new_debt').reduce((s, e) => s + e.amount, 0);
+    const totalCashIn  = entries.filter((e) => e.flowType === 'cash_in').reduce((s, e) => s + e.amount, 0);
+    const totalCashOut = entries.filter((e) => e.flowType === 'cash_out').reduce((s, e) => s + e.amount, 0);
+    const totalNewDebt = entries.filter((e) => e.flowType === 'new_debt').reduce((s, e) => s + e.amount, 0);
 
     return delay({
-      total_cash_in,
-      total_cash_out,
-      net_cash: total_cash_in - total_cash_out,
-      total_new_debt,
+      totalCashIn,
+      totalCashOut,
+      netCash: totalCashIn - totalCashOut,
+      totalNewDebt,
       entries,
     });
   },

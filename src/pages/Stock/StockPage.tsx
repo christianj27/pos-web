@@ -90,13 +90,13 @@ export function StockPage() {
     setSaving(true); resetFeedback();
     try {
       await stockService.receiveBulk({
-        to_location_id: receiveShared.to_location_id,
+        toLocationId: receiveShared.to_location_id,
         note: receiveShared.notes || undefined,
         items: receiveItems.map((item) => ({
-          product_id: item.product_id,
+          productId: item.product_id,
           quantity: parseInt(item.quantity),
-          container_status: item.container_status || undefined,
-          purchase_cost: item.purchase_cost ? parseFloat(item.purchase_cost) : undefined,
+          containerStatus: item.container_status || undefined,
+          purchaseCost: item.purchase_cost ? parseFloat(item.purchase_cost) : undefined,
         })),
       });
       setReceiveShared({ to_location_id: '', notes: '' });
@@ -110,13 +110,13 @@ export function StockPage() {
     setSaving(true); resetFeedback();
     try {
       await stockService.transferBulk({
-        from_location_id: transferShared.from_location_id,
-        to_location_id: transferShared.to_location_id,
+        fromLocationId: transferShared.from_location_id,
+        toLocationId: transferShared.to_location_id,
         note: transferShared.notes || undefined,
         items: transferItems.map((item) => ({
-          product_id: item.product_id,
+          productId: item.product_id,
           quantity: parseInt(item.quantity),
-          container_status: item.container_status || undefined,
+          containerStatus: item.container_status || undefined,
         })),
       });
       setTransferShared({ from_location_id: '', to_location_id: '', notes: '' });
@@ -152,8 +152,8 @@ export function StockPage() {
     setSaving(true); resetFeedback();
     try {
       await stockService.defect({
-        product_id: defectForm.product_id, from_location_id: defectForm.from_location_id,
-        quantity: parseInt(defectForm.quantity), container_status: defectForm.container_status || undefined,
+        productId: defectForm.product_id, fromLocationId: defectForm.from_location_id,
+        quantity: parseInt(defectForm.quantity), containerStatus: defectForm.container_status || undefined,
         note: defectForm.notes || undefined,
       });
       setDefectForm({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
@@ -166,13 +166,13 @@ export function StockPage() {
     setSaving(true); resetFeedback();
     try {
       await stockService.vendorExchangeBulk({
-        location_id: vendorShared.location_id,
+        locationId: vendorShared.location_id,
         note: vendorShared.notes || undefined,
         items: vendorItems.map((item) => ({
-          product_id: item.product_id,
-          empty_quantity: parseInt(item.empty_quantity) || 0,
-          filled_quantity: parseInt(item.filled_quantity) || 0,
-          purchase_cost: parseFloat(item.purchase_cost) || 0,
+          productId: item.product_id,
+          emptyQuantity: parseInt(item.empty_quantity) || 0,
+          filledQuantity: parseInt(item.filled_quantity) || 0,
+          purchaseCost: parseFloat(item.purchase_cost) || 0,
         })),
       });
       setVendorShared({ location_id: '', notes: '' });
@@ -197,9 +197,9 @@ export function StockPage() {
     setSaving(true); resetFeedback();
     try {
       await stockService.production({
-        product_id: productionForm.product_id, location_id: productionForm.location_id,
+        productId: productionForm.product_id, locationId: productionForm.location_id,
         quantity: parseInt(productionForm.quantity),
-        production_cost: productionForm.production_cost ? parseFloat(productionForm.production_cost) : undefined,
+        productionCost: productionForm.production_cost ? parseFloat(productionForm.production_cost) : undefined,
         note: productionForm.notes || undefined,
       });
       setProductionForm({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
@@ -235,7 +235,7 @@ export function StockPage() {
     if (qty <= 0) return;
     setSaving(true); resetFeedback();
     try {
-      await containerLoanService.create({ customer_id: customerId, product_id: productId, quantity: -qty, notes: `Pengembalian manual — ${productName}` });
+      await containerLoanService.create({ customerId: customerId, productId: productId, quantity: -qty, notes: `Pengembalian manual — ${productName}` });
       setReturnQtyMap((prev) => ({ ...prev, [`${customerId}-${productId}`]: '' }));
       showToast('Pengembalian berhasil dicatat.');
       loadContainerLoans();
@@ -245,12 +245,12 @@ export function StockPage() {
 
   // --- Levels helpers ----------------------------------------------------------
   /** Group levels by location, and within each location aggregate empty counts by unit. */
-  type LocationGroup = { location_id: string; location_name: string; items: StockLevel[] };
+  type LocationGroup = { locationId: string; locationName: string; items: StockLevel[] };
   function groupByLocation(data: StockLevel[]): LocationGroup[] {
     const map = new Map<string, LocationGroup>();
     for (const l of data) {
-      if (!map.has(l.location_id)) map.set(l.location_id, { location_id: l.location_id, location_name: l.location_name, items: [] });
-      map.get(l.location_id)!.items.push(l);
+      if (!map.has(l.locationId)) map.set(l.locationId, { locationId: l.locationId, locationName: l.locationName, items: [] });
+      map.get(l.locationId)!.items.push(l);
     }
     return Array.from(map.values());
   }
@@ -259,8 +259,8 @@ export function StockPage() {
   function emptyPoolByUnit(items: StockLevel[]): Record<string, number> {
     const pool: Record<string, number> = {};
     for (const item of items) {
-      if (item.product_category === 'refillable' && (item.quantity_empty ?? 0) > 0) {
-        pool[item.product_unit] = (pool[item.product_unit] ?? 0) + (item.quantity_empty ?? 0);
+      if (item.productCategory === 'refillable' && (item.quantityEmpty ?? 0) > 0) {
+        pool[item.productUnit] = (pool[item.productUnit] ?? 0) + (item.quantityEmpty ?? 0);
       }
     }
     return pool;
@@ -310,31 +310,31 @@ export function StockPage() {
                 {locationGroups.map((group) => {
                   const emptyPool = emptyPoolByUnit(group.items);
                   return (
-                    <div key={group.location_id}>
+                    <div key={group.locationId}>
                       <div style={{ fontWeight: 700, fontSize: 13, color: 'var(--color-whisper-gray)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                        {group.location_name}
+                        {group.locationName}
                       </div>
                       <div className={styles.cardList}>
                         {group.items.map((l) => {
-                          const isLow = l.product_category === 'refillable'
-                            ? (l.quantity_filled ?? 0) <= 0
-                            : (l.quantity_total ?? 0) <= 0;
+                          const isLow = l.productCategory === 'refillable'
+                            ? (l.quantityFilled ?? 0) <= 0
+                            : (l.quantityTotal ?? 0) <= 0;
                           return (
-                            <div key={l.product_id} className={styles.card}>
+                            <div key={l.productId} className={styles.card}>
                               <div className={styles.cardTop}>
                                 <div className={styles.cardInfo}>
-                                  <span className={styles.cardName}>{l.product_name}</span>
-                                  <span className={styles.cardSub}>{l.product_unit}</span>
+                                  <span className={styles.cardName}>{l.productName}</span>
+                                  <span className={styles.cardSub}>{l.productUnit}</span>
                                 </div>
                                 <div className={styles.cardBadges}>
                                   {isLow && <Badge variant="inactive">Stok Habis</Badge>}
-                                  {l.product_category === 'refillable' ? (
+                                  {l.productCategory === 'refillable' ? (
                                     <div style={{ textAlign: 'right', fontSize: 13, lineHeight: 1.6 }}>
-                                      <div><span style={{ color: 'var(--color-whisper-gray)' }}>Terisi:</span> <strong style={{ color: 'var(--color-deep-space-violet)' }}>{l.quantity_filled ?? 0}</strong></div>
-                                      <div><span style={{ color: 'var(--color-whisper-gray)' }}>Kosong:</span> <strong style={{ color: 'var(--color-slate-text)' }}>{l.quantity_empty ?? 0}</strong></div>
+                                      <div><span style={{ color: 'var(--color-whisper-gray)' }}>Terisi:</span> <strong style={{ color: 'var(--color-deep-space-violet)' }}>{l.quantityFilled ?? 0}</strong></div>
+                                      <div><span style={{ color: 'var(--color-whisper-gray)' }}>Kosong:</span> <strong style={{ color: 'var(--color-slate-text)' }}>{l.quantityEmpty ?? 0}</strong></div>
                                     </div>
                                   ) : (
-                                    <span className={styles.cardQty}>{l.quantity_total ?? 0}</span>
+                                    <span className={styles.cardQty}>{l.quantityTotal ?? 0}</span>
                                   )}
                                 </div>
                               </div>
@@ -390,23 +390,23 @@ export function StockPage() {
                   <div key={m.id} className={styles.card}>
                     <div className={styles.cardTop}>
                       <div className={styles.cardInfo}>
-                        <span className={styles.cardName}>{m.product_name}</span>
+                        <span className={styles.cardName}>{m.productName}</span>
                         <span className={styles.cardRoute}>
-                          {m.from_location_name ?? '—'} → {m.to_location_name ?? '—'}
+                          {m.fromLocationName ?? '—'} → {m.toLocationName ?? '—'}
                         </span>
                       </div>
                       <div className={styles.cardBadges}>
-                        <Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movement_type] ?? m.movement_type}</Badge>
+                        <Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</Badge>
                         <span className={styles.cardQty}>{m.quantity}</span>
                       </div>
                     </div>
                     <div className={styles.cardBottom}>
                       <span className={styles.cardCost}>
-                        {m.purchase_cost && !(m.movement_type === 'vendor_exchange' && !isOwner)
-                          ? formatCurrency(m.purchase_cost)
+                        {m.purchaseCost && !(m.movementType === 'vendor_exchange' && !isOwner)
+                          ? formatCurrency(m.purchaseCost)
                           : '—'}
                       </span>
-                      <span className={styles.cardDate}>{formatDate(m.created_at)}</span>
+                      <span className={styles.cardDate}>{formatDate(m.createdAt)}</span>
                     </div>
                   </div>
                 ))}
@@ -569,13 +569,13 @@ export function StockPage() {
               type LoanEntry = { customerId: string; customerName: string; productId: string; productName: string; net: number };
               const netMap = new Map<string, LoanEntry>();
               containerLoans.forEach((loan) => {
-                const key = `${loan.customer_id}__${loan.product_id}`;
+                const key = `${loan.customerId}__${loan.productId}`;
                 if (!netMap.has(key)) {
                   netMap.set(key, {
-                    customerId: loan.customer_id,
-                    customerName: loan.customer_name ?? loan.customer_id,
-                    productId: loan.product_id,
-                    productName: loan.product_name ?? loan.product_id,
+                    customerId: loan.customerId,
+                    customerName: loan.customerName ?? loan.customerId,
+                    productId: loan.productId,
+                    productName: loan.productName ?? loan.productId,
                     net: 0,
                   });
                 }

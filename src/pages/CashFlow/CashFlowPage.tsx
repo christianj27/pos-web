@@ -21,32 +21,32 @@ function CashFlowRow({ entry }: { entry: CashFlowEntry }) {
   const time = new Intl.DateTimeFormat('id-ID', {
     hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short',
     timeZone: 'Asia/Jakarta',
-  }).format(new Date(entry.created_at));
+  }).format(new Date(entry.createdAt));
 
   const rowClass = [
     styles.row,
-    entry.flow_type === 'cash_in'  ? styles.rowCashIn  : '',
-    entry.flow_type === 'cash_out' ? styles.rowCashOut : '',
-    entry.flow_type === 'new_debt' ? styles.rowNewDebt : '',
+    entry.flowType === 'cash_in'  ? styles.rowCashIn  : '',
+    entry.flowType === 'cash_out' ? styles.rowCashOut : '',
+    entry.flowType === 'new_debt' ? styles.rowNewDebt : '',
   ].join(' ');
 
   const amountClass = [
     styles.rowAmount,
-    entry.flow_type === 'cash_in'  ? styles.amountIn  : '',
-    entry.flow_type === 'cash_out' ? styles.amountOut : '',
-    entry.flow_type === 'new_debt' ? styles.amountDebt : '',
+    entry.flowType === 'cash_in'  ? styles.amountIn  : '',
+    entry.flowType === 'cash_out' ? styles.amountOut : '',
+    entry.flowType === 'new_debt' ? styles.amountDebt : '',
   ].join(' ');
 
-  const prefix = entry.flow_type === 'cash_in' ? '+' : entry.flow_type === 'cash_out' ? '−' : '';
+  const prefix = entry.flowType === 'cash_in' ? '+' : entry.flowType === 'cash_out' ? '−' : '';
 
   return (
     <div className={rowClass}>
       <div className={styles.rowLeft}>
         <div className={styles.rowBadge}>
-          {FLOW_TYPE_LABELS[entry.flow_type] ?? entry.flow_type}
+          {FLOW_TYPE_LABELS[entry.flowType] ?? entry.flowType}
         </div>
         <span className={styles.rowDesc}>{entry.description}</span>
-        <span className={styles.rowMeta}>{entry.created_by_name} · {time}</span>
+        <span className={styles.rowMeta}>{entry.createdByName} · {time}</span>
       </div>
       <span className={amountClass}>
         {prefix}{formatCurrency(entry.amount)}
@@ -123,19 +123,19 @@ export function CashFlowPage() {
             <div className={styles.summaryGrid}>
               <div className={[styles.summaryCard, styles.summaryIn].join(' ')}>
                 <span className={styles.summaryLabel}>Kas Masuk</span>
-                <span className={styles.summaryValue}>{formatCurrency(summary.total_cash_in)}</span>
+                <span className={styles.summaryValue}>{formatCurrency(summary.totalCashIn)}</span>
               </div>
               <div className={[styles.summaryCard, styles.summaryOut].join(' ')}>
                 <span className={styles.summaryLabel}>Kas Keluar</span>
-                <span className={styles.summaryValue}>{formatCurrency(summary.total_cash_out)}</span>
+                <span className={styles.summaryValue}>{formatCurrency(summary.totalCashOut)}</span>
               </div>
-              <div className={[styles.summaryCard, summary.net_cash >= 0 ? styles.summaryNet : styles.summaryNetNeg].join(' ')}>
+              <div className={[styles.summaryCard, summary.netCash >= 0 ? styles.summaryNet : styles.summaryNetNeg].join(' ')}>
                 <span className={styles.summaryLabel}>Net Kas</span>
-                <span className={styles.summaryValue}>{formatCurrency(summary.net_cash)}</span>
+                <span className={styles.summaryValue}>{formatCurrency(summary.netCash)}</span>
               </div>
               <div className={[styles.summaryCard, styles.summaryDebt].join(' ')}>
                 <span className={styles.summaryLabel}>Piutang Baru</span>
-                <span className={styles.summaryValue}>{formatCurrency(summary.total_new_debt)}</span>
+                <span className={styles.summaryValue}>{formatCurrency(summary.totalNewDebt)}</span>
               </div>
             </div>
 

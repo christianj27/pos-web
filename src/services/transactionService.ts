@@ -4,14 +4,14 @@ import type { Transaction } from '../types';
 
 export interface CreateTransactionPayload {
   type: string;
-  customer_id?: string;
-  location_id?: string;
-  items: { product_id: string; quantity: number; unit_price: number }[];
-  paid_amount: number;
-  payment_method?: 'cash' | 'transfer' | 'qris';
+  customerId?: string;
+  locationId?: string;
+  items: { productId: string; quantity: number; unitPrice: number }[];
+  paidAmount: number;
+  paymentMethod?: 'cash' | 'transfer' | 'qris';
   notes?: string;
-  container_returns?: { product_id: string; quantity: number }[];
-  debt_payment_amount?: number;
+  containerReturns?: { productId: string; quantity: number }[];
+  debtPaymentAmount?: number;
 }
 
 function toWIBDate(isoString: string): string {
@@ -22,7 +22,7 @@ export const transactionService = {
   list: (date?: string): Promise<Transaction[]> => {
     if (!USE_MOCK) return apiClient.get<Transaction[]>(`/api/transactions${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const all = [...mockDb.transactions].reverse();
-    const filtered = date ? all.filter((tx) => toWIBDate(tx.created_at) === date) : all;
+    const filtered = date ? all.filter((tx) => toWIBDate(tx.createdAt) === date) : all;
     return delay(filtered);
   },
 
@@ -34,90 +34,90 @@ export const transactionService = {
 
   create: (data: CreateTransactionPayload): Promise<Transaction> => {
     if (!USE_MOCK) return apiClient.post<Transaction>('/api/transactions', data).then((r) => r.data);
-    const customer = data.customer_id ? mockDb.customers.find((c) => c.id === data.customer_id) : undefined;
-    const location = data.location_id ? mockDb.locations.find((l) => l.id === data.location_id) : undefined;
+    const customer = data.customerId ? mockDb.customers.find((c) => c.id === data.customerId) : undefined;
+    const location = data.locationId ? mockDb.locations.find((l) => l.id === data.locationId) : undefined;
     const items = data.items.map((i) => {
-      const prod = mockDb.products.find((p) => p.id === i.product_id);
-      return { product_id: i.product_id, product_name: prod?.name ?? '', quantity: i.quantity, unit_price: i.unit_price, subtotal: i.quantity * i.unit_price };
+      const prod = mockDb.products.find((p) => p.id === i.productId);
+      return { productId: i.productId, productName: prod?.name ?? '', quantity: i.quantity, unitPrice: i.unitPrice, subtotal: i.quantity * i.unitPrice };
     });
-    const total_amount = items.reduce((s, i) => s + i.subtotal, 0);
+    const totalAmount = items.reduce((s, i) => s + i.subtotal, 0);
     const tx: Transaction = {
-      id: uid(), transaction_type: data.type as Transaction['transaction_type'],
-      customer_id: customer?.id, customer_name: customer?.name,
-      staff_id: 'mock-user-id', staff_name: 'Demo User',
-      location_id: location?.id, location_name: location?.name,
-      items, total_amount, paid_amount: data.paid_amount,
-      payment_method: data.payment_method ?? 'cash',
+      id: uid(), transactionType: data.type as Transaction['transactionType'],
+      customerId: customer?.id, customerName: customer?.name,
+      staffId: 'mock-user-id', staffName: 'Demo User',
+      locationId: location?.id, locationName: location?.name,
+      items, totalAmount, paidAmount: data.paidAmount,
+      paymentMethod: data.paymentMethod ?? 'cash',
       notes: data.notes,
       status: 'completed',
-      created_at: new Date().toISOString(),
+      createdAt: new Date().toISOString(),
     };
     mockDb.transactions.push(tx);
     // Update customer debt if underpaid
-    const debt = total_amount - data.paid_amount;
+    const debt = totalAmount - data.paidAmount;
     if (customer && debt > 0) {
-      customer.outstanding_debt = (customer.outstanding_debt ?? 0) + debt;
+      customer.outstandingDebt = (customer.outstandingDebt ?? 0) + debt;
     }
     // Record ContainerLoans for refillable items (positive = lent) + dispatch StockMovements
     if (customer) {
       data.items.forEach((item) => {
-        const prod = mockDb.products.find((p) => p.id === item.product_id);
+        const prod = mockDb.products.find((p) => p.id === item.productId);
         if (prod?.category === 'refillable') {
           mockDb.containerLoans.push({
-            id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
-            product_id: item.product_id, product_name: prod.name,
-            quantity: item.quantity, transaction_id: tx.id,
-            created_by_name: 'Demo User', created_at: new Date().toISOString(),
+            id: uid(), customerId: customer.id, customerName: customer.name ?? '',
+            productId: item.productId, productName: prod.name,
+            quantity: item.quantity, transactionId: tx.id,
+            createdByName: 'Demo User', createdAt: new Date().toISOString(),
           });
           // Dispatch movement: filled stock leaving the source location
           mockDb.stockMovements.push({
             id: uid(),
-            movement_type: 'dispatch',
-            product_id: item.product_id, product_name: prod.name,
-            from_location_id: tx.location_id ?? '',
-            from_location_name: tx.location_name ?? '',
+            movementType: 'dispatch',
+            productId: item.productId, productName: prod.name,
+            fromLocationId: tx.locationId ?? '',
+            fromLocationName: tx.locationName ?? '',
             quantity: item.quantity,
-            container_status: 'filled',
+            containerStatus: 'filled',
             note: `Penjualan ${tx.id} — ${customer.name}`,
-            created_by_name: 'Demo User', created_at: new Date().toISOString(),
+            createdByName: 'Demo User', createdAt: new Date().toISOString(),
           });
         }
       });
       // Record container returns (negative ContainerLoans) + receive StockMovements
-      if (data.container_returns) {
-        data.container_returns.forEach((ret) => {
+      if (data.containerReturns) {
+        data.containerReturns.forEach((ret) => {
           if (ret.quantity > 0) {
-            const retProd = mockDb.products.find((p) => p.id === ret.product_id);
+            const retProd = mockDb.products.find((p) => p.id === ret.productId);
             mockDb.containerLoans.push({
-              id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
-              product_id: ret.product_id, product_name: retProd?.name ?? '',
-              quantity: -ret.quantity, transaction_id: tx.id,
-              created_by_name: 'Demo User', created_at: new Date().toISOString(),
+              id: uid(), customerId: customer.id, customerName: customer.name ?? '',
+              productId: ret.productId, productName: retProd?.name ?? '',
+              quantity: -ret.quantity, transactionId: tx.id,
+              createdByName: 'Demo User', createdAt: new Date().toISOString(),
             });
             // Receive movement: empty containers arriving at source location
             mockDb.stockMovements.push({
               id: uid(),
-              movement_type: 'receive',
-              product_id: ret.product_id, product_name: retProd?.name ?? '',
-              to_location_id: tx.location_id ?? '',
-              to_location_name: tx.location_name ?? '',
+              movementType: 'receive',
+              productId: ret.productId, productName: retProd?.name ?? '',
+              toLocationId: tx.locationId ?? '',
+              toLocationName: tx.locationName ?? '',
               quantity: ret.quantity,
-              container_status: 'empty',
+              containerStatus: 'empty',
               note: `Kontainer kosong diterima dari ${customer.name} (${tx.id})`,
-              created_by_name: 'Demo User', created_at: new Date().toISOString(),
+              createdByName: 'Demo User', createdAt: new Date().toISOString(),
             });
           }
         });
       }
     }
     // Record old debt payment if provided
-    if (customer && data.debt_payment_amount && data.debt_payment_amount > 0) {
+    if (customer && data.debtPaymentAmount && data.debtPaymentAmount > 0) {
       mockDb.debtPayments.push({
-        id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
-        amount: data.debt_payment_amount, method: 'cash', transaction_id: tx.id,
-        created_by_name: 'Demo User', created_at: new Date().toISOString(),
+        id: uid(), customerId: customer.id, customerName: customer.name ?? '',
+        amount: data.debtPaymentAmount, method: 'cash', transactionId: tx.id,
+        createdByName: 'Demo User', createdAt: new Date().toISOString(),
       });
-      customer.outstanding_debt = Math.max(0, (customer.outstanding_debt ?? 0) - data.debt_payment_amount);
+      customer.outstandingDebt = Math.max(0, (customer.outstandingDebt ?? 0) - data.debtPaymentAmount);
     }
     return delay({ ...tx });
   },
@@ -131,38 +131,38 @@ export const transactionService = {
       tx.items.forEach((item) => {
         mockDb.stockMovements.push({
           id: uid(),
-          product_id: item.product_id,
-          product_name: item.product_name,
-          to_location_id: tx.location_id ?? '',
-          to_location_name: tx.location_name ?? '',
-          movement_type: 'receive',
+          productId: item.productId,
+          productName: item.productName,
+          toLocationId: tx.locationId ?? '',
+          toLocationName: tx.locationName ?? '',
+          movementType: 'receive',
           quantity: item.quantity,
           note: `Pembatalan transaksi #${tx.id}`,
-          created_by_name: 'System',
-          created_at: new Date().toISOString(),
+          createdByName: 'System',
+          createdAt: new Date().toISOString(),
         });
       });
       // Reverse ContainerLoans created for this transaction
-      const loansForTx = mockDb.containerLoans.filter((l) => l.transaction_id === id);
+      const loansForTx = mockDb.containerLoans.filter((l) => l.transactionId === id);
       loansForTx.forEach((loan) => {
         mockDb.containerLoans.push({
           id: uid(),
-          customer_id: loan.customer_id,
-          customer_name: loan.customer_name,
-          product_id: loan.product_id,
-          product_name: loan.product_name,
+          customerId: loan.customerId,
+          customerName: loan.customerName,
+          productId: loan.productId,
+          productName: loan.productName,
           quantity: -loan.quantity,
-          transaction_id: tx.id,
+          transactionId: tx.id,
           notes: `Pembatalan transaksi #${tx.id}`,
-          created_by_name: 'System',
-          created_at: new Date().toISOString(),
+          createdByName: 'System',
+          createdAt: new Date().toISOString(),
         });
       });
-      // Restore customer debt if paid_amount < total_amount
-      const debt = tx.total_amount - tx.paid_amount;
-      if (tx.customer_id && debt > 0) {
-        const c = mockDb.customers.find((c) => c.id === tx.customer_id);
-        if (c) c.outstanding_debt = Math.max(0, (c.outstanding_debt ?? 0) - debt);
+      // Restore customer debt if paidAmount < totalAmount
+      const debt = tx.totalAmount - tx.paidAmount;
+      if (tx.customerId && debt > 0) {
+        const c = mockDb.customers.find((c) => c.id === tx.customerId);
+        if (c) c.outstandingDebt = Math.max(0, (c.outstandingDebt ?? 0) - debt);
       }
     }
     return delay(undefined);
@@ -172,12 +172,12 @@ export const transactionService = {
     if (!USE_MOCK) return apiClient.post(`/api/transactions/${id}/payments`, { amount }).then((r) => r.data);
     const tx = mockDb.transactions.find((t) => t.id === id);
     if (tx) {
-      tx.paid_amount = Math.min(tx.total_amount, tx.paid_amount + amount);
-      if (tx.paid_amount >= tx.total_amount) tx.status = 'completed';
+      tx.paidAmount = Math.min(tx.totalAmount, tx.paidAmount + amount);
+      if (tx.paidAmount >= tx.totalAmount) tx.status = 'completed';
       // Reduce customer debt
-      if (tx.customer_id) {
-        const c = mockDb.customers.find((c) => c.id === tx.customer_id);
-        if (c) c.outstanding_debt = Math.max(0, (c.outstanding_debt ?? 0) - amount);
+      if (tx.customerId) {
+        const c = mockDb.customers.find((c) => c.id === tx.customerId);
+        if (c) c.outstandingDebt = Math.max(0, (c.outstandingDebt ?? 0) - amount);
       }
     }
     return delay(undefined);

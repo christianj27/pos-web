@@ -47,7 +47,7 @@ export function CustomerDebtDetailPage() {
 
   useEffect(() => {
     customerService.list()
-      .then((custs) => setAllCustomers((custs as Customer[]).filter((c) => c.is_active)))
+      .then((custs) => setAllCustomers((custs as Customer[]).filter((c) => c.isActive)))
       .catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat daftar pelanggan.'), 'error'); });
   }, []);
 
@@ -61,7 +61,7 @@ export function CustomerDebtDetailPage() {
     if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
     setSaving(true); setSaveError(null);
     try {
-      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
+      await debtService.create({ customerId: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
       showToast('Pembayaran berhasil dicatat.');
       load();
@@ -83,7 +83,7 @@ export function CustomerDebtDetailPage() {
               </svg>
             </button>
             <div>
-              <h1 className={styles.title}>{history?.customer_name ?? 'Detail Hutang'}</h1>
+              <h1 className={styles.title}>{history?.customerName ?? 'Detail Hutang'}</h1>
               <p className={styles.subtitle}>Riwayat Hutang Pelanggan</p>
             </div>
           </div>
@@ -98,19 +98,19 @@ export function CustomerDebtDetailPage() {
         {!loading && history && (
           <>
             {/* Outstanding debt banner */}
-            <div className={[styles.debtBanner, history.outstanding_debt > 0 ? styles.debtBannerActive : styles.debtBannerClear].join(' ')}>
+            <div className={[styles.debtBanner, history.outstandingDebt > 0 ? styles.debtBannerActive : styles.debtBannerClear].join(' ')}>
               <span className={styles.debtBannerLabel}>Total Hutang Aktif</span>
-              <span className={styles.debtBannerAmount}>{formatCurrency(history.outstanding_debt)}</span>
+              <span className={styles.debtBannerAmount}>{formatCurrency(history.outstandingDebt)}</span>
             </div>
 
             {/* Debt-creating transactions */}
             <section>
               <h2 className={styles.sectionTitle}>Transaksi Pembuat Hutang</h2>
-              {history.debt_transactions.length === 0 ? (
+              {history.debtTransactions.length === 0 ? (
                 <p className={styles.emptyText}>Tidak ada transaksi yang membuat hutang.</p>
               ) : (
                 <div className={styles.cardList}>
-                  {history.debt_transactions.map((tx) => (
+                  {history.debtTransactions.map((tx) => (
                     <div key={tx.id} className={styles.txCard}>
                       <div className={styles.txCardTop}>
                         <div className={styles.txCardInfo}>
@@ -122,14 +122,14 @@ export function CustomerDebtDetailPage() {
                               day: 'numeric', month: 'short', year: 'numeric',
                               hour: '2-digit', minute: '2-digit',
                               timeZone: 'Asia/Jakarta',
-                            }).format(new Date(tx.created_at))}
+                            }).format(new Date(tx.createdAt))}
                           </span>
-                          <span className={styles.txCardBy}>{tx.created_by_name}</span>
+                          <span className={styles.txCardBy}>{tx.createdByName}</span>
                         </div>
                         <div className={styles.txCardAmounts}>
-                          <span className={styles.txCardTotal}>{formatCurrency(tx.total_amount)}</span>
-                          <span className={styles.txCardPaid}>Dibayar: {formatCurrency(tx.paid_amount)}</span>
-                          <span className={styles.txCardDebt}>Hutang: {formatCurrency(tx.debt_amount)}</span>
+                          <span className={styles.txCardTotal}>{formatCurrency(tx.totalAmount)}</span>
+                          <span className={styles.txCardPaid}>Dibayar: {formatCurrency(tx.paidAmount)}</span>
+                          <span className={styles.txCardDebt}>Hutang: {formatCurrency(tx.debtAmount)}</span>
                         </div>
                       </div>
                     </div>
@@ -150,7 +150,7 @@ export function CustomerDebtDetailPage() {
                       <div className={styles.payCardTop}>
                         <div className={styles.payCardInfo}>
                           {p.note && <span className={styles.payCardNotes}>{p.note}</span>}
-                          <span className={styles.payCardMeta}>{p.created_by_name} · {formatDate(p.created_at)}</span>
+                          <span className={styles.payCardMeta}>{p.createdByName} · {formatDate(p.createdAt)}</span>
                         </div>
                         <span className={styles.payCardAmount}>{formatCurrency(p.amount)}</span>
                       </div>

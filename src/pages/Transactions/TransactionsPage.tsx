@@ -15,7 +15,7 @@ import type { Transaction, Product, Customer, Location, User, DeliveryAssignment
 import styles from './TransactionsPage.module.scss';
 
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
-interface CartItem { product_id: string; product_name: string; quantity: number; unit_price: number; }
+interface CartItem { productId: string; productName: string; quantity: number; unitPrice: number; }
 
 function getTodayWIB(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
@@ -113,7 +113,7 @@ export function TransactionsPage() {
     ]);
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
-    setCustomers((custs as Customer[]).filter((c) => c.is_active));
+    setCustomers((custs as Customer[]).filter((c) => c.isActive));
     setLocations((locs as Location[]).filter((l) => l.isActive));
     setAssignments(asgns as DeliveryAssignment[]);
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
@@ -131,7 +131,7 @@ export function TransactionsPage() {
   const filteredTxs = useMemo(() => {
     return transactions.filter((tx) => {
       if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
-      if (isOwner && typeFilter !== 'all' && tx.transaction_type !== typeFilter) return false;
+      if (isOwner && typeFilter !== 'all' && tx.transactionType !== typeFilter) return false;
       return true;
     });
   }, [transactions, statusFilter, typeFilter, isOwner]);
@@ -176,7 +176,7 @@ export function TransactionsPage() {
 
   function advanceToStep3() {
     if (cart.length === 0) return;
-    const t = cart.reduce((s, c) => s + c.quantity * c.unit_price, 0);
+    const t = cart.reduce((s, c) => s + c.quantity * c.unitPrice, 0);
     setPaidAmount(String(t));
     setStep(3);
   }
@@ -184,42 +184,42 @@ export function TransactionsPage() {
   // ── Cart helpers ─────────────────────────────────────────────────────────────
   function incrementQty(prod: Product) {
     setCart((prev) => {
-      const existing = prev.find((c) => c.product_id === prod.id);
+      const existing = prev.find((c) => c.productId === prod.id);
       if (existing) {
-        return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
+        return prev.map((c) => c.productId === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
       }
-      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.basePrice }];
+      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: prod.basePrice }];
     });
   }
 
   function decrementQty(productId: string) {
     setCart((prev) => {
-      const existing = prev.find((c) => c.product_id === productId);
+      const existing = prev.find((c) => c.productId === productId);
       if (!existing) return prev;
-      if (existing.quantity <= 1) return prev.filter((c) => c.product_id !== productId);
-      return prev.map((c) => c.product_id === productId ? { ...c, quantity: c.quantity - 1 } : c);
+      if (existing.quantity <= 1) return prev.filter((c) => c.productId !== productId);
+      return prev.map((c) => c.productId === productId ? { ...c, quantity: c.quantity - 1 } : c);
     });
   }
 
   function setQtyDirect(prod: Product, val: number) {
     if (val <= 0) {
-      setCart((prev) => prev.filter((c) => c.product_id !== prod.id));
+      setCart((prev) => prev.filter((c) => c.productId !== prod.id));
     } else {
       setCart((prev) => {
-        const existing = prev.find((c) => c.product_id === prod.id);
+        const existing = prev.find((c) => c.productId === prod.id);
         if (existing) {
-          return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
+          return prev.map((c) => c.productId === prod.id ? { ...c, quantity: val } : c);
         }
-        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.basePrice }];
+        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: prod.basePrice }];
       });
     }
   }
 
   function cartQty(productId: string): number {
-    return cart.find((c) => c.product_id === productId)?.quantity ?? 0;
+    return cart.find((c) => c.productId === productId)?.quantity ?? 0;
   }
 
-  const total = cart.reduce((s, c) => s + c.quantity * c.unit_price, 0);
+  const total = cart.reduce((s, c) => s + c.quantity * c.unitPrice, 0);
   const paid = parseFloat(paidAmount) || 0;
   const debt = Math.max(0, total - paid);
 
@@ -229,30 +229,30 @@ export function TransactionsPage() {
     setSaving(true); setSaveError(null);
     const containerReturnsArr = Object.entries(containerReturns)
       .filter(([, qty]) => parseInt(qty) > 0)
-      .map(([product_id, qty]) => ({ product_id, quantity: parseInt(qty) }));
+      .map(([productId, qty]) => ({ productId, quantity: parseInt(qty) }));
     const debtAmt = parseFloat(debtPaymentAmount);
     try {
       if (fulfillAssignment) {
         await assignmentService.fulfill(fulfillAssignment.id, {
-          items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
-          paid_amount: paid,
-          payment_method: paymentMethod,
+          items: cart.map((c) => ({ productId: c.productId, quantity: c.quantity, unitPrice: c.unitPrice })),
+          paidAmount: paid,
+          paymentMethod: paymentMethod,
           notes: notes.trim() || undefined,
-          container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
-          debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
+          containerReturns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
+          debtPaymentAmount: debtAmt > 0 ? debtAmt : undefined,
         });
         showToast('Penugasan berhasil diselesaikan.');
       } else {
         await transactionService.create({
           type: txType,
-          customer_id: selectedCustomer?.id,
-          location_id: locationId || undefined,
-          items: cart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
-          paid_amount: paid,
-          payment_method: paymentMethod,
+          customerId: selectedCustomer?.id,
+          locationId: locationId || undefined,
+          items: cart.map((c) => ({ productId: c.productId, quantity: c.quantity, unitPrice: c.unitPrice })),
+          paidAmount: paid,
+          paymentMethod: paymentMethod,
           notes: notes.trim() || undefined,
-          container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
-          debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
+          containerReturns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
+          debtPaymentAmount: debtAmt > 0 ? debtAmt : undefined,
         });
         showToast('Transaksi berhasil dibuat.');
       }
@@ -293,12 +293,12 @@ export function TransactionsPage() {
 
   // ── Fulfillment (open overlay pre-filled with assignment) ────────────────────
   function openFulfillment(assignment: DeliveryAssignment) {
-    const customer = customers.find((c) => c.id === assignment.customer_id) ?? null;
+    const customer = customers.find((c) => c.id === assignment.customerId) ?? null;
     setFulfillAssignment(assignment);
     setSelectedCustomer(customer);
     setCustomerSearch('');
     setCart(assignment.items.map((i) => ({
-      product_id: i.product_id, product_name: i.product_name, quantity: i.quantity, unit_price: i.unit_price,
+      productId: i.productId, productName: i.productName, quantity: i.quantity, unitPrice: i.unitPrice,
     })));
     setProductSearch('');
     setTxType('delivery');
@@ -333,35 +333,35 @@ export function TransactionsPage() {
 
   function incrementAssignQty(prod: Product) {
     setAssignCart((prev) => {
-      const existing = prev.find((c) => c.product_id === prod.id);
-      if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
-      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.basePrice }];
+      const existing = prev.find((c) => c.productId === prod.id);
+      if (existing) return prev.map((c) => c.productId === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
+      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: prod.basePrice }];
     });
   }
 
   function decrementAssignQty(productId: string) {
     setAssignCart((prev) => {
-      const existing = prev.find((c) => c.product_id === productId);
+      const existing = prev.find((c) => c.productId === productId);
       if (!existing) return prev;
-      if (existing.quantity <= 1) return prev.filter((c) => c.product_id !== productId);
-      return prev.map((c) => c.product_id === productId ? { ...c, quantity: c.quantity - 1 } : c);
+      if (existing.quantity <= 1) return prev.filter((c) => c.productId !== productId);
+      return prev.map((c) => c.productId === productId ? { ...c, quantity: c.quantity - 1 } : c);
     });
   }
 
   function setAssignQtyDirect(prod: Product, val: number) {
     if (val <= 0) {
-      setAssignCart((prev) => prev.filter((c) => c.product_id !== prod.id));
+      setAssignCart((prev) => prev.filter((c) => c.productId !== prod.id));
     } else {
       setAssignCart((prev) => {
-        const existing = prev.find((c) => c.product_id === prod.id);
-        if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
-        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.basePrice }];
+        const existing = prev.find((c) => c.productId === prod.id);
+        if (existing) return prev.map((c) => c.productId === prod.id ? { ...c, quantity: val } : c);
+        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: prod.basePrice }];
       });
     }
   }
 
   function assignCartQty(productId: string): number {
-    return assignCart.find((c) => c.product_id === productId)?.quantity ?? 0;
+    return assignCart.find((c) => c.productId === productId)?.quantity ?? 0;
   }
 
   async function handleCreateAssignment() {
@@ -370,9 +370,9 @@ export function TransactionsPage() {
     setAssignSaving(true); setAssignSaveError(null);
     try {
       await assignmentService.create({
-        kurir_id: assignKurir.id,
-        customer_id: assignCustomer.id,
-        items: assignCart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
+        kurirId: assignKurir.id,
+        customerId: assignCustomer.id,
+        items: assignCart.map((c) => ({ productId: c.productId, quantity: c.quantity, unitPrice: c.unitPrice })),
         notes: assignNotes.trim() || undefined,
       });
       showToast('Penugasan berhasil dibuat.');
@@ -426,7 +426,7 @@ export function TransactionsPage() {
     p.name.toLowerCase().includes(assignProductSearch.toLowerCase())
   );
 
-  const assignTotal = assignCart.reduce((s, c) => s + c.quantity * c.unit_price, 0);
+  const assignTotal = assignCart.reduce((s, c) => s + c.quantity * c.unitPrice, 0);
 
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
@@ -503,13 +503,13 @@ export function TransactionsPage() {
                   <Badge variant={a.status === 'pending' ? 'pending' : a.status === 'fulfilled' ? 'completed' : 'cancelled'}>
                     {ASSIGNMENT_STATUS_LABELS[a.status]}
                   </Badge>
-                  <span className={styles.txDate}>{formatDate(a.created_at)}</span>
+                  <span className={styles.txDate}>{formatDate(a.createdAt)}</span>
                 </div>
                 <div className={styles.assignmentBody}>
-                  <p className={styles.assignmentCustomer}>{a.customer_name}</p>
-                  <p className={styles.assignmentKurir}>Kurir: {a.kurir_name}</p>
+                  <p className={styles.assignmentCustomer}>{a.customerName}</p>
+                  <p className={styles.assignmentKurir}>Kurir: {a.kurirName}</p>
                   <p className={styles.assignmentItemsText}>
-                    {a.items.map((i) => `${i.quantity}× ${i.product_name}`).join(', ')}
+                    {a.items.map((i) => `${i.quantity}× ${i.productName}`).join(', ')}
                   </p>
                   {a.notes && <p className={styles.assignmentNotes}>{a.notes}</p>}
                 </div>
@@ -544,36 +544,36 @@ export function TransactionsPage() {
         {!loading && statusFilter !== 'penugasan' && filteredTxs.length > 0 && (
           <div className={styles.txList}>
             {filteredTxs.map((tx) => {
-              const debtAmt = tx.total_amount - tx.paid_amount;
+              const debtAmt = tx.totalAmount - tx.paidAmount;
               return (
                 <div key={tx.id} className={styles.txCard}>
                   <div className={styles.txTop}>
                     <div className={styles.txMeta}>
-                      <Badge variant={tx.transaction_type as 'delivery' | 'counter'}>
-                        {TRANSACTION_TYPE_LABELS[tx.transaction_type]}
+                      <Badge variant={tx.transactionType as 'delivery' | 'counter'}>
+                        {TRANSACTION_TYPE_LABELS[tx.transactionType]}
                       </Badge>
                       <Badge variant={tx.status as 'pending' | 'completed' | 'cancelled'}>
                         {TRANSACTION_STATUS_LABELS[tx.status]}
                       </Badge>
                     </div>
-                    <span className={styles.txDate}>{formatDate(tx.created_at)}</span>
+                    <span className={styles.txDate}>{formatDate(tx.createdAt)}</span>
                   </div>
 
                   <div className={styles.txBody}>
-                    {tx.customer_name && <p className={styles.txCustomer}>{tx.customer_name}</p>}
-                    {tx.location_name && <p className={styles.txLocation}>{tx.location_name}</p>}
+                    {tx.customerName && <p className={styles.txCustomer}>{tx.customerName}</p>}
+                    {tx.locationName && <p className={styles.txLocation}>{tx.locationName}</p>}
                     {debtAmt > 0 && tx.status !== 'cancelled' && (
                       <p className={styles.debtBadge}>Ada utang: {formatCurrency(debtAmt)}</p>
                     )}
                     <div className={styles.txAmounts}>
                       <div>
                         <span className={styles.amountLabel}>Total</span>
-                        <span className={styles.amountValue}>{formatCurrency(tx.total_amount)}</span>
+                        <span className={styles.amountValue}>{formatCurrency(tx.totalAmount)}</span>
                       </div>
                       <div>
                         <span className={styles.amountLabel}>Dibayar</span>
                         <span className={[styles.amountValue, debtAmt > 0 ? styles.debtAmt : ''].join(' ')}>
-                          {formatCurrency(tx.paid_amount)}
+                          {formatCurrency(tx.paidAmount)}
                         </span>
                       </div>
                     </div>
@@ -581,7 +581,7 @@ export function TransactionsPage() {
 
                   <div className={styles.txActions}>
                     <button className={styles.txActionBtn} onClick={() => setDetailTx(tx)}>Detail</button>
-                    {tx.paid_amount < tx.total_amount && tx.status !== 'cancelled' && (
+                    {tx.paidAmount < tx.totalAmount && tx.status !== 'cancelled' && (
                       <button
                         className={[styles.txActionBtn, styles.payBtn].join(' ')}
                         onClick={() => { setPaymentTx(tx); setPaymentAmount(''); }}
@@ -617,10 +617,10 @@ export function TransactionsPage() {
             <span className={styles.overlayTitle}>
               {step === 1 ? 'Pilih Pelanggan' : step === 2
                 ? (fulfillAssignment
-                    ? `Proses — ${fulfillAssignment.customer_name}`
+                    ? `Proses — ${fulfillAssignment.customerName}`
                     : selectedCustomer ? `Produk — ${selectedCustomer.name}` : 'Pilih Produk')
                 : (fulfillAssignment
-                    ? `Konfirmasi — ${fulfillAssignment.customer_name}`
+                    ? `Konfirmasi — ${fulfillAssignment.customerName}`
                     : selectedCustomer ? `Konfirmasi — ${selectedCustomer.name}` : 'Konfirmasi (Tanpa Pelanggan)')}
             </span>
             <div className={styles.steps}>
@@ -664,8 +664,8 @@ export function TransactionsPage() {
                         <div className={styles.customerInfo}>
                           <span className={styles.customerName}>{c.name}</span>
                           {c.phone && <span className={styles.customerPhone}>{c.phone}</span>}
-                          {(c.outstanding_debt ?? 0) > 0 && (
-                            <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstanding_debt!)}</span>
+                          {(c.outstandingDebt ?? 0) > 0 && (
+                            <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstandingDebt!)}</span>
                           )}
                         </div>
                         {selectedCustomer?.id === c.id && (
@@ -736,7 +736,7 @@ export function TransactionsPage() {
                 </div>
                 {/* Refillable warning when no customer */}
                 {skipCustomer && cart.some((c) => {
-                  const prod = products.find((p) => p.id === c.product_id);
+                  const prod = products.find((p) => p.id === c.productId);
                   return prod?.category === 'refillable';
                 }) && (
                   <div className={styles.warningBanner}>
@@ -819,9 +819,9 @@ export function TransactionsPage() {
                     <span>{TRANSACTION_TYPE_LABELS[txType as keyof typeof TRANSACTION_TYPE_LABELS] ?? txType}</span>
                   </div>
                   {cart.map((item) => (
-                    <div key={item.product_id} className={styles.summaryRow}>
-                      <span>{item.product_name} × {item.quantity}</span>
-                      <span>{formatCurrency(item.quantity * item.unit_price)}</span>
+                    <div key={item.productId} className={styles.summaryRow}>
+                      <span>{item.productName} × {item.quantity}</span>
+                      <span>{formatCurrency(item.quantity * item.unitPrice)}</span>
                     </div>
                   ))}
                   <div className={[styles.summaryRow, styles.summaryTotal].join(' ')}>
@@ -852,10 +852,10 @@ export function TransactionsPage() {
                 )}
 
                 {/* Customer outstanding debt indicator */}
-                {selectedCustomer && (selectedCustomer.outstanding_debt ?? 0) > 0 && (
+                {selectedCustomer && (selectedCustomer.outstandingDebt ?? 0) > 0 && (
                   <div className={styles.debtBox}>
                     <span>Total Hutang Pelanggan</span>
-                    <strong>{formatCurrency(selectedCustomer.outstanding_debt!)}</strong>
+                    <strong>{formatCurrency(selectedCustomer.outstandingDebt!)}</strong>
                   </div>
                 )}
 
@@ -872,7 +872,7 @@ export function TransactionsPage() {
                 )}
 
                 {/* Old debt payment field */}
-                {selectedCustomer && (selectedCustomer.outstanding_debt ?? 0) > 0 && (
+                {selectedCustomer && (selectedCustomer.outstandingDebt ?? 0) > 0 && (
                   <Input
                     label="Bayar Hutang Lama (Rp, opsional)"
                     type="number"
@@ -883,20 +883,20 @@ export function TransactionsPage() {
                 )}
 
                 {/* Container return section */}
-                {selectedCustomer && cart.some((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable') && (
+                {selectedCustomer && cart.some((c) => products.find((p) => p.id === c.productId)?.category === 'refillable') && (
                   <div className={styles.containerReturnSection}>
                     <p className={styles.containerReturnTitle}>Kontainer Kosong Diterima dari Pelanggan (opsional)</p>
                     {cart
-                      .filter((c) => products.find((p) => p.id === c.product_id)?.category === 'refillable')
+                      .filter((c) => products.find((p) => p.id === c.productId)?.category === 'refillable')
                       .map((c) => (
                         <Input
-                          key={c.product_id}
-                          label={`${c.product_name}`}
+                          key={c.productId}
+                          label={`${c.productName}`}
                           hint="Bisa lebih dari jumlah yang dijual jika pelanggan memberikan kontainer ekstra"
                           type="number"
                           min="0"
-                          value={containerReturns[c.product_id] ?? ''}
-                          onChange={(e) => setContainerReturns((prev) => ({ ...prev, [c.product_id]: e.target.value }))}
+                          value={containerReturns[c.productId] ?? ''}
+                          onChange={(e) => setContainerReturns((prev) => ({ ...prev, [c.productId]: e.target.value }))}
                         />
                       ))}
                   </div>
@@ -932,29 +932,29 @@ export function TransactionsPage() {
           footer={<Button variant="ghost" onClick={() => setDetailTx(null)}>Tutup</Button>}
         >
           <div className={styles.detailSection}>
-            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.transaction_type as 'delivery' | 'counter'}>{TRANSACTION_TYPE_LABELS[detailTx.transaction_type]}</Badge></div>
+            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.transactionType as 'delivery' | 'counter'}>{TRANSACTION_TYPE_LABELS[detailTx.transactionType]}</Badge></div>
             <div className={styles.detailRow}><span>Status</span><Badge variant={detailTx.status as 'pending' | 'completed' | 'cancelled'}>{TRANSACTION_STATUS_LABELS[detailTx.status]}</Badge></div>
-            {detailTx.customer_name && <div className={styles.detailRow}><span>Pelanggan</span><strong>{detailTx.customer_name}</strong></div>}
-            {detailTx.location_name && <div className={styles.detailRow}><span>Lokasi</span><span>{detailTx.location_name}</span></div>}
-            {detailTx.payment_method && <div className={styles.detailRow}><span>Pembayaran</span><span>{PAYMENT_LABELS[detailTx.payment_method]}</span></div>}
+            {detailTx.customerName && <div className={styles.detailRow}><span>Pelanggan</span><strong>{detailTx.customerName}</strong></div>}
+            {detailTx.locationName && <div className={styles.detailRow}><span>Lokasi</span><span>{detailTx.locationName}</span></div>}
+            {detailTx.paymentMethod && <div className={styles.detailRow}><span>Pembayaran</span><span>{PAYMENT_LABELS[detailTx.paymentMethod]}</span></div>}
             {detailTx.notes && <div className={styles.detailRow}><span>Catatan</span><span>{detailTx.notes}</span></div>}
-            <div className={styles.detailRow}><span>Dibuat oleh</span><span>{detailTx.staff_name}</span></div>
-            <div className={styles.detailRow}><span>Waktu</span><span>{formatDate(detailTx.created_at)}</span></div>
+            <div className={styles.detailRow}><span>Dibuat oleh</span><span>{detailTx.staffName}</span></div>
+            <div className={styles.detailRow}><span>Waktu</span><span>{formatDate(detailTx.createdAt)}</span></div>
           </div>
           <div className={styles.detailItems}>
             <h4 className={styles.detailSubtitle}>Item</h4>
             {detailTx.items.map((item, i) => (
               <div key={i} className={styles.detailItem}>
-                <span>{item.product_name}</span>
-                <span>{item.quantity} × {formatCurrency(item.unit_price)}</span>
+                <span>{item.productName}</span>
+                <span>{item.quantity} × {formatCurrency(item.unitPrice)}</span>
                 <strong>{formatCurrency(item.subtotal)}</strong>
               </div>
             ))}
-            <div className={styles.detailTotal}><span>Total</span><strong>{formatCurrency(detailTx.total_amount)}</strong></div>
-            <div className={styles.detailTotal}><span>Dibayar</span><span>{formatCurrency(detailTx.paid_amount)}</span></div>
-            {detailTx.paid_amount < detailTx.total_amount && (
+            <div className={styles.detailTotal}><span>Total</span><strong>{formatCurrency(detailTx.totalAmount)}</strong></div>
+            <div className={styles.detailTotal}><span>Dibayar</span><span>{formatCurrency(detailTx.paidAmount)}</span></div>
+            {detailTx.paidAmount < detailTx.totalAmount && (
               <div className={[styles.detailTotal, styles.debtRow].join(' ')}>
-                <span>Sisa Hutang</span><strong>{formatCurrency(detailTx.total_amount - detailTx.paid_amount)}</strong>
+                <span>Sisa Hutang</span><strong>{formatCurrency(detailTx.totalAmount - detailTx.paidAmount)}</strong>
               </div>
             )}
           </div>
@@ -977,7 +977,7 @@ export function TransactionsPage() {
         {paymentTx && (
           <div className={styles.paymentForm}>
             <p className={styles.paymentDebt}>
-              Sisa hutang: <strong>{formatCurrency(paymentTx.total_amount - paymentTx.paid_amount)}</strong>
+              Sisa hutang: <strong>{formatCurrency(paymentTx.totalAmount - paymentTx.paidAmount)}</strong>
             </p>
             <Input
               label="Jumlah Bayar (Rp)"
@@ -1102,8 +1102,8 @@ export function TransactionsPage() {
                         <div className={styles.customerInfo}>
                           <span className={styles.customerName}>{c.name}</span>
                           {c.phone && <span className={styles.customerPhone}>{c.phone}</span>}
-                          {(c.outstanding_debt ?? 0) > 0 && (
-                            <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstanding_debt!)}</span>
+                          {(c.outstandingDebt ?? 0) > 0 && (
+                            <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstandingDebt!)}</span>
                           )}
                         </div>
                         {assignCustomer?.id === c.id && (

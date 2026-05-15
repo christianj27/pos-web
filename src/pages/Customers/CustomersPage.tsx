@@ -60,12 +60,12 @@ export function CustomersPage() {
       customerService.getPricing(c.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat harga khusus.'), 'error'); return [] as CustomerPricingItem[]; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; }),
     ]);
-    const activeRefillable = (prods as Product[]).filter((p) => p.is_active);
+    const activeRefillable = (prods as Product[]).filter((p) => p.isActive);
     setAllProducts(activeRefillable);
     setPricingItems(items as CustomerPricingItem[]);
     const updates: Record<string, string> = {};
     (items as CustomerPricingItem[]).forEach((i) => {
-      if (i.custom_price != null) updates[i.product_id] = String(i.custom_price);
+      if (i.customPrice != null) updates[i.productId] = String(i.customPrice);
     });
     setPricingUpdates(updates);
   }
@@ -113,8 +113,8 @@ export function CustomersPage() {
     setSavingPricing(true);
     try {
       const items = allProducts.map((p) => ({
-        product_id: p.id,
-        custom_price: pricingUpdates[p.id] ? parseFloat(pricingUpdates[p.id]) : undefined,
+        productId: p.id,
+        customPrice: pricingUpdates[p.id] ? parseFloat(pricingUpdates[p.id]) : undefined,
       }));
       await customerService.updatePricing(pricingCustomer.id, items);
       showToast('Harga khusus berhasil disimpan.');
@@ -147,7 +147,7 @@ export function CustomersPage() {
         {!loading && customers.length > 0 && (
           <div className={styles.cardList}>
             {customers.map((c) => (
-              <div key={c.id} className={[styles.card, !c.is_active ? styles.cardInactive : ''].join(' ')}>
+              <div key={c.id} className={[styles.card, !c.isActive ? styles.cardInactive : ''].join(' ')}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{c.name}</span>
@@ -155,14 +155,14 @@ export function CustomersPage() {
                     {c.address && <span className={styles.cardAddress}>{c.address}</span>}
                   </div>
                   <div className={styles.cardBadges}>
-                    <Badge variant={c.is_active ? 'active' : 'inactive'}>{c.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                    <Badge variant={c.isActive ? 'active' : 'inactive'}>{c.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
                   </div>
                 </div>
                 {isOwner && (
                   <div className={styles.cardActions}>
                     <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
                     <button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>
-                    {c.is_active && <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(c)}>Nonaktifkan</button>}
+                    {c.isActive && <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(c)}>Nonaktifkan</button>}
                   </div>
                 )}
               </div>
@@ -191,8 +191,8 @@ export function CustomersPage() {
         </div>
         <div className={styles.pricingTable}>
           {allProducts.map((p) => {
-            const base = p.base_price;
-            const existing = pricingItems.find((i) => i.product_id === p.id);
+            const base = p.basePrice;
+            const existing = pricingItems.find((i) => i.productId === p.id);
             return (
               <div key={p.id} className={styles.pricingRow}>
                 <div className={styles.pricingProduct}>
@@ -205,7 +205,7 @@ export function CustomersPage() {
                     type="number"
                     min="0"
                     placeholder={String(base)}
-                    value={pricingUpdates[p.id] ?? (existing?.custom_price ? String(existing.custom_price) : '')}
+                    value={pricingUpdates[p.id] ?? (existing?.customPrice ? String(existing.customPrice) : '')}
                     onChange={(e) => setPricingUpdates((prev) => ({ ...prev, [p.id]: e.target.value }))}
                   />
                 </div>

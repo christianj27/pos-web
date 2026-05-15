@@ -5,24 +5,24 @@ import type { ContainerLoan } from '../types';
 export const containerLoanService = {
   list: (customerId?: string): Promise<ContainerLoan[]> => {
     if (!USE_MOCK) {
-      const params = customerId ? { customer_id: customerId } : undefined;
+      const params = customerId ? { customerId } : undefined;
       return apiClient.get<ContainerLoan[]>('/api/container-loans', { params }).then((r) => r.data);
     }
     const loans = customerId
-      ? mockDb.containerLoans.filter((l) => l.customer_id === customerId)
+      ? mockDb.containerLoans.filter((l) => l.customerId === customerId)
       : [...mockDb.containerLoans];
     return delay(loans);
   },
 
-  create: (data: { customer_id: string; product_id: string; quantity: number; notes?: string }): Promise<ContainerLoan> => {
+  create: (data: { customerId: string; productId: string; quantity: number; notes?: string }): Promise<ContainerLoan> => {
     if (!USE_MOCK) return apiClient.post<ContainerLoan>('/api/container-loans', data).then((r) => r.data);
-    const customer = mockDb.customers.find((c) => c.id === data.customer_id);
-    const product = mockDb.products.find((p) => p.id === data.product_id);
+    const customer = mockDb.customers.find((c) => c.id === data.customerId);
+    const product = mockDb.products.find((p) => p.id === data.productId);
     const loan: ContainerLoan = {
-      id: uid(), customer_id: data.customer_id, customer_name: customer?.name ?? '',
-      product_id: data.product_id, product_name: product?.name ?? '',
+      id: uid(), customerId: data.customerId, customerName: customer?.name ?? '',
+      productId: data.productId, productName: product?.name ?? '',
       quantity: data.quantity, notes: data.notes,
-      created_by_name: 'Demo User', created_at: new Date().toISOString(),
+      createdByName: 'Demo User', createdAt: new Date().toISOString(),
     };
     mockDb.containerLoans.push(loan);
     return delay({ ...loan });

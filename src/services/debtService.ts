@@ -10,21 +10,21 @@ export const debtService = {
   list: (date?: string): Promise<DebtPayment[]> => {
     if (!USE_MOCK) return apiClient.get<DebtPayment[]>(`/api/debt-payments${date ? `?date=${date}` : ''}`).then((r) => r.data);
     const all = [...mockDb.debtPayments].reverse();
-    const filtered = date ? all.filter((p) => toWIBDate(p.created_at) === date) : all;
+    const filtered = date ? all.filter((p) => toWIBDate(p.createdAt) === date) : all;
     return delay(filtered);
   },
 
-  create: (data: { customer_id: string; amount: number; method: 'cash' | 'transfer' | 'qris'; reference_no?: string; note?: string }): Promise<DebtPayment> => {
+  create: (data: { customerId: string; amount: number; method: 'cash' | 'transfer' | 'qris'; referenceNo?: string; note?: string }): Promise<DebtPayment> => {
     if (!USE_MOCK) return apiClient.post<DebtPayment>('/api/debt-payments', data).then((r) => r.data);
-    const customer = mockDb.customers.find((c) => c.id === data.customer_id);
+    const customer = mockDb.customers.find((c) => c.id === data.customerId);
     const payment: DebtPayment = {
-      id: uid(), customer_id: data.customer_id, customer_name: customer?.name ?? '',
-      amount: data.amount, method: data.method, reference_no: data.reference_no, note: data.note,
-      created_by_name: 'Demo User', created_at: new Date().toISOString(),
+      id: uid(), customerId: data.customerId, customerName: customer?.name ?? '',
+      amount: data.amount, method: data.method, referenceNo: data.referenceNo, note: data.note,
+      createdByName: 'Demo User', createdAt: new Date().toISOString(),
     };
     mockDb.debtPayments.push(payment);
     // Reduce customer outstanding debt
-    if (customer) customer.outstanding_debt = Math.max(0, (customer.outstanding_debt ?? 0) - data.amount);
+    if (customer) customer.outstandingDebt = Math.max(0, (customer.outstandingDebt ?? 0) - data.amount);
     return delay({ ...payment });
   },
 
@@ -33,28 +33,28 @@ export const debtService = {
     const customer = mockDb.customers.find((c) => c.id === customerId);
     // Transactions that created debt for this customer
     const debtTransactions = mockDb.transactions
-      .filter((tx) => tx.customer_id === customerId && tx.total_amount > tx.paid_amount && tx.status !== 'cancelled')
+      .filter((tx) => tx.customerId === customerId && tx.totalAmount > tx.paidAmount && tx.status !== 'cancelled')
       .map((tx) => ({
         id: tx.id,
-        created_at: tx.created_at,
-        type: tx.transaction_type,
-        total_amount: tx.total_amount,
-        paid_amount: tx.paid_amount,
-        debt_amount: tx.total_amount - tx.paid_amount,
-        created_by_name: tx.staff_name,
+        createdAt: tx.createdAt,
+        type: tx.transactionType,
+        totalAmount: tx.totalAmount,
+        paidAmount: tx.paidAmount,
+        debtAmount: tx.totalAmount - tx.paidAmount,
+        createdByName: tx.staffName,
       }))
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Standalone debt payments for this customer
     const payments = mockDb.debtPayments
-      .filter((p) => p.customer_id === customerId)
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      .filter((p) => p.customerId === customerId)
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     return delay({
-      customer_id: customerId,
-      customer_name: customer?.name ?? '',
-      outstanding_debt: customer?.outstanding_debt ?? 0,
-      debt_transactions: debtTransactions,
+      customerId,
+      customerName: customer?.name ?? '',
+      outstandingDebt: customer?.outstandingDebt ?? 0,
+      debtTransactions,
       payments: [...payments],
     });
   },

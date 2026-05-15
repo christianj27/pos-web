@@ -46,11 +46,11 @@ export function DebtPaymentsPage() {
   const loadOutstanding = useCallback(async () => {
     setCustomersLoading(true);
     const custs = await customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat daftar pelanggan.'), 'error'); return [] as Customer[]; });
-    const active = (custs as Customer[]).filter((c) => c.is_active);
+    const active = (custs as Customer[]).filter((c) => c.isActive);
     setAllCustomers(active);
     const withDebt = active
-      .filter((c) => (c.outstanding_debt ?? 0) > 0)
-      .sort((a, b) => (b.outstanding_debt ?? 0) - (a.outstanding_debt ?? 0));
+      .filter((c) => (c.outstandingDebt ?? 0) > 0)
+      .sort((a, b) => (b.outstandingDebt ?? 0) - (a.outstandingDebt ?? 0));
     setCustomers(withDebt);
     setCustomersLoading(false);
   }, [showToast]);
@@ -89,7 +89,7 @@ export function DebtPaymentsPage() {
     if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
     setSaving(true); setSaveError(null);
     try {
-      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
+      await debtService.create({ customerId: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
       showToast('Pembayaran berhasil dicatat.');
       // Refresh both tabs
@@ -159,7 +159,7 @@ export function DebtPaymentsPage() {
                       {c.phone && <span className={styles.outstandingSub}>{c.phone}</span>}
                     </div>
                     <div className={styles.outstandingRight}>
-                      <span className={styles.outstandingDebt}>{formatCurrency(c.outstanding_debt ?? 0)}</span>
+                      <span className={styles.outstandingDebt}>{formatCurrency(c.outstandingDebt ?? 0)}</span>
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="16" height="16" className={styles.outstandingChevron}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
                       </svg>
@@ -199,12 +199,12 @@ export function DebtPaymentsPage() {
                   <div key={p.id} className={styles.card}>
                     <div className={styles.cardTop}>
                       <div className={styles.cardInfo}>
-                        <span className={styles.cardName}>{p.customer_name}</span>
+                        <span className={styles.cardName}>{p.customerName}</span>
                         {p.note && <span className={styles.cardSub}>{p.note}</span>}
                       </div>
                       <span className={styles.cardAmount}>{formatCurrency(p.amount)}</span>
                     </div>
-                    <div className={styles.cardMeta}>{p.created_by_name} · {formatDate(p.created_at)}</div>
+                    <div className={styles.cardMeta}>{p.createdByName} · {formatDate(p.createdAt)}</div>
                   </div>
                 ))}
               </div>
