@@ -61,7 +61,7 @@ export function LocationsPage() {
 
   function openEdit(l: Location) {
     setEditTarget(l);
-    setFormData({ name: l.name, type: l.type, assigned_to: l.assigned_to ?? '' });
+    setFormData({ name: l.name, type: l.type, assigned_to: l.assignedTo ?? '' });
     setFormErrors({});
     setModalOpen(true);
   }
@@ -83,14 +83,14 @@ export function LocationsPage() {
       if (editTarget) {
         await locationService.update(editTarget.id, {
           name: formData.name,
-          assigned_to: formData.assigned_to || undefined,
+          assignedTo: formData.assigned_to || undefined,
         });
         showToast('Lokasi berhasil diperbarui.');
       } else {
         await locationService.create({
           name: formData.name,
           type: formData.type,
-          assigned_to: formData.assigned_to || undefined,
+          assignedTo: formData.assigned_to || undefined,
         });
         showToast('Lokasi berhasil dibuat.');
       }
@@ -107,7 +107,11 @@ export function LocationsPage() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try {
-      await locationService.deactivate(confirmTarget.id);
+      await locationService.deactivate(confirmTarget.id, {
+        name: formData.name,
+        assignedTo: formData.assigned_to || undefined,
+        isActive: false,
+      });
       showToast('Lokasi berhasil dinonaktifkan.');
       setConfirmTarget(null);
       load();
@@ -146,20 +150,20 @@ export function LocationsPage() {
         {!loading && locations.length > 0 && (
           <div className={styles.cardList}>
             {locations.map((l) => (
-              <div key={l.id} className={[styles.card, !l.is_active ? styles.cardInactive : ''].join(' ')}>
+              <div key={l.id} className={[styles.card, !l.isActive ? styles.cardInactive : ''].join(' ')}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{l.name}</span>
-                    {l.assigned_to_name && <span className={styles.cardSub}>{l.assigned_to_name}</span>}
+                    {l.assignedToName && <span className={styles.cardSub}>{l.assignedToName}</span>}
                   </div>
                   <div className={styles.cardBadges}>
                     <Badge variant={l.type}>{LOCATION_TYPE_LABELS[l.type]}</Badge>
-                    <Badge variant={l.is_active ? 'active' : 'inactive'}>{l.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                    <Badge variant={l.isActive ? 'active' : 'inactive'}>{l.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
                   </div>
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(l)}>Edit</button>
-                  {l.type !== 'warehouse' && l.is_active && (
+                  {l.type !== 'warehouse' && l.isActive && (
                     <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(l)}>Nonaktifkan</button>
                   )}
                 </div>

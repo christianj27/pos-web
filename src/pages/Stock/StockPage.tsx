@@ -61,7 +61,7 @@ export function StockPage() {
     ]);
     setLevels(lvls as StockLevel[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
-    setLocations((locs as Location[]).filter((l) => l.is_active));
+    setLocations((locs as Location[]).filter((l) => l.isActive));
     setLoading(false);
   }, [showToast]);
 

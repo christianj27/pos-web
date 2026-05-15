@@ -24,10 +24,10 @@ export interface Location {
   id: string;
   name: string;
   type: LocationType;
-  assigned_to?: string;
-  assigned_to_name?: string;
-  is_active: boolean;
-  created_at: string;
+  assignedTo?: string;
+  assignedToName?: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 // ─── Product ──────────────────────────────────────────────────────────────────

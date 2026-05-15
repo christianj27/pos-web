@@ -114,7 +114,7 @@ export function TransactionsPage() {
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
     setCustomers((custs as Customer[]).filter((c) => c.is_active));
-    setLocations((locs as Location[]).filter((l) => l.is_active));
+    setLocations((locs as Location[]).filter((l) => l.isActive));
     setAssignments(asgns as DeliveryAssignment[]);
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
     setLoading(false);
@@ -147,10 +147,10 @@ export function TransactionsPage() {
     setSkipCustomer(false); setDebtPaymentAmount(''); setContainerReturns({});
     // Auto-fill location for locked roles
     if (isKasir) {
-      const wh = locations.find((l) => l.type === 'warehouse' && l.is_active);
+      const wh = locations.find((l) => l.type === 'warehouse' && l.isActive);
       if (wh) setLocationId(wh.id);
     } else if (isKurir) {
-      const truck = locations.find((l) => l.type === 'vehicle' && l.assigned_to === user?.id && l.is_active);
+      const truck = locations.find((l) => l.type === 'vehicle' && l.assignedTo === user?.id && l.isActive);
       if (truck) setLocationId(truck.id);
     }
     setOverlayOpen(true);
@@ -302,7 +302,7 @@ export function TransactionsPage() {
     })));
     setProductSearch('');
     setTxType('delivery');
-    const truck = locations.find((l) => l.type === 'vehicle' && l.assigned_to === user?.id && l.is_active);
+    const truck = locations.find((l) => l.type === 'vehicle' && l.assignedTo === user?.id && l.isActive);
     setLocationId(truck?.id ?? '');
     setPaymentMethod('cash');
     setPaidAmount('');
