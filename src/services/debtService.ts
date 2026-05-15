@@ -14,12 +14,12 @@ export const debtService = {
     return delay(filtered);
   },
 
-  create: (data: { customer_id: string; amount: number; notes?: string }): Promise<DebtPayment> => {
+  create: (data: { customer_id: string; amount: number; method: 'cash' | 'transfer' | 'qris'; reference_no?: string; note?: string }): Promise<DebtPayment> => {
     if (!USE_MOCK) return apiClient.post<DebtPayment>('/api/debt-payments', data).then((r) => r.data);
     const customer = mockDb.customers.find((c) => c.id === data.customer_id);
     const payment: DebtPayment = {
       id: uid(), customer_id: data.customer_id, customer_name: customer?.name ?? '',
-      amount: data.amount, notes: data.notes,
+      amount: data.amount, method: data.method, reference_no: data.reference_no, note: data.note,
       created_by_name: 'Demo User', created_at: new Date().toISOString(),
     };
     mockDb.debtPayments.push(payment);
@@ -37,11 +37,11 @@ export const debtService = {
       .map((tx) => ({
         id: tx.id,
         created_at: tx.created_at,
-        type: tx.type,
+        type: tx.transaction_type,
         total_amount: tx.total_amount,
         paid_amount: tx.paid_amount,
         debt_amount: tx.total_amount - tx.paid_amount,
-        created_by_name: tx.created_by_name,
+        created_by_name: tx.staff_name,
       }))
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 

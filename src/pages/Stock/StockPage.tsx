@@ -90,7 +90,7 @@ export function StockPage() {
     try {
       await stockService.receiveBulk({
         to_location_id: receiveShared.to_location_id,
-        notes: receiveShared.notes || undefined,
+        note: receiveShared.notes || undefined,
         items: receiveItems.map((item) => ({
           product_id: item.product_id,
           quantity: parseInt(item.quantity),
@@ -111,7 +111,7 @@ export function StockPage() {
       await stockService.transferBulk({
         from_location_id: transferShared.from_location_id,
         to_location_id: transferShared.to_location_id,
-        notes: transferShared.notes || undefined,
+        note: transferShared.notes || undefined,
         items: transferItems.map((item) => ({
           product_id: item.product_id,
           quantity: parseInt(item.quantity),
@@ -153,7 +153,7 @@ export function StockPage() {
       await stockService.defect({
         product_id: defectForm.product_id, from_location_id: defectForm.from_location_id,
         quantity: parseInt(defectForm.quantity), container_status: defectForm.container_status || undefined,
-        notes: defectForm.notes || undefined,
+        note: defectForm.notes || undefined,
       });
       setDefectForm({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
       setSaveSuccess(true); load();
@@ -166,7 +166,7 @@ export function StockPage() {
     try {
       await stockService.vendorExchangeBulk({
         location_id: vendorShared.location_id,
-        notes: vendorShared.notes || undefined,
+        note: vendorShared.notes || undefined,
         items: vendorItems.map((item) => ({
           product_id: item.product_id,
           empty_quantity: parseInt(item.empty_quantity) || 0,
@@ -199,7 +199,7 @@ export function StockPage() {
         product_id: productionForm.product_id, location_id: productionForm.location_id,
         quantity: parseInt(productionForm.quantity),
         production_cost: productionForm.production_cost ? parseFloat(productionForm.production_cost) : undefined,
-        notes: productionForm.notes || undefined,
+        note: productionForm.notes || undefined,
       });
       setProductionForm({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
       setSaveSuccess(true); load();

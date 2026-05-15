@@ -42,14 +42,15 @@ export const transactionService = {
     });
     const total_amount = items.reduce((s, i) => s + i.subtotal, 0);
     const tx: Transaction = {
-      id: uid(), type: data.type as Transaction['type'],
+      id: uid(), transaction_type: data.type as Transaction['transaction_type'],
       customer_id: customer?.id, customer_name: customer?.name,
+      staff_id: 'mock-user-id', staff_name: 'Demo User',
       location_id: location?.id, location_name: location?.name,
       items, total_amount, paid_amount: data.paid_amount,
       payment_method: data.payment_method ?? 'cash',
       notes: data.notes,
       status: 'completed',
-      created_by_name: 'Demo User', created_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
     };
     mockDb.transactions.push(tx);
     // Update customer debt if underpaid
@@ -77,7 +78,7 @@ export const transactionService = {
             from_location_name: tx.location_name ?? '',
             quantity: item.quantity,
             container_status: 'filled',
-            notes: `Penjualan ${tx.id} — ${customer.name}`,
+            note: `Penjualan ${tx.id} — ${customer.name}`,
             created_by_name: 'Demo User', created_at: new Date().toISOString(),
           });
         }
@@ -102,7 +103,7 @@ export const transactionService = {
               to_location_name: tx.location_name ?? '',
               quantity: ret.quantity,
               container_status: 'empty',
-              notes: `Kontainer kosong diterima dari ${customer.name} (${tx.id})`,
+              note: `Kontainer kosong diterima dari ${customer.name} (${tx.id})`,
               created_by_name: 'Demo User', created_at: new Date().toISOString(),
             });
           }
@@ -113,7 +114,7 @@ export const transactionService = {
     if (customer && data.debt_payment_amount && data.debt_payment_amount > 0) {
       mockDb.debtPayments.push({
         id: uid(), customer_id: customer.id, customer_name: customer.name ?? '',
-        amount: data.debt_payment_amount, transaction_id: tx.id,
+        amount: data.debt_payment_amount, method: 'cash', transaction_id: tx.id,
         created_by_name: 'Demo User', created_at: new Date().toISOString(),
       });
       customer.outstanding_debt = Math.max(0, (customer.outstanding_debt ?? 0) - data.debt_payment_amount);
@@ -136,7 +137,7 @@ export const transactionService = {
           to_location_name: tx.location_name ?? '',
           movement_type: 'receive',
           quantity: item.quantity,
-          notes: `Pembatalan transaksi #${tx.id}`,
+          note: `Pembatalan transaksi #${tx.id}`,
           created_by_name: 'System',
           created_at: new Date().toISOString(),
         });
@@ -152,7 +153,7 @@ export const transactionService = {
           product_name: loan.product_name,
           quantity: -loan.quantity,
           transaction_id: tx.id,
-          notes: `Pembatalan transaksi #${tx.id}`,
+          note: `Pembatalan transaksi #${tx.id}`,
           created_by_name: 'System',
           created_at: new Date().toISOString(),
         });

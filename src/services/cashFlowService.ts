@@ -17,7 +17,7 @@ export const cashFlowService = {
       if (date && toWIBDate(tx.created_at) !== date) continue;
 
       const customerLabel = tx.customer_name ? ` — ${tx.customer_name}` : '';
-      const typeLabel = tx.type === 'delivery' ? 'Pengiriman' : 'Kasir';
+      const typeLabel = tx.transaction_type === 'delivery' ? 'Pengiriman' : 'Kasir';
 
       if (tx.paid_amount > 0) {
         entries.push({
@@ -27,7 +27,7 @@ export const cashFlowService = {
           amount: tx.paid_amount,
           description: `${typeLabel}${customerLabel}`,
           reference_id: tx.id,
-          created_by_name: tx.created_by_name,
+          created_by_name: tx.staff_name,
           created_at: tx.created_at,
         });
       }
@@ -41,7 +41,7 @@ export const cashFlowService = {
           amount: debtAmount,
           description: `Piutang Baru — ${tx.customer_name ?? 'Pelanggan'}`,
           reference_id: tx.id,
-          created_by_name: tx.created_by_name,
+          created_by_name: tx.staff_name,
           created_at: tx.created_at,
         });
       }

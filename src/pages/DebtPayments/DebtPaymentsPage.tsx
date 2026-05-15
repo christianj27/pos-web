@@ -37,7 +37,7 @@ export function DebtPaymentsPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [form, setForm] = useState({ customer_id: '', amount: '', notes: '' });
+  const [form, setForm] = useState({ customer_id: '', amount: '', notes: '', method: 'cash' as 'cash' | 'transfer' | 'qris' });
 
   // ── Load outstanding customers ────────────────────────────────────────────
   const loadOutstanding = useCallback(async () => {
@@ -77,7 +77,7 @@ export function DebtPaymentsPage() {
   }
 
   function openCreate() {
-    setForm({ customer_id: '', amount: '', notes: '' });
+    setForm({ customer_id: '', amount: '', notes: '', method: 'cash' });
     setSaveError(null);
     setCreateOpen(true);
   }
@@ -86,7 +86,7 @@ export function DebtPaymentsPage() {
     if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
     setSaving(true); setSaveError(null);
     try {
-      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), notes: form.notes || undefined });
+      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
       // Refresh both tabs
       loadOutstanding();
@@ -196,7 +196,7 @@ export function DebtPaymentsPage() {
                     <div className={styles.cardTop}>
                       <div className={styles.cardInfo}>
                         <span className={styles.cardName}>{p.customer_name}</span>
-                        {p.notes && <span className={styles.cardSub}>{p.notes}</span>}
+                        {p.note && <span className={styles.cardSub}>{p.note}</span>}
                       </div>
                       <span className={styles.cardAmount}>{formatCurrency(p.amount)}</span>
                     </div>
@@ -217,6 +217,7 @@ export function DebtPaymentsPage() {
           {saveError && <div className={styles.errorBanner}>{saveError}</div>}
           <Select label="Pelanggan" value={form.customer_id} onChange={(e) => setForm(p => ({ ...p, customer_id: e.target.value }))} options={customerOptions} placeholder="Pilih pelanggan..." required />
           <Input label="Jumlah Bayar (Rp)" type="number" min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
+          <Select label="Metode Pembayaran" value={form.method} onChange={(e) => setForm(p => ({ ...p, method: e.target.value as 'cash' | 'transfer' | 'qris' }))} options={[{ value: 'cash', label: 'Tunai' }, { value: 'transfer', label: 'Transfer' }, { value: 'qris', label: 'QRIS' }]} required />
           <Input label="Catatan (opsional)" value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
         </div>
       </Modal>

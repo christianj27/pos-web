@@ -24,7 +24,7 @@ export function CustomerDebtDetailPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [form, setForm] = useState({ customer_id: customerId ?? '', amount: '', notes: '' });
+  const [form, setForm] = useState({ customer_id: customerId ?? '', amount: '', notes: '', method: 'cash' as 'cash' | 'transfer' | 'qris' });
 
   const load = useCallback(async () => {
     if (!customerId) return;
@@ -49,7 +49,7 @@ export function CustomerDebtDetailPage() {
   }, []);
 
   function openCreate() {
-    setForm({ customer_id: customerId ?? '', amount: '', notes: '' });
+    setForm({ customer_id: customerId ?? '', amount: '', notes: '', method: 'cash' });
     setSaveError(null);
     setCreateOpen(true);
   }
@@ -58,7 +58,7 @@ export function CustomerDebtDetailPage() {
     if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
     setSaving(true); setSaveError(null);
     try {
-      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), notes: form.notes || undefined });
+      await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
       load();
     } catch { setSaveError('Gagal menyimpan pembayaran hutang.'); }
@@ -145,7 +145,7 @@ export function CustomerDebtDetailPage() {
                     <div key={p.id} className={styles.payCard}>
                       <div className={styles.payCardTop}>
                         <div className={styles.payCardInfo}>
-                          {p.notes && <span className={styles.payCardNotes}>{p.notes}</span>}
+                          {p.note && <span className={styles.payCardNotes}>{p.note}</span>}
                           <span className={styles.payCardMeta}>{p.created_by_name} · {formatDate(p.created_at)}</span>
                         </div>
                         <span className={styles.payCardAmount}>{formatCurrency(p.amount)}</span>
@@ -167,6 +167,7 @@ export function CustomerDebtDetailPage() {
           {saveError && <div className={styles.errorBanner}>{saveError}</div>}
           <Select label="Pelanggan" value={form.customer_id} onChange={(e) => setForm(p => ({ ...p, customer_id: e.target.value }))} options={customerOptions} placeholder="Pilih pelanggan..." required />
           <Input label="Jumlah Bayar (Rp)" type="number" min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
+          <Select label="Metode Pembayaran" value={form.method} onChange={(e) => setForm(p => ({ ...p, method: e.target.value as 'cash' | 'transfer' | 'qris' }))} options={[{ value: 'cash', label: 'Tunai' }, { value: 'transfer', label: 'Transfer' }, { value: 'qris', label: 'QRIS' }]} required />
           <Input label="Catatan (opsional)" value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
         </div>
       </Modal>

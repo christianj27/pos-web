@@ -13,8 +13,8 @@ export interface User {
   name: string;
   username: string;
   role: UserRole;
-  is_active: boolean;
-  created_at: string;
+  isActive: boolean;
+  createdAt: string;
 }
 
 // ─── Location ─────────────────────────────────────────────────────────────────
@@ -96,7 +96,7 @@ export interface StockMovement {
   quantity: number;
   container_status?: ContainerStatus;
   purchase_cost?: number;
-  notes?: string;
+  note?: string;
   created_by_name: string;
   created_at: string;
 }
@@ -115,9 +115,11 @@ export interface TransactionItem {
 
 export interface Transaction {
   id: string;
-  type: TransactionType;
+  transaction_type: TransactionType;
   customer_id?: string;
   customer_name?: string;
+  staff_id: string;
+  staff_name: string;
   location_id?: string;
   location_name?: string;
   items: TransactionItem[];
@@ -126,7 +128,6 @@ export interface Transaction {
   payment_method?: 'cash' | 'transfer' | 'qris';
   notes?: string;
   status: TransactionStatus;
-  created_by_name: string;
   created_at: string;
   completed_at?: string;
 }
@@ -161,8 +162,10 @@ export interface DebtPayment {
   customer_id: string;
   customer_name: string;
   amount: number;
+  method: 'cash' | 'transfer' | 'qris';
+  reference_no?: string;
   transaction_id?: string;
-  notes?: string;
+  note?: string;
   created_by_name: string;
   created_at: string;
 }

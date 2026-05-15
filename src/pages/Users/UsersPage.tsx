@@ -110,7 +110,7 @@ export function UsersPage() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try {
-      if (confirmTarget.is_active) {
+      if (confirmTarget.isActive) {
         await userService.deactivate(confirmTarget.id);
       } else {
         await userService.reactivate(confirmTarget.id);
@@ -149,7 +149,7 @@ export function UsersPage() {
         {!loading && users.length > 0 && (
           <div className={styles.cardList}>
             {users.map((u) => (
-              <div key={u.id} className={[styles.card, !u.is_active ? styles.cardInactive : ''].join(' ')}>
+              <div key={u.id} className={[styles.card, !u.isActive ? styles.cardInactive : ''].join(' ')}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{u.name}</span>
@@ -157,18 +157,18 @@ export function UsersPage() {
                   </div>
                   <div className={styles.cardBadges}>
                     <Badge variant={u.role as UserRole}>{ROLE_LABELS[u.role]}</Badge>
-                    <Badge variant={u.is_active ? 'active' : 'inactive'}>{u.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                    <Badge variant={u.isActive ? 'active' : 'inactive'}>{u.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
                   </div>
                 </div>
-                <div className={styles.cardMeta}>{formatDate(u.created_at)}</div>
+                <div className={styles.cardMeta}>{formatDate(u.createdAt)}</div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(u)}>Edit</button>
                   {u.id !== me?.id && (
                     <button
-                      className={[styles.actionBtn, u.is_active ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                      className={[styles.actionBtn, u.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
                       onClick={() => setConfirmTarget(u)}
                     >
-                      {u.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+                      {u.isActive ? 'Nonaktifkan' : 'Aktifkan'}
                     </button>
                   )}
                 </div>
@@ -230,14 +230,14 @@ export function UsersPage() {
         isOpen={!!confirmTarget}
         onClose={() => setConfirmTarget(null)}
         onConfirm={handleDeactivate}
-        title={confirmTarget?.is_active ? 'Nonaktifkan Pengguna' : 'Aktifkan Pengguna'}
+        title={confirmTarget?.isActive ? 'Nonaktifkan Pengguna' : 'Aktifkan Pengguna'}
         message={
-          confirmTarget?.is_active
+          confirmTarget?.isActive
             ? `Nonaktifkan ${confirmTarget?.name}? Mereka tidak akan bisa login lagi.`
             : `Aktifkan kembali ${confirmTarget?.name}?`
         }
-        confirmText={confirmTarget?.is_active ? 'Nonaktifkan' : 'Aktifkan'}
-        variant={confirmTarget?.is_active ? 'danger' : 'primary'}
+        confirmText={confirmTarget?.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+        variant={confirmTarget?.isActive ? 'danger' : 'primary'}
         loading={confirmLoading}
       />
     </div>

@@ -21,7 +21,7 @@ export const customerService = {
   },
 
   deactivate: (id: string): Promise<void> => {
-    if (!USE_MOCK) return apiClient.delete(`/api/customers/${id}`).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, { is_active: false }).then((r) => r.data);
     const c = mockDb.customers.find((c) => c.id === id);
     if (c) c.is_active = false;
     return delay(undefined);

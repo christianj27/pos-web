@@ -596,7 +596,7 @@ export function DashboardPage() {
           <div className={styles.detailSection}>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Tipe</span>
-              <span className={styles.detailValue}>{TRANSACTION_TYPE_LABELS[detailTx.type]}</span>
+              <span className={styles.detailValue}>{TRANSACTION_TYPE_LABELS[detailTx.transaction_type]}</span>
             </div>
             <div className={styles.detailRow}>
               <span className={styles.detailLabel}>Status</span>
@@ -628,10 +628,10 @@ export function DashboardPage() {
                 <span className={styles.detailValue}>{PAYMENT_METHOD_LABELS[detailTx.payment_method] ?? detailTx.payment_method}</span>
               </div>
             )}
-            {detailTx.created_by_name && (
+            {detailTx.staff_name && (
               <div className={styles.detailRow}>
                 <span className={styles.detailLabel}>Dibuat oleh</span>
-                <span className={styles.detailValue}>{detailTx.created_by_name}</span>
+                <span className={styles.detailValue}>{detailTx.staff_name}</span>
               </div>
             )}
             {detailTx.notes && (

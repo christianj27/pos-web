@@ -128,7 +128,7 @@ export function TransactionsPage() {
   const filteredTxs = useMemo(() => {
     return transactions.filter((tx) => {
       if (statusFilter !== 'all' && tx.status !== statusFilter) return false;
-      if (isOwner && typeFilter !== 'all' && tx.type !== typeFilter) return false;
+      if (isOwner && typeFilter !== 'all' && tx.transaction_type !== typeFilter) return false;
       return true;
     });
   }, [transactions, statusFilter, typeFilter, isOwner]);
@@ -534,8 +534,8 @@ export function TransactionsPage() {
                 <div key={tx.id} className={styles.txCard}>
                   <div className={styles.txTop}>
                     <div className={styles.txMeta}>
-                      <Badge variant={tx.type as 'delivery' | 'counter'}>
-                        {TRANSACTION_TYPE_LABELS[tx.type]}
+                      <Badge variant={tx.transaction_type as 'delivery' | 'counter'}>
+                        {TRANSACTION_TYPE_LABELS[tx.transaction_type]}
                       </Badge>
                       <Badge variant={tx.status as 'pending' | 'completed' | 'cancelled'}>
                         {TRANSACTION_STATUS_LABELS[tx.status]}
@@ -917,13 +917,13 @@ export function TransactionsPage() {
           footer={<Button variant="ghost" onClick={() => setDetailTx(null)}>Tutup</Button>}
         >
           <div className={styles.detailSection}>
-            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.type as 'delivery' | 'counter'}>{TRANSACTION_TYPE_LABELS[detailTx.type]}</Badge></div>
+            <div className={styles.detailRow}><span>Tipe</span><Badge variant={detailTx.transaction_type as 'delivery' | 'counter'}>{TRANSACTION_TYPE_LABELS[detailTx.transaction_type]}</Badge></div>
             <div className={styles.detailRow}><span>Status</span><Badge variant={detailTx.status as 'pending' | 'completed' | 'cancelled'}>{TRANSACTION_STATUS_LABELS[detailTx.status]}</Badge></div>
             {detailTx.customer_name && <div className={styles.detailRow}><span>Pelanggan</span><strong>{detailTx.customer_name}</strong></div>}
             {detailTx.location_name && <div className={styles.detailRow}><span>Lokasi</span><span>{detailTx.location_name}</span></div>}
             {detailTx.payment_method && <div className={styles.detailRow}><span>Pembayaran</span><span>{PAYMENT_LABELS[detailTx.payment_method]}</span></div>}
             {detailTx.notes && <div className={styles.detailRow}><span>Catatan</span><span>{detailTx.notes}</span></div>}
-            <div className={styles.detailRow}><span>Dibuat oleh</span><span>{detailTx.created_by_name}</span></div>
+            <div className={styles.detailRow}><span>Dibuat oleh</span><span>{detailTx.staff_name}</span></div>
             <div className={styles.detailRow}><span>Waktu</span><span>{formatDate(detailTx.created_at)}</span></div>
           </div>
           <div className={styles.detailItems}>

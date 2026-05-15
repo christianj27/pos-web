@@ -24,6 +24,10 @@ export function formatNumber(value: number): string {
  * e.g. "2026-05-07T10:30:00Z" → "7 Mei 2026, 17:30"
  */
 export function formatDate(isoString: string): string {
+  if (!isoString) return '-';
+  // Truncate microseconds to milliseconds (e.g. ".722283Z" → ".722Z")
+  // because JS Date only reliably parses up to 3 fractional-second digits.
+  const normalized = isoString.replace(/(\.\d{3})\d+/, '$1');
   return new Intl.DateTimeFormat('id-ID', {
     day: 'numeric',
     month: 'short',
@@ -31,7 +35,7 @@ export function formatDate(isoString: string): string {
     hour: '2-digit',
     minute: '2-digit',
     timeZone: 'Asia/Jakarta',
-  }).format(new Date(isoString));
+  }).format(new Date(normalized));
 }
 
 /**
