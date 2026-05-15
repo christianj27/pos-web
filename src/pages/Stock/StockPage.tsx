@@ -3,6 +3,7 @@ import { stockService } from '../../services/stockService';
 import { productService } from '../../services/productService';
 import { locationService } from '../../services/locationService';
 import { containerLoanService } from '../../services/containerLoanService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Input, Select, EmptyState, Spinner } from '../../components/common';
 import { MOVEMENT_TYPE_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
@@ -24,6 +25,7 @@ export function StockPage() {
   const isOwner = user?.role === 'owner';
   const isKasir = user?.role === 'kasir';
   const isKurir = user?.role === 'kurir';
+  const { showToast } = useToast();
 
   const [tab, setTab] = useState<Tab>('levels');
   const [levels, setLevels] = useState<StockLevel[]>([]);
@@ -49,8 +51,6 @@ export function StockPage() {
   const [movementsLoading, setMovementsLoading] = useState(false);
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
-  const [saveSuccess, setSaveSuccess] = useState(false);
 
   const load = useCallback(async () => {
     const [lvls, prods, locs] = await Promise.all([
@@ -83,7 +83,7 @@ export function StockPage() {
   const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
   const containerOptions = [{ value: 'filled', label: 'Terisi' }, { value: 'empty', label: 'Kosong' }];
 
-  function resetFeedback() { setSaveError(null); setSaveSuccess(false); }
+  function resetFeedback() { /* noop — feedback now via toast */ }
 
   async function handleReceive() {
     setSaving(true); resetFeedback();
@@ -100,8 +100,8 @@ export function StockPage() {
       });
       setReceiveShared({ to_location_id: '', notes: '' });
       setReceiveItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
-      setSaveSuccess(true); load();
-    } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
+      showToast('Stok berhasil diterima.'); load();
+    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -120,8 +120,8 @@ export function StockPage() {
       });
       setTransferShared({ from_location_id: '', to_location_id: '', notes: '' });
       setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
-      setSaveSuccess(true); load();
-    } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
+      showToast('Transfer stok berhasil.'); load();
+    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -156,8 +156,8 @@ export function StockPage() {
         note: defectForm.notes || undefined,
       });
       setDefectForm({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
-      setSaveSuccess(true); load();
-    } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
+      showToast('Defek berhasil dicatat.'); load();
+    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -176,8 +176,8 @@ export function StockPage() {
       });
       setVendorShared({ location_id: '', notes: '' });
       setVendorItems([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
-      setSaveSuccess(true); load();
-    } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
+      showToast('Tukar agent berhasil dicatat.'); load();
+    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -202,8 +202,8 @@ export function StockPage() {
         note: productionForm.notes || undefined,
       });
       setProductionForm({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
-      setSaveSuccess(true); load();
-    } catch { setSaveError('Gagal menyimpan. Periksa kembali data.'); }
+      showToast('Produksi berhasil dicatat.'); load();
+    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -236,9 +236,9 @@ export function StockPage() {
     try {
       await containerLoanService.create({ customer_id: customerId, product_id: productId, quantity: -qty, notes: `Pengembalian manual — ${productName}` });
       setReturnQtyMap((prev) => ({ ...prev, [`${customerId}-${productId}`]: '' }));
-      setSaveSuccess(true);
+      showToast('Pengembalian berhasil dicatat.');
       loadContainerLoans();
-    } catch { setSaveError('Gagal mencatat pengembalian.'); }
+    } catch { showToast('Gagal mencatat pengembalian.', 'error'); }
     finally { setSaving(false); }
   }
 
@@ -419,8 +419,6 @@ export function StockPage() {
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Terima Stok Baru</h2>
             <p className={styles.formSubtitle}>Stok baru dari luar sistem (pembelian, stok awal). Tidak memotong kontainer kosong. Bisa tambah beberapa produk sekaligus.</p>
-            {saveSuccess && <div className={styles.successBanner}>Stok berhasil diterima.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
               <Select label="Lokasi Tujuan" value={receiveShared.to_location_id} onChange={(e) => setReceiveShared(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
               <div className={styles.itemList}>
@@ -454,8 +452,6 @@ export function StockPage() {
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Transfer Stok (Muat / Kembali)</h2>
             <p className={styles.formSubtitle}>Pindahkan stok antar lokasi. Gunakan untuk muat truk (gudang → kendaraan) atau barang kembali (kendaraan → gudang). Bisa tambah beberapa produk sekaligus.</p>
-            {saveSuccess && <div className={styles.successBanner}>Transfer stok berhasil.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
               <Select label="Dari Lokasi" value={transferShared.from_location_id} onChange={(e) => setTransferShared(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih asal..." required />
               <Select label="Ke Lokasi" value={transferShared.to_location_id} onChange={(e) => setTransferShared(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih tujuan..." required />
@@ -488,8 +484,6 @@ export function StockPage() {
         {!loading && tab === 'defect' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Catat Stok Rusak / Defek</h2>
-            {saveSuccess && <div className={styles.successBanner}>Defek berhasil dicatat.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
               <Select label="Produk" value={defectForm.product_id} onChange={(e) => setDefectForm(p => ({ ...p, product_id: e.target.value }))} options={productOptions} placeholder="Pilih produk..." required />
               <Select label="Dari Lokasi" value={defectForm.from_location_id} onChange={(e) => setDefectForm(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
@@ -506,8 +500,6 @@ export function StockPage() {
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Tukar Kontainer ke Agent</h2>
             <p className={styles.formSubtitle}>Serahkan kontainer kosong ke agent, terima kontainer terisi + catat biaya beli. Bisa tambah beberapa produk sekaligus.</p>
-            {saveSuccess && <div className={styles.successBanner}>Tukar agent berhasil dicatat.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             <div className={styles.form}>
               <Select label="Lokasi (truk / gudang)" value={vendorShared.location_id} onChange={(e) => setVendorShared(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
               <div className={styles.itemList}>
@@ -547,8 +539,6 @@ export function StockPage() {
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Produksi Isi Ulang</h2>
             <p className={styles.formSubtitle}>Isi ulang kontainer kosong menjadi terisi (produk produksi sendiri). Kontainer kosong akan berkurang otomatis.</p>
-            {saveSuccess && <div className={styles.successBanner}>Produksi berhasil dicatat.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             {selfProducedOptions.length === 0 ? (
               <EmptyState message="Belum ada produk produksi sendiri (self-produced). Tambahkan produk refillable dengan tipe produksi 'Produksi Sendiri'." />
             ) : (
@@ -571,8 +561,6 @@ export function StockPage() {
             <p className={styles.formSubtitle}>
               Saldo kontainer per pelanggan. <strong>Oranye:</strong> pelanggan masih memegang kontainer kami. <strong>Biru:</strong> kami memegang kontainer mereka — kembalikan terisi di pengiriman berikutnya.
             </p>
-            {saveSuccess && <div className={styles.successBanner}>Pengembalian berhasil dicatat.</div>}
-            {saveError && <div className={styles.errorBanner}>{saveError}</div>}
             {containerLoansLoading ? (
               <div className={styles.loadingWrap}><Spinner /></div>
             ) : (() => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { locationService } from '../../services/locationService';
 import { userService } from '../../services/userService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { LOCATION_TYPE_LABELS } from '../../utils/constants';
 import type { Location, User } from '../../types';
@@ -21,6 +22,7 @@ const TYPE_OPTIONS = [
 
 export function LocationsPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [locations, setLocations] = useState<Location[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,15 +84,19 @@ export function LocationsPage() {
           name: formData.name,
           assigned_to: formData.assigned_to || undefined,
         });
+        showToast('Lokasi berhasil diperbarui.');
       } else {
         await locationService.create({
           name: formData.name,
           type: formData.type,
           assigned_to: formData.assigned_to || undefined,
         });
+        showToast('Lokasi berhasil dibuat.');
       }
       setModalOpen(false);
       load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setSaving(false);
     }
@@ -101,8 +107,11 @@ export function LocationsPage() {
     setConfirmLoading(true);
     try {
       await locationService.deactivate(confirmTarget.id);
+      showToast('Lokasi berhasil dinonaktifkan.');
       setConfirmTarget(null);
       load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setConfirmLoading(false);
     }

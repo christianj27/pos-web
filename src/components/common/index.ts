@@ -6,3 +6,4 @@ export { Badge } from './Badge/Badge';
 export { Spinner } from './Spinner/Spinner';
 export { ConfirmDialog } from './ConfirmDialog/ConfirmDialog';
 export { EmptyState } from './EmptyState/EmptyState';
+export { ToastContainer } from './Toast/Toast';

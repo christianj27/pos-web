@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { PRODUCT_CATEGORY_LABELS, PRODUCT_TYPE_LABELS, UNIT_OPTIONS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatCurrency';
@@ -23,6 +24,7 @@ const TYPE_OPTIONS = [{ value: 'air', label: 'Air' }, { value: 'gas', label: 'Ga
 
 export function ProductsPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -85,6 +87,7 @@ export function ProductsPage() {
           unit: formData.unit,
           base_price: parseFloat(formData.base_price),
         });
+        showToast('Produk berhasil diperbarui.');
       } else {
         await productService.create({
           name: formData.name,
@@ -94,8 +97,11 @@ export function ProductsPage() {
           unit: formData.unit,
           base_price: parseFloat(formData.base_price),
         });
+        showToast('Produk berhasil dibuat.');
       }
       setModalOpen(false); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setSaving(false);
     }
@@ -106,7 +112,10 @@ export function ProductsPage() {
     setConfirmLoading(true);
     try {
       await productService.deactivate(confirmTarget.id);
+      showToast('Produk berhasil dinonaktifkan.');
       setConfirmTarget(null); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setConfirmLoading(false);
     }

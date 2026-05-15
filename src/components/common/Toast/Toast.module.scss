@@ -1,0 +1,94 @@
+@use '../../../styles/variables' as *;
+
+/* ── Animation ──────────────────────────────────────────────────────────────── */
+/* Full lifecycle: 3.5 s total — slide in (0–8%), stay opaque (8–86%), fade out (86–100%) */
+/* Keep TOAST_DURATION in ToastContext.tsx in sync with this total duration. */
+@keyframes toastLifecycle {
+  0%   { opacity: 0; transform: translateY(20px) scale(0.96); }
+  8%   { opacity: 1; transform: translateY(0)    scale(1);    }
+  86%  { opacity: 1;                                          }
+  100% { opacity: 0;                                          }
+}
+
+/* ── Container ──────────────────────────────────────────────────────────────── */
+.container {
+  position: fixed;
+  bottom: calc(#{$bottom-nav-height} + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  width: calc(100% - 32px);
+  max-width: 420px;
+}
+
+/* ── Individual toast ───────────────────────────────────────────────────────── */
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 12px 10px 14px;
+  border-radius: $radius-general;
+  box-shadow: $shadow-lg;
+  pointer-events: all;
+  animation: toastLifecycle 3.5s ease-out forwards;
+
+  // ── Variants ────────────────────────────────────────────────────────────── //
+  &.success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+
+    .iconWrap { color: $color-success; }
+  }
+
+  &.error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #991b1b;
+
+    .iconWrap { color: $color-danger; }
+  }
+}
+
+/* ── Icon ───────────────────────────────────────────────────────────────────── */
+.iconWrap {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ── Message ─────────────────────────────────────────────────────────────────── */
+.message {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+/* ── Close button ────────────────────────────────────────────────────────────── */
+.closeBtn {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.6;
+  color: inherit;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 1; }
+}

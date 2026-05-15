@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { debtService } from '../../services/debtService';
 import { customerService } from '../../services/customerService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Modal, Input, Select, EmptyState, Spinner } from '../../components/common';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
@@ -19,6 +20,7 @@ export function DebtPaymentsPage() {
   const navigate = useNavigate();
   const isOwner = user?.role === 'owner';
   const canCreate = isOwner || user?.role === 'kasir';
+  const { showToast } = useToast();
 
   const [activeTab, setActiveTab] = useState<Tab>('outstanding');
 
@@ -88,6 +90,7 @@ export function DebtPaymentsPage() {
     try {
       await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
+      showToast('Pembayaran berhasil dicatat.');
       // Refresh both tabs
       loadOutstanding();
       if (historyLoaded) { setHistoryLoaded(false); loadHistory(selectedDate); }

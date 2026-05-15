@@ -153,7 +153,7 @@ export const transactionService = {
           product_name: loan.product_name,
           quantity: -loan.quantity,
           transaction_id: tx.id,
-          note: `Pembatalan transaksi #${tx.id}`,
+          notes: `Pembatalan transaksi #${tx.id}`,
           created_by_name: 'System',
           created_at: new Date().toISOString(),
         });

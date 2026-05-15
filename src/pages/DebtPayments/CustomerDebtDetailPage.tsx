@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { debtService } from '../../services/debtService';
 import { Button, Modal, Input, Select, Spinner } from '../../components/common';
 import { customerService } from '../../services/customerService';
+import { useToast } from '../../context/ToastContext';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
@@ -14,6 +15,7 @@ export function CustomerDebtDetailPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const canCreate = user?.role === 'owner' || user?.role === 'kasir';
+  const { showToast } = useToast();
 
   const [history, setHistory] = useState<CustomerDebtHistory | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,6 +62,7 @@ export function CustomerDebtDetailPage() {
     try {
       await debtService.create({ customer_id: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
+      showToast('Pembayaran berhasil dicatat.');
       load();
     } catch { setSaveError('Gagal menyimpan pembayaran hutang.'); }
     finally { setSaving(false); }

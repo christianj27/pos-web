@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { userService } from '../../services/userService';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { ROLE_LABELS } from '../../utils/constants';
 import { formatDate } from '../../utils/formatCurrency';
@@ -25,6 +26,7 @@ const ROLE_OPTIONS = [
 export function UsersPage() {
   const { user: me } = useAuth();
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,8 +94,10 @@ export function UsersPage() {
           isActive: editTarget.isActive,
           ...(formData.password ? { password: formData.password } : {}),
         });
+        showToast('Pengguna berhasil diperbarui.');
       } else {
         await userService.create(formData);
+        showToast('Pengguna berhasil dibuat.');
       }
       setModalOpen(false);
       load();
@@ -101,6 +105,8 @@ export function UsersPage() {
       const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
       if (msg?.toLowerCase().includes('username')) {
         setFormErrors((p) => ({ ...p, username: 'Username ini sudah digunakan.' }));
+      } else {
+        showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
       }
     } finally {
       setSaving(false);
@@ -113,11 +119,15 @@ export function UsersPage() {
     try {
       if (confirmTarget.isActive) {
         await userService.deactivate(confirmTarget.id);
+        showToast('Pengguna berhasil dinonaktifkan.');
       } else {
         await userService.reactivate(confirmTarget.id, { name: confirmTarget.name, username: confirmTarget.username, role: confirmTarget.role });
+        showToast('Pengguna berhasil diaktifkan kembali.');
       }
       setConfirmTarget(null);
       load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setConfirmLoading(false);
     }

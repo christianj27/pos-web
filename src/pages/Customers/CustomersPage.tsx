@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { customerService } from '../../services/customerService';
 import { productService } from '../../services/productService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
@@ -13,6 +14,7 @@ const EMPTY_FORM: CustomerFormData = { name: '', phone: '', address: '' };
 export function CustomersPage() {
   const { user } = useAuth();
   const isOwner = user?.role === 'owner';
+  const { showToast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,10 +82,14 @@ export function CustomersPage() {
     try {
       if (editTarget) {
         await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined });
+        showToast('Pelanggan berhasil diperbarui.');
       } else {
         await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined });
+        showToast('Pelanggan berhasil dibuat.');
       }
       setModalOpen(false); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setSaving(false);
     }
@@ -92,7 +98,8 @@ export function CustomersPage() {
   async function handleDeactivate() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
-    try { await customerService.deactivate(confirmTarget.id); setConfirmTarget(null); load(); }
+    try { await customerService.deactivate(confirmTarget.id); showToast('Pelanggan berhasil dinonaktifkan.'); setConfirmTarget(null); load(); }
+    catch { showToast('Terjadi kesalahan. Silakan coba lagi.', 'error'); }
     finally { setConfirmLoading(false); }
   }
 
@@ -105,7 +112,10 @@ export function CustomersPage() {
         custom_price: pricingUpdates[p.id] ? parseFloat(pricingUpdates[p.id]) : undefined,
       }));
       await customerService.updatePricing(pricingCustomer.id, items);
+      showToast('Harga khusus berhasil disimpan.');
       setPricingCustomer(null);
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally {
       setSavingPricing(false);
     }

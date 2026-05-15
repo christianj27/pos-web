@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Input, Badge } from '../../components/common';
 import styles from './ProfilePage.module.scss';
 
@@ -9,26 +10,25 @@ export function ProfilePage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const isOwner = user?.role === 'owner';
+  const { showToast } = useToast();
 
   const [name, setName] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
-  const [nameSuccess, setNameSuccess] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
 
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
-  const [pwdSuccess, setPwdSuccess] = useState(false);
   const [pwdError, setPwdError] = useState<string | null>(null);
 
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault();
     if (!name.trim()) { setNameError('Nama tidak boleh kosong.'); return; }
-    setSavingName(true); setNameError(null); setNameSuccess(false);
+    setSavingName(true); setNameError(null);
     try {
       await userService.updateProfile({ name: name.trim() });
-      setNameSuccess(true);
+      showToast('Profil berhasil diperbarui.');
     } catch {
       setNameError('Gagal menyimpan nama.');
     } finally { setSavingName(false); }
@@ -39,10 +39,10 @@ export function ProfilePage() {
     if (!currentPwd || !newPwd || !confirmPwd) { setPwdError('Semua kolom wajib diisi.'); return; }
     if (newPwd !== confirmPwd) { setPwdError('Konfirmasi kata sandi tidak cocok.'); return; }
     if (newPwd.length < 8) { setPwdError('Kata sandi minimal 8 karakter.'); return; }
-    setSavingPwd(true); setPwdError(null); setPwdSuccess(false);
+    setSavingPwd(true); setPwdError(null);
     try {
       await userService.updateProfile({ currentPassword: currentPwd, newPassword: newPwd });
-      setPwdSuccess(true);
+      showToast('Kata sandi berhasil diubah.');
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
     } catch {
       setPwdError('Kata sandi saat ini tidak benar.');
@@ -78,7 +78,6 @@ export function ProfilePage() {
         {/* Edit Name */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ubah Nama</h2>
-          {nameSuccess && <div className={styles.successBanner}>Nama berhasil diperbarui.</div>}
           {nameError && <div className={styles.errorBanner}>{nameError}</div>}
           <form className={styles.form} onSubmit={handleSaveName}>
             <Input
@@ -94,7 +93,6 @@ export function ProfilePage() {
         {/* Change Password */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ubah Kata Sandi</h2>
-          {pwdSuccess && <div className={styles.successBanner}>Kata sandi berhasil diperbarui.</div>}
           {pwdError && <div className={styles.errorBanner}>{pwdError}</div>}
           <form className={styles.form} onSubmit={handleSavePwd}>
             <Input

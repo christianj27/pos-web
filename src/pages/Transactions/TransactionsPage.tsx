@@ -5,6 +5,7 @@ import { customerService } from '../../services/customerService';
 import { locationService } from '../../services/locationService';
 import { userService } from '../../services/userService';
 import { assignmentService } from '../../services/assignmentService';
+import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, EmptyState, Spinner, ConfirmDialog } from '../../components/common';
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS, ASSIGNMENT_STATUS_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
@@ -38,6 +39,7 @@ export function TransactionsPage() {
   const isOwner = role === 'owner';
   const isKurir = role === 'kurir';
   const isKasir = role === 'kasir';
+  const { showToast } = useToast();
 
   // ── List state ───────────────────────────────────────────────────────────────
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -113,7 +115,7 @@ export function TransactionsPage() {
     setCustomers((custs as Customer[]).filter((c) => c.is_active));
     setLocations((locs as Location[]).filter((l) => l.is_active));
     setAssignments(asgns as DeliveryAssignment[]);
-    setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.is_active));
+    setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
     setLoading(false);
   }, [selectedDate, role, user?.id]);
 
@@ -238,6 +240,7 @@ export function TransactionsPage() {
           container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
           debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
         });
+        showToast('Penugasan berhasil diselesaikan.');
       } else {
         await transactionService.create({
           type: txType,
@@ -250,6 +253,7 @@ export function TransactionsPage() {
           container_returns: containerReturnsArr.length > 0 ? containerReturnsArr : undefined,
           debt_payment_amount: debtAmt > 0 ? debtAmt : undefined,
         });
+        showToast('Transaksi berhasil dibuat.');
       }
       closeOverlay();
       load();
@@ -266,7 +270,10 @@ export function TransactionsPage() {
     setSaving(true);
     try {
       await transactionService.addPayment(paymentTx.id, parseFloat(paymentAmount));
+      showToast('Pembayaran berhasil dicatat.');
       setPaymentTx(null); setPaymentAmount(''); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally { setSaving(false); }
   }
 
@@ -276,7 +283,10 @@ export function TransactionsPage() {
     setCancelling(true);
     try {
       await transactionService.updateStatus(cancelTx.id, 'cancelled');
+      showToast('Transaksi berhasil dibatalkan.');
       setCancelTx(null); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally { setCancelling(false); }
   }
 
@@ -364,6 +374,7 @@ export function TransactionsPage() {
         items: assignCart.map((c) => ({ product_id: c.product_id, quantity: c.quantity, unit_price: c.unit_price })),
         notes: assignNotes.trim() || undefined,
       });
+      showToast('Penugasan berhasil dibuat.');
       closeAssignmentOverlay();
       load();
     } catch {
@@ -378,7 +389,10 @@ export function TransactionsPage() {
     setCancellingAssignment(true);
     try {
       await assignmentService.cancel(cancelAssignment.id);
+      showToast('Penugasan berhasil dibatalkan.');
       setCancelAssignment(null); load();
+    } catch {
+      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
     } finally { setCancellingAssignment(false); }
   }
 
