@@ -1,6 +1,7 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
 import { useCallback } from 'react';
 import { useAuthContext } from '../context/AuthContext';
+import { ApiError } from '../utils/apiError';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
@@ -64,7 +65,16 @@ apiClient.interceptors.response.use(
       }
     }
 
-    return Promise.reject(error);
+    if (error.response) {
+      const data = error.response.data as { message?: string; errors?: Record<string, string[]> } | undefined;
+      console.error(data);
+      return Promise.reject(new ApiError(
+        data?.message ?? 'Terjadi kesalahan.',
+        error.response.status,
+        data?.errors,
+      ));
+    }
+    return Promise.reject(new ApiError('Tidak dapat terhubung ke server.', 0));
   }
 );
 

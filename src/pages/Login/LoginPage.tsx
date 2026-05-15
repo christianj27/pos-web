@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { getRoleDefaultPath } from '../../context/AuthContext';
 import { USE_MOCK } from '../../mocks/db';
+import { ApiError } from '../../utils/apiError';
 import { Button } from '../../components/common/Button/Button';
 import { Input } from '../../components/common/Input/Input';
 import logoSrc from '../../assets/logo.png';
@@ -41,7 +42,7 @@ export function LoginPage() {
       const loggedInUser = await login(username.trim(), password);
       navigate(getRoleDefaultPath(loggedInUser.role), { replace: true });
     } catch (err: unknown) {
-      const status = (err as { response?: { status?: number } })?.response?.status;
+      const status = err instanceof ApiError ? err.status : null;
       if (status === 429) {
         setErrors({ form: 'Terlalu banyak percobaan login. Silakan tunggu 15 menit dan coba lagi.' });
       } else {

@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { userService } from '../../services/userService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Input, Badge } from '../../components/common';
+import { getErrorMessage } from '../../utils/apiError';
 import styles from './ProfilePage.module.scss';
 
 export function ProfilePage() {
@@ -29,8 +30,8 @@ export function ProfilePage() {
     try {
       await userService.updateProfile({ name: name.trim() });
       showToast('Profil berhasil diperbarui.');
-    } catch {
-      setNameError('Gagal menyimpan nama.');
+    } catch (err) {
+      setNameError(getErrorMessage(err, 'Gagal menyimpan nama.'));
     } finally { setSavingName(false); }
   }
 
@@ -44,8 +45,8 @@ export function ProfilePage() {
       await userService.updateProfile({ currentPassword: currentPwd, newPassword: newPwd });
       showToast('Kata sandi berhasil diubah.');
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
-    } catch {
-      setPwdError('Kata sandi saat ini tidak benar.');
+    } catch (err) {
+      setPwdError(getErrorMessage(err, 'Kata sandi saat ini tidak benar.'));
     } finally { setSavingPwd(false); }
   }
 

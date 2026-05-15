@@ -39,12 +39,12 @@ export interface Product {
   id: string;
   name: string;
   category: ProductCategory;
-  production_type?: ProductionType;
+  productionType?: ProductionType;
   type: ProductType;
   unit: string;
-  base_price: number;
-  is_active: boolean;
-  created_at: string;
+  basePrice: number;
+  isActive: boolean;
+  createdAt: string;
 }
 
 // ─── Customer ─────────────────────────────────────────────────────────────────
@@ -267,10 +267,7 @@ export interface CashFlowSummary {
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
-export interface ApiError {
-  message: string;
-  errors?: Record<string, string[]>;
-}
+export type { ApiError } from '../utils/apiError';
 
 export interface PaginatedResponse<T> {
   data: T[];

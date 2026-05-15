@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
 import styles from './CustomersPage.module.scss';
 
@@ -56,8 +57,8 @@ export function CustomersPage() {
   async function openPricing(c: Customer) {
     setPricingCustomer(c);
     const [items, prods] = await Promise.all([
-      customerService.getPricing(c.id).catch(() => [] as CustomerPricingItem[]),
-      productService.list().catch(() => [] as Product[]),
+      customerService.getPricing(c.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat harga khusus.'), 'error'); return [] as CustomerPricingItem[]; }),
+      productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; }),
     ]);
     const activeRefillable = (prods as Product[]).filter((p) => p.is_active);
     setAllProducts(activeRefillable);
@@ -88,8 +89,12 @@ export function CustomersPage() {
         showToast('Pelanggan berhasil dibuat.');
       }
       setModalOpen(false); load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      if (err instanceof ApiError && err.errors && Object.keys(err.errors).length > 0) {
+        setFormErrors((p) => ({ ...p, ...Object.fromEntries(Object.entries(err.errors!).map(([k, v]) => [k, v[0]])) }));
+      } else {
+        showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
+      }
     } finally {
       setSaving(false);
     }
@@ -99,7 +104,7 @@ export function CustomersPage() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try { await customerService.deactivate(confirmTarget.id); showToast('Pelanggan berhasil dinonaktifkan.'); setConfirmTarget(null); load(); }
-    catch { showToast('Terjadi kesalahan. Silakan coba lagi.', 'error'); }
+    catch (err) { showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error'); }
     finally { setConfirmLoading(false); }
   }
 
@@ -114,8 +119,8 @@ export function CustomersPage() {
       await customerService.updatePricing(pricingCustomer.id, items);
       showToast('Harga khusus berhasil disimpan.');
       setPricingCustomer(null);
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally {
       setSavingPricing(false);
     }

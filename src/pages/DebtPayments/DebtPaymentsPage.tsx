@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button, Modal, Input, Select, EmptyState, Spinner } from '../../components/common';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../utils/apiError';
 import type { DebtPayment, Customer } from '../../types';
 import styles from './DebtPaymentsPage.module.scss';
 
@@ -44,7 +45,7 @@ export function DebtPaymentsPage() {
   // ── Load outstanding customers ────────────────────────────────────────────
   const loadOutstanding = useCallback(async () => {
     setCustomersLoading(true);
-    const custs = await customerService.list().catch(() => [] as Customer[]);
+    const custs = await customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat daftar pelanggan.'), 'error'); return [] as Customer[]; });
     const active = (custs as Customer[]).filter((c) => c.is_active);
     setAllCustomers(active);
     const withDebt = active
@@ -52,16 +53,16 @@ export function DebtPaymentsPage() {
       .sort((a, b) => (b.outstanding_debt ?? 0) - (a.outstanding_debt ?? 0));
     setCustomers(withDebt);
     setCustomersLoading(false);
-  }, []);
+  }, [showToast]);
 
   // ── Load history ──────────────────────────────────────────────────────────
   const loadHistory = useCallback(async (date: string) => {
     setHistoryLoading(true);
-    const pmts = await debtService.list(date).catch(() => [] as DebtPayment[]);
+    const pmts = await debtService.list(date).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat riwayat pembayaran.'), 'error'); return [] as DebtPayment[]; });
     setPayments(pmts as DebtPayment[]);
     setHistoryLoading(false);
     setHistoryLoaded(true);
-  }, []);
+  }, [showToast]);
 
   useEffect(() => { loadOutstanding(); }, [loadOutstanding]);
 
@@ -94,7 +95,7 @@ export function DebtPaymentsPage() {
       // Refresh both tabs
       loadOutstanding();
       if (historyLoaded) { setHistoryLoaded(false); loadHistory(selectedDate); }
-    } catch { setSaveError('Gagal menyimpan pembayaran hutang.'); }
+    } catch (err) { setSaveError(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.')); }
     finally { setSaving(false); }
   }
 

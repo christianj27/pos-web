@@ -8,6 +8,7 @@ import { Button, Badge, Input, Select, EmptyState, Spinner } from '../../compone
 import { MOVEMENT_TYPE_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../utils/apiError';
 import type { StockLevel, StockMovement, Product, Location, ContainerLoan } from '../../types';
 import styles from './StockPage.module.scss';
 
@@ -54,15 +55,15 @@ export function StockPage() {
 
   const load = useCallback(async () => {
     const [lvls, prods, locs] = await Promise.all([
-      stockService.getLevels().catch(() => []),
-      productService.list().catch(() => []),
-      locationService.list().catch(() => []),
+      stockService.getLevels().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat level stok.'), 'error'); return []; }),
+      productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
+      locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
     ]);
     setLevels(lvls as StockLevel[]);
-    setProducts((prods as Product[]).filter((p) => p.is_active));
+    setProducts((prods as Product[]).filter((p) => p.isActive));
     setLocations((locs as Location[]).filter((l) => l.is_active));
     setLoading(false);
-  }, []);
+  }, [showToast]);
 
   async function loadMovements(date: string) {
     setMovementsLoading(true);
@@ -78,7 +79,7 @@ export function StockPage() {
 
   const productOptions = products.map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }));
   const selfProducedOptions = products
-    .filter((p) => p.category === 'refillable' && p.production_type === 'self_produced')
+    .filter((p) => p.category === 'refillable' && p.productionType === 'self_produced')
     .map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }));
   const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
   const containerOptions = [{ value: 'filled', label: 'Terisi' }, { value: 'empty', label: 'Kosong' }];
@@ -101,7 +102,7 @@ export function StockPage() {
       setReceiveShared({ to_location_id: '', notes: '' });
       setReceiveItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
       showToast('Stok berhasil diterima.'); load();
-    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -121,7 +122,7 @@ export function StockPage() {
       setTransferShared({ from_location_id: '', to_location_id: '', notes: '' });
       setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
       showToast('Transfer stok berhasil.'); load();
-    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -157,7 +158,7 @@ export function StockPage() {
       });
       setDefectForm({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
       showToast('Defek berhasil dicatat.'); load();
-    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -177,7 +178,7 @@ export function StockPage() {
       setVendorShared({ location_id: '', notes: '' });
       setVendorItems([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
       showToast('Tukar agent berhasil dicatat.'); load();
-    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -203,7 +204,7 @@ export function StockPage() {
       });
       setProductionForm({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
       showToast('Produksi berhasil dicatat.'); load();
-    } catch { showToast('Gagal menyimpan. Periksa kembali data.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -238,7 +239,7 @@ export function StockPage() {
       setReturnQtyMap((prev) => ({ ...prev, [`${customerId}-${productId}`]: '' }));
       showToast('Pengembalian berhasil dicatat.');
       loadContainerLoans();
-    } catch { showToast('Gagal mencatat pengembalian.', 'error'); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal mencatat pengembalian.'), 'error'); }
     finally { setSaving(false); }
   }
 

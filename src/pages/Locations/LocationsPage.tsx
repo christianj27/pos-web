@@ -5,6 +5,7 @@ import { userService } from '../../services/userService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { LOCATION_TYPE_LABELS } from '../../utils/constants';
+import { getErrorMessage } from '../../utils/apiError';
 import type { Location, User } from '../../types';
 import styles from './LocationsPage.module.scss';
 
@@ -38,13 +39,13 @@ export function LocationsPage() {
 
   const load = useCallback(async () => {
     const [locs, usrs] = await Promise.all([
-      locationService.list().catch(() => []),
-      userService.list().catch(() => []),
+      locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
+      userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; }),
     ]);
     setLocations(locs as Location[]);
     setUsers(usrs as User[]);
     setLoading(false);
-  }, []);
+  }, [showToast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -95,8 +96,8 @@ export function LocationsPage() {
       }
       setModalOpen(false);
       load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -110,8 +111,8 @@ export function LocationsPage() {
       showToast('Lokasi berhasil dinonaktifkan.');
       setConfirmTarget(null);
       load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally {
       setConfirmLoading(false);
     }

@@ -20,6 +20,7 @@ import { Modal } from '../../components/common/Modal/Modal';
 import { Button } from '../../components/common/Button/Button';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
+import { getErrorMessage } from '../../utils/apiError';
 import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
@@ -354,8 +355,8 @@ export function DashboardPage() {
       setStats(data);
       setLastUpdated(new Date());
       setError(null);
-    } catch {
-      setError('Gagal memuat data dashboard.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Gagal memuat data dashboard.'));
     } finally {
       setLoading(false);
     }

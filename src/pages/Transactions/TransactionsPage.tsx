@@ -10,6 +10,7 @@ import { Button, Badge, Modal, Input, Select, EmptyState, Spinner, ConfirmDialog
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS, ASSIGNMENT_STATUS_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../utils/apiError';
 import type { Transaction, Product, Customer, Location, User, DeliveryAssignment } from '../../types';
 import styles from './TransactionsPage.module.scss';
 
@@ -103,21 +104,21 @@ export function TransactionsPage() {
 
   const load = useCallback(async () => {
     const [txs, prods, custs, locs, asgns, usrs] = await Promise.all([
-      transactionService.list(selectedDate).catch(() => []),
-      productService.list().catch(() => []),
-      customerService.list().catch(() => []),
-      locationService.list().catch(() => []),
-      assignmentService.list(role, user?.id).catch(() => []),
-      userService.list().catch(() => []),
+      transactionService.list(selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat transaksi.'), 'error'); return []; }),
+      productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
+      customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
+      locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
+      assignmentService.list(role, user?.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat penugasan.'), 'error'); return []; }),
+      userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; }),
     ]);
     setTransactions(txs as Transaction[]);
-    setProducts((prods as Product[]).filter((p) => p.is_active));
+    setProducts((prods as Product[]).filter((p) => p.isActive));
     setCustomers((custs as Customer[]).filter((c) => c.is_active));
     setLocations((locs as Location[]).filter((l) => l.is_active));
     setAssignments(asgns as DeliveryAssignment[]);
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
     setLoading(false);
-  }, [selectedDate, role, user?.id]);
+  }, [selectedDate, role, user?.id, showToast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -187,7 +188,7 @@ export function TransactionsPage() {
       if (existing) {
         return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
       }
-      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.base_price }];
+      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.basePrice }];
     });
   }
 
@@ -209,7 +210,7 @@ export function TransactionsPage() {
         if (existing) {
           return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
         }
-        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.base_price }];
+        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.basePrice }];
       });
     }
   }
@@ -257,8 +258,8 @@ export function TransactionsPage() {
       }
       closeOverlay();
       load();
-    } catch {
-      setSaveError('Gagal menyimpan transaksi.');
+    } catch (err) {
+      setSaveError(getErrorMessage(err, 'Gagal menyimpan transaksi.'));
     } finally {
       setSaving(false);
     }
@@ -334,7 +335,7 @@ export function TransactionsPage() {
     setAssignCart((prev) => {
       const existing = prev.find((c) => c.product_id === prod.id);
       if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
-      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.base_price }];
+      return [...prev, { product_id: prod.id, product_name: prod.name, quantity: 1, unit_price: prod.basePrice }];
     });
   }
 
@@ -354,7 +355,7 @@ export function TransactionsPage() {
       setAssignCart((prev) => {
         const existing = prev.find((c) => c.product_id === prod.id);
         if (existing) return prev.map((c) => c.product_id === prod.id ? { ...c, quantity: val } : c);
-        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.base_price }];
+        return [...prev, { product_id: prod.id, product_name: prod.name, quantity: val, unit_price: prod.basePrice }];
       });
     }
   }
@@ -377,8 +378,8 @@ export function TransactionsPage() {
       showToast('Penugasan berhasil dibuat.');
       closeAssignmentOverlay();
       load();
-    } catch {
-      setAssignSaveError('Gagal membuat penugasan.');
+    } catch (err) {
+      setAssignSaveError(getErrorMessage(err, 'Gagal membuat penugasan.'));
     } finally {
       setAssignSaving(false);
     }
@@ -391,8 +392,8 @@ export function TransactionsPage() {
       await assignmentService.cancel(cancelAssignment.id);
       showToast('Penugasan berhasil dibatalkan.');
       setCancelAssignment(null); load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally { setCancellingAssignment(false); }
   }
 
@@ -758,7 +759,7 @@ export function TransactionsPage() {
                       <li key={prod.id} className={styles.productRow}>
                         <div className={styles.productInfo}>
                           <span className={styles.productName}>{prod.name}</span>
-                          <span className={styles.productPrice}>{formatCurrency(prod.base_price)} / {prod.unit}</span>
+                          <span className={styles.productPrice}>{formatCurrency(prod.basePrice)} / {prod.unit}</span>
                         </div>
                         <div className={styles.qtyControl}>
                           <button
@@ -1161,7 +1162,7 @@ export function TransactionsPage() {
                       <li key={prod.id} className={styles.productRow}>
                         <div className={styles.productInfo}>
                           <span className={styles.productName}>{prod.name}</span>
-                          <span className={styles.productPrice}>{formatCurrency(prod.base_price)} / {prod.unit}</span>
+                          <span className={styles.productPrice}>{formatCurrency(prod.basePrice)} / {prod.unit}</span>
                         </div>
                         <div className={styles.qtyControl}>
                           <button className={styles.qtyBtn} onClick={() => decrementAssignQty(prod.id)} disabled={qty === 0} aria-label="Kurangi">−</button>

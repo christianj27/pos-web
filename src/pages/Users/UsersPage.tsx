@@ -6,6 +6,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { ROLE_LABELS } from '../../utils/constants';
 import { formatDate } from '../../utils/formatCurrency';
+import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { User, UserRole } from '../../types';
 import styles from './UsersPage.module.scss';
 
@@ -102,11 +103,12 @@ export function UsersPage() {
       setModalOpen(false);
       load();
     } catch (err: unknown) {
-      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message;
-      if (msg?.toLowerCase().includes('username')) {
+      if (err instanceof ApiError && err.errors && Object.keys(err.errors).length > 0) {
+        setFormErrors((p) => ({ ...p, ...Object.fromEntries(Object.entries(err.errors!).map(([k, v]) => [k, v[0]])) }));
+      } else if (err instanceof ApiError && err.message.toLowerCase().includes('username')) {
         setFormErrors((p) => ({ ...p, username: 'Username ini sudah digunakan.' }));
       } else {
-        showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+        showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
       }
     } finally {
       setSaving(false);
@@ -126,8 +128,8 @@ export function UsersPage() {
       }
       setConfirmTarget(null);
       load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally {
       setConfirmLoading(false);
     }

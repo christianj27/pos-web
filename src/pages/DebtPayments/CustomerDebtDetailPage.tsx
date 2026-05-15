@@ -7,6 +7,7 @@ import { useToast } from '../../context/ToastContext';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { useAuth } from '../../hooks/useAuth';
+import { getErrorMessage } from '../../utils/apiError';
 import type { CustomerDebtHistory, Customer } from '../../types';
 import styles from './CustomerDebtDetailPage.module.scss';
 
@@ -35,8 +36,8 @@ export function CustomerDebtDetailPage() {
       const data = await debtService.getCustomerHistory(customerId);
       setHistory(data);
       setError(null);
-    } catch {
-      setError('Gagal memuat riwayat hutang pelanggan.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Gagal memuat riwayat hutang pelanggan.'));
     } finally {
       setLoading(false);
     }
@@ -47,7 +48,7 @@ export function CustomerDebtDetailPage() {
   useEffect(() => {
     customerService.list()
       .then((custs) => setAllCustomers((custs as Customer[]).filter((c) => c.is_active)))
-      .catch(() => {});
+      .catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat daftar pelanggan.'), 'error'); });
   }, []);
 
   function openCreate() {
@@ -64,7 +65,7 @@ export function CustomerDebtDetailPage() {
       setCreateOpen(false);
       showToast('Pembayaran berhasil dicatat.');
       load();
-    } catch { setSaveError('Gagal menyimpan pembayaran hutang.'); }
+    } catch (err) { setSaveError(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.')); }
     finally { setSaving(false); }
   }
 

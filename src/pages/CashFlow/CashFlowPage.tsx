@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { cashFlowService } from '../../services/cashFlowService';
 import { Spinner } from '../../components/common/Spinner/Spinner';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { getErrorMessage } from '../../utils/apiError';
 import type { CashFlowEntry, CashFlowSummary } from '../../types';
 import styles from './CashFlowPage.module.scss';
 
@@ -67,8 +68,8 @@ export function CashFlowPage() {
       const data = await cashFlowService.getSummary(date);
       setSummary(data);
       setError(null);
-    } catch {
-      setError('Gagal memuat data arus kas.');
+    } catch (err) {
+      setError(getErrorMessage(err, 'Gagal memuat data arus kas.'));
     } finally {
       setLoading(false);
     }

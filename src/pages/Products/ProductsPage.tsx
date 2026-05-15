@@ -5,6 +5,7 @@ import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { PRODUCT_CATEGORY_LABELS, PRODUCT_TYPE_LABELS, UNIT_OPTIONS } from '../../utils/constants';
 import { formatCurrency } from '../../utils/formatCurrency';
+import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { Product, ProductCategory } from '../../types';
 import styles from './ProductsPage.module.scss';
 
@@ -53,8 +54,8 @@ export function ProductsPage() {
   function openEdit(p: Product) {
     setEditTarget(p);
     setFormData({
-      name: p.name, category: p.category, production_type: p.production_type ?? '',
-      type: p.type, unit: p.unit, base_price: String(p.base_price),
+      name: p.name, category: p.category, production_type: p.productionType ?? '',
+      type: p.type, unit: p.unit, base_price: String(p.basePrice),
     });
     setFormErrors({}); setModalOpen(true);
   }
@@ -82,26 +83,33 @@ export function ProductsPage() {
       if (editTarget) {
         await productService.update(editTarget.id, {
           name: formData.name,
-          production_type: formData.production_type || undefined,
+          category: formData.category,
+          productionType: formData.production_type || undefined,
           type: formData.type as 'air' | 'gas',
           unit: formData.unit,
-          base_price: parseFloat(formData.base_price),
+          basePrice: parseFloat(formData.base_price),
+          isActive: editTarget.isActive,
         });
         showToast('Produk berhasil diperbarui.');
       } else {
         await productService.create({
           name: formData.name,
           category: formData.category,
-          production_type: formData.production_type || undefined,
+          productionType: formData.production_type || undefined,
           type: formData.type,
           unit: formData.unit,
-          base_price: parseFloat(formData.base_price),
+          basePrice: parseFloat(formData.base_price),
         });
         showToast('Produk berhasil dibuat.');
       }
       setModalOpen(false); load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      console.error(err);
+      if (err instanceof ApiError && err.errors && Object.keys(err.errors).length > 0) {
+        setFormErrors((p) => ({ ...p, ...Object.fromEntries(Object.entries(err.errors!).map(([k, v]) => [k, v[0]])) }));
+      } else {
+        showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
+      }
     } finally {
       setSaving(false);
     }
@@ -114,8 +122,8 @@ export function ProductsPage() {
       await productService.deactivate(confirmTarget.id);
       showToast('Produk berhasil dinonaktifkan.');
       setConfirmTarget(null); load();
-    } catch {
-      showToast('Terjadi kesalahan. Silakan coba lagi.', 'error');
+    } catch (err) {
+      showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
     } finally {
       setConfirmLoading(false);
     }
@@ -149,21 +157,21 @@ export function ProductsPage() {
         {!loading && products.length > 0 && (
           <div className={styles.cardList}>
             {products.map((p) => (
-              <div key={p.id} className={[styles.card, !p.is_active ? styles.cardInactive : ''].join(' ')}>
+              <div key={p.id} className={[styles.card, !p.isActive ? styles.cardInactive : ''].join(' ')}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{p.name}</span>
-                    <span className={styles.cardPrice}>{formatCurrency(p.base_price)} / {p.unit}</span>
+                    <span className={styles.cardPrice}>{formatCurrency(p.basePrice)} / {p.unit}</span>
                   </div>
                   <div className={styles.cardBadges}>
                     <Badge variant={p.category as ProductCategory}>{PRODUCT_CATEGORY_LABELS[p.category]}</Badge>
                     <Badge variant={p.type}>{PRODUCT_TYPE_LABELS[p.type]}</Badge>
-                    <Badge variant={p.is_active ? 'active' : 'inactive'}>{p.is_active ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                    <Badge variant={p.isActive ? 'active' : 'inactive'}>{p.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
                   </div>
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(p)}>Edit</button>
-                  {p.is_active && (
+                  {p.isActive && (
                     <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(p)}>Nonaktifkan</button>
                   )}
                 </div>
