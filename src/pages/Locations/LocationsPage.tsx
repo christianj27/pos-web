@@ -46,7 +46,7 @@ export function LocationsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  const activeUsers = users.filter((u) => u.is_active && (u.role === 'owner' || u.role === 'kurir'));
+  const activeUsers = users.filter((u) => u.isActive && (u.role === 'owner' || u.role === 'kurir'));
   const userOptions = activeUsers.map((u) => ({ value: u.id, label: `${u.name} (${u.role})` }));
 
   function openCreate() {
@@ -119,7 +119,7 @@ export function LocationsPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <div className={styles.titleGroup}>
-            <button className={styles.backArrow} onClick={() => navigate('/settings')} aria-label="Kembali ke Pengaturan">
+            <button className={styles.backArrow} onClick={() => navigate('/lainnya')} aria-label="Kembali ke Pengaturan">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" aria-hidden="true"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" /></svg>
             </button>
             <h1 className={styles.title}>Lokasi</h1>

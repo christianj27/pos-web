@@ -4,7 +4,7 @@ import type { User } from '../types';
 
 export const userService = {
   list: (): Promise<User[]> =>
-    USE_MOCK ? delay([...mockDb.users]) : apiClient.get<User[]>('/api/users').then((r) => { console.log(r.data); return r.data; }),
+    USE_MOCK ? delay([...mockDb.users]) : apiClient.get<User[]>('/api/users').then((r) => r.data),
 
   create: (data: { name: string; username: string; password: string; role: string }): Promise<User> => {
     if (!USE_MOCK) return apiClient.post<User>('/api/users', data).then((r) => r.data);
@@ -13,7 +13,7 @@ export const userService = {
     return delay({ ...user });
   },
 
-  update: (id: string, data: { name?: string; username?: string; role?: string }): Promise<User> => {
+  update: (id: string, data: { name: string; username: string; password?: string; role: string; isActive: boolean }): Promise<User> => {
     if (!USE_MOCK) return apiClient.put<User>(`/api/users/${id}`, data).then((r) => r.data);
     const idx = mockDb.users.findIndex((u) => u.id === id);
     if (idx !== -1) Object.assign(mockDb.users[idx], data);
@@ -27,10 +27,10 @@ export const userService = {
     return delay(undefined);
   },
 
-  reactivate: (id: string): Promise<User> => {
-    if (!USE_MOCK) return apiClient.put<User>(`/api/users/${id}`, { isActive: true }).then((r) => r.data);
+  reactivate: (id: string, data: { name: string; username: string; role: string }): Promise<User> => {
+    if (!USE_MOCK) return apiClient.put<User>(`/api/users/${id}`, { ...data, isActive: true }).then((r) => r.data);
     const u = mockDb.users.find((u) => u.id === id);
-    if (u) u.isActive = true;
+    if (u) { u.isActive = true; Object.assign(u, data); }
     return delay({ ...u! });
   },
 
