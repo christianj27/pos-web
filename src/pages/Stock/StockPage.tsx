@@ -79,7 +79,7 @@ export function StockPage() {
 
   const productOptions = products.map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }));
   const selfProducedOptions = products
-    .filter((p) => p.category === 'refillable' && p.productionType === 'self_produced')
+    .filter((p) => p.category === 'refillable' && p.productionType === 'selfproduced')
     .map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }));
   const locationOptions = locations.map((l) => ({ value: l.id, label: l.name }));
   const containerOptions = [{ value: 'filled', label: 'Terisi' }, { value: 'empty', label: 'Kosong' }];
@@ -541,7 +541,7 @@ export function StockPage() {
             <h2 className={styles.formTitle}>Produksi Isi Ulang</h2>
             <p className={styles.formSubtitle}>Isi ulang kontainer kosong menjadi terisi (produk produksi sendiri). Kontainer kosong akan berkurang otomatis.</p>
             {selfProducedOptions.length === 0 ? (
-              <EmptyState message="Belum ada produk produksi sendiri (self-produced). Tambahkan produk refillable dengan tipe produksi 'Produksi Sendiri'." />
+              <EmptyState message="Belum ada produk produksi sendiri. Tambahkan produk refillable dengan tipe produksi 'Produksi Sendiri'." />
             ) : (
               <div className={styles.form}>
                 <Select label="Produk" value={productionForm.product_id} onChange={(e) => setProductionForm(p => ({ ...p, product_id: e.target.value }))} options={selfProducedOptions} placeholder="Pilih produk..." required />

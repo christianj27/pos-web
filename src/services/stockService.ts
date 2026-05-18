@@ -141,7 +141,7 @@ export const stockService = {
     return delay(undefined);
   },
 
-  /** Atomically converts empty containers → filled for self_produced refillable products. */
+  /** Atomically converts empty containers → filled for selfproduced refillable products. */
   production: (data: { productId: string; locationId: string; quantity: number; productionCost?: number; note?: string }): Promise<void> => {
     if (!USE_MOCK) return apiClient.post('/api/stock/production', data).then((r) => r.data);
     const prod  = mockDb.products.find((p) => p.id === data.productId);

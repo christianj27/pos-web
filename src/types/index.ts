@@ -32,7 +32,7 @@ export interface Location {
 
 // ─── Product ──────────────────────────────────────────────────────────────────
 export type ProductCategory = 'simple' | 'refillable';
-export type ProductionType = 'purchased' | 'self_produced';
+export type ProductionType = 'purchased' | 'selfproduced';
 export type ProductType = 'air' | 'gas';
 
 export interface Product {

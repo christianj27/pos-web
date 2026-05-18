@@ -20,7 +20,7 @@ interface ProductFormData {
 
 const EMPTY_FORM: ProductFormData = { name: '', category: '', production_type: '', type: '', unit: '', base_price: '' };
 const CATEGORY_OPTIONS = [{ value: 'simple', label: 'Sederhana' }, { value: 'refillable', label: 'Refillable' }];
-const PRODUCTION_OPTIONS = [{ value: 'purchased', label: 'Beli dari Vendor' }, { value: 'self_produced', label: 'Produksi Sendiri' }];
+const PRODUCTION_OPTIONS = [{ value: 'purchased', label: 'Beli dari Vendor' }, { value: 'selfproduced', label: 'Produksi Sendiri' }];
 const TYPE_OPTIONS = [{ value: 'air', label: 'Air' }, { value: 'gas', label: 'Gas' }];
 
 export function ProductsPage() {

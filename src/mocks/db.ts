@@ -47,7 +47,7 @@ export const mockDb = {
   products: [
     { id: 'prod-1', name: 'Galon Aqua',           category: 'refillable', productionType: 'purchased',     type: 'air', unit: 'galon',      basePrice: 5000,  isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
     { id: 'prod-2', name: 'Galon Vit',            category: 'refillable', productionType: 'purchased',     type: 'air', unit: 'galon',      basePrice: 4800,  isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
-    { id: 'prod-3', name: 'Galon Isi Ulang',      category: 'refillable', productionType: 'self_produced', type: 'air', unit: 'galon',      basePrice: 3000,  isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
+    { id: 'prod-3', name: 'Galon Isi Ulang',      category: 'refillable', productionType: 'selfproduced', type: 'air', unit: 'galon',      basePrice: 3000,  isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
     { id: 'prod-4', name: 'Gas LPG 3 kg',         category: 'refillable', productionType: 'purchased',     type: 'gas', unit: 'tabung 3kg',  basePrice: 20000, isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
     { id: 'prod-5', name: 'Gas LPG 12 kg',        category: 'refillable', productionType: 'purchased',     type: 'gas', unit: 'tabung 12kg', basePrice: 85000, isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },
     { id: 'prod-6', name: 'Air Isi Ulang 240ml',  category: 'simple',     productionType: undefined,       type: 'air', unit: 'cup',         basePrice: 500,   isActive: true,  createdAt: '2025-01-01T08:00:00.000Z' },

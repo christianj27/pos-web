@@ -22,7 +22,7 @@ export const PRODUCT_CATEGORY_LABELS: Record<string, string> = {
 
 export const PRODUCTION_TYPE_LABELS: Record<string, string> = {
   purchased: 'Beli',
-  self_produced: 'Produksi Sendiri',
+  selfproduced: 'Produksi Sendiri',
 };
 
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {
