@@ -13,15 +13,15 @@ export const customerService = {
     return delay({ ...c });
   },
 
-  update: (id: string, data: { name?: string; phone?: string; address?: string }): Promise<Customer> => {
+  update: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.put<Customer>(`/api/customers/${id}`, data).then((r) => r.data);
     const idx = mockDb.customers.findIndex((c) => c.id === id);
     if (idx !== -1) Object.assign(mockDb.customers[idx], data);
     return delay({ ...mockDb.customers[idx] });
   },
 
-  deactivate: (id: string): Promise<void> => {
-    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, { isActive: false }).then((r) => r.data);
+  deactivate: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<void> => {
+    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, data).then((r) => r.data);
     const c = mockDb.customers.find((c) => c.id === id);
     if (c) c.isActive = false;
     return delay(undefined);

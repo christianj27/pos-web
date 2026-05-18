@@ -67,7 +67,6 @@ apiClient.interceptors.response.use(
 
     if (error.response) {
       const data = error.response.data as { message?: string; errors?: Record<string, string[]> } | undefined;
-      console.error(data);
       return Promise.reject(new ApiError(
         data?.message ?? 'Terjadi kesalahan.',
         error.response.status,

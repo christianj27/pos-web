@@ -104,7 +104,6 @@ export function ProductsPage() {
       }
       setModalOpen(false); load();
     } catch (err) {
-      console.error(err);
       if (err instanceof ApiError && err.errors && Object.keys(err.errors).length > 0) {
         setFormErrors((p) => ({ ...p, ...Object.fromEntries(Object.entries(err.errors!).map(([k, v]) => [k, v[0]])) }));
       } else {

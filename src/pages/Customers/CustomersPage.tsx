@@ -56,15 +56,15 @@ export function CustomersPage() {
 
   async function openPricing(c: Customer) {
     setPricingCustomer(c);
-    const [items, prods] = await Promise.all([
-      customerService.getPricing(c.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat harga khusus.'), 'error'); return [] as CustomerPricingItem[]; }),
-      productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; }),
-    ]);
+    const items = await customerService.getPricing(c.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat harga khusus.'), 'error'); return [] as CustomerPricingItem[]; });
+    const prods = await productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; });
     const activeRefillable = (prods as Product[]).filter((p) => p.isActive);
     setAllProducts(activeRefillable);
-    setPricingItems(items as CustomerPricingItem[]);
+    const responseItems = (items as { items?: CustomerPricingItem[] })?.items;
+    const safeItems = Array.isArray(responseItems) ? responseItems : [];
+    setPricingItems(safeItems);
     const updates: Record<string, string> = {};
-    (items as CustomerPricingItem[]).forEach((i) => {
+    safeItems.forEach((i) => {
       if (i.customPrice != null) updates[i.productId] = String(i.customPrice);
     });
     setPricingUpdates(updates);
@@ -82,7 +82,7 @@ export function CustomersPage() {
     setSaving(true);
     try {
       if (editTarget) {
-        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined });
+        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: editTarget.isActive });
         showToast('Pelanggan berhasil diperbarui.');
       } else {
         await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined });
@@ -103,7 +103,7 @@ export function CustomersPage() {
   async function handleDeactivate() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
-    try { await customerService.deactivate(confirmTarget.id); showToast('Pelanggan berhasil dinonaktifkan.'); setConfirmTarget(null); load(); }
+    try { await customerService.deactivate(confirmTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: false }); showToast('Pelanggan berhasil dinonaktifkan.'); setConfirmTarget(null); load(); }
     catch (err) { showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error'); }
     finally { setConfirmLoading(false); }
   }
