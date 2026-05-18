@@ -18,7 +18,7 @@ export const locationService = {
     return delay({ ...loc });
   },
 
-  update: (id: string, data: { name?: string; assignedTo?: string }): Promise<Location> => {
+  update: (id: string, data: { name?: string; assignedTo?: string; isActive?: boolean }): Promise<Location> => {
     if (!USE_MOCK) return apiClient.put<Location>(`/api/locations/${id}`, data).then((r) => r.data);
     const idx = mockDb.locations.findIndex((l) => l.id === id);
     if (idx !== -1) {

@@ -84,6 +84,7 @@ export function LocationsPage() {
         await locationService.update(editTarget.id, {
           name: formData.name,
           assignedTo: formData.assigned_to || undefined,
+          isActive: editTarget.isActive,
         });
         showToast('Lokasi berhasil diperbarui.');
       } else {
