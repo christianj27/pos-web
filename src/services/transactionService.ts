@@ -3,7 +3,7 @@ import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { Transaction } from '../types';
 
 export interface CreateTransactionPayload {
-  type: string;
+  transactionType: string;
   customerId?: string;
   locationId?: string;
   items: { productId: string; quantity: number; unitPrice: number }[];
@@ -42,7 +42,7 @@ export const transactionService = {
     });
     const totalAmount = items.reduce((s, i) => s + i.subtotal, 0);
     const tx: Transaction = {
-      id: uid(), transactionType: data.type as Transaction['transactionType'],
+      id: uid(), transactionType: data.transactionType as Transaction['transactionType'],
       customerId: customer?.id, customerName: customer?.name,
       staffId: 'mock-user-id', staffName: 'Demo User',
       locationId: location?.id, locationName: location?.name,

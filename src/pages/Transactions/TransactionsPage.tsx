@@ -97,7 +97,6 @@ export function TransactionsPage() {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('cash');
   const [paidAmount, setPaidAmount] = useState('');
   const [notes, setNotes] = useState('');
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [skipCustomer, setSkipCustomer] = useState(false);
   const [debtPaymentAmount, setDebtPaymentAmount] = useState('');
   const [containerReturns, setContainerReturns] = useState<Record<string, string>>({});
@@ -109,7 +108,9 @@ export function TransactionsPage() {
       customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
       locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
       assignmentService.list(role, user?.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat penugasan.'), 'error'); return []; }),
-      userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; }),
+      (isOwner || isKasir)
+        ? userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; })
+        : Promise.resolve([]),
     ]);
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
@@ -143,7 +144,6 @@ export function TransactionsPage() {
     setCart([]); setProductSearch('');
     setTxType(defaultType); setLocationId('');
     setPaymentMethod('cash'); setPaidAmount(''); setNotes('');
-    setSaveError(null);
     setSkipCustomer(false); setDebtPaymentAmount(''); setContainerReturns({});
     // Auto-fill location for locked roles
     if (isKasir) {
@@ -225,8 +225,8 @@ export function TransactionsPage() {
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function handleCreate() {
-    if (cart.length === 0) { setSaveError('Tambahkan minimal satu produk.'); return; }
-    setSaving(true); setSaveError(null);
+    if (cart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
+    setSaving(true);
     const containerReturnsArr = Object.entries(containerReturns)
       .filter(([, qty]) => parseInt(qty) > 0)
       .map(([productId, qty]) => ({ productId, quantity: parseInt(qty) }));
@@ -244,7 +244,7 @@ export function TransactionsPage() {
         showToast('Penugasan berhasil diselesaikan.');
       } else {
         await transactionService.create({
-          type: txType,
+          transactionType: txType,
           customerId: selectedCustomer?.id,
           locationId: locationId || undefined,
           items: cart.map((c) => ({ productId: c.productId, quantity: c.quantity, unitPrice: c.unitPrice })),
@@ -259,7 +259,7 @@ export function TransactionsPage() {
       closeOverlay();
       load();
     } catch (err) {
-      setSaveError(getErrorMessage(err, 'Gagal menyimpan transaksi.'));
+      showToast(getErrorMessage(err, 'Gagal menyimpan transaksi.'), 'error');
     } finally {
       setSaving(false);
     }
@@ -307,7 +307,6 @@ export function TransactionsPage() {
     setPaymentMethod('cash');
     setPaidAmount('');
     setNotes('');
-    setSaveError(null);
     setSkipCustomer(false);
     setDebtPaymentAmount('');
     setContainerReturns({});
@@ -807,9 +806,7 @@ export function TransactionsPage() {
           {step === 3 && (
             <>
               <div className={styles.overlayBody}>
-                {saveError && <div className={styles.errorBanner}>{saveError}</div>}
-
-                <div className={styles.summaryCard}>
+                  <div className={styles.summaryCard}>
                   <div className={styles.summaryRow}>
                     <span>Pelanggan</span>
                     <strong>{selectedCustomer?.name ?? 'Tanpa Pelanggan'}</strong>
@@ -891,7 +888,7 @@ export function TransactionsPage() {
                       .map((c) => (
                         <Input
                           key={c.productId}
-                          label={`${c.productName}`}
+                          label={`${c.productName} (terjual: ${c.quantity})`}
                           hint="Bisa lebih dari jumlah yang dijual jika pelanggan memberikan kontainer ekstra"
                           type="number"
                           min="0"
