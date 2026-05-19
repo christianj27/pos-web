@@ -56,6 +56,8 @@ export function StockPage() {
   // ── Transfer negative-stock warning ──────────────────────────────────────────
   const [transferWarnings, setTransferWarnings] = useState<string[]>([]);
   const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
+  // ── Transfer auto-populate from vehicle ──────────────────────────────────────
+  const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
   const load = useCallback(async () => {
     const [lvls, prods, locs] = await Promise.all([
@@ -158,6 +160,7 @@ export function StockPage() {
       });
       setTransferShared({ from_location_id: '', to_location_id: '', notes: '' });
       setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
+      setTransferAutoPopulated(false);
       showToast('Transfer stok berhasil.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
@@ -192,6 +195,42 @@ export function StockPage() {
   }
   function addReceiveItem() {
     setReceiveItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', container_status: '', purchase_cost: '' }]);
+  }
+
+  // ── Transfer auto-populate helpers ─────────────────────────────────────────
+  function autoPopulateFromVehicle(locationId: string) {
+    const vehicleLevels = levels.filter((l) => l.locationId === locationId);
+    const items: TransferItem[] = [];
+    for (const level of vehicleLevels) {
+      if (level.productCategory === 'simple' && (level.quantityTotal ?? 0) > 0) {
+        items.push({ _key: newKey(), product_id: level.productId, quantity: String(level.quantityTotal), container_status: 'na' });
+      } else if (level.productCategory === 'refillable') {
+        if ((level.quantityFilled ?? 0) > 0) {
+          items.push({ _key: newKey(), product_id: level.productId, quantity: String(level.quantityFilled), container_status: 'filled' });
+        }
+        if ((level.quantityEmpty ?? 0) > 0) {
+          items.push({ _key: newKey(), product_id: level.productId, quantity: String(level.quantityEmpty), container_status: 'empty' });
+        }
+      }
+    }
+    if (items.length > 0) {
+      setTransferItems(items);
+      setTransferAutoPopulated(true);
+    } else {
+      setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
+      setTransferAutoPopulated(false);
+    }
+  }
+
+  function handleFromLocationChange(locationId: string) {
+    setTransferShared((p) => ({ ...p, from_location_id: locationId }));
+    const loc = locations.find((l) => l.id === locationId);
+    if (loc?.type === 'vehicle') {
+      autoPopulateFromVehicle(locationId);
+    } else {
+      setTransferItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
+      setTransferAutoPopulated(false);
+    }
   }
 
   // -- Transfer item helpers --
@@ -525,7 +564,12 @@ export function StockPage() {
             <h2 className={styles.formTitle}>Transfer Stok (Muat / Kembali)</h2>
             <p className={styles.formSubtitle}>Pindahkan stok antar lokasi. Gunakan untuk muat truk (gudang → kendaraan) atau barang kembali (kendaraan → gudang). Bisa tambah beberapa produk sekaligus.</p>
             <div className={styles.form}>
-              <Select label="Dari Lokasi" value={transferShared.from_location_id} onChange={(e) => setTransferShared(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih asal..." required />
+              <Select label="Dari Lokasi" value={transferShared.from_location_id} onChange={(e) => handleFromLocationChange(e.target.value)} options={locationOptions} placeholder="Pilih asal..." required />
+              {transferAutoPopulated && (
+                <p className={styles.autoPopulateNote}>
+                  Stok kendaraan dimuat otomatis. Sesuaikan jumlah jika perlu.
+                </p>
+              )}
               <Select label="Ke Lokasi" value={transferShared.to_location_id} onChange={(e) => setTransferShared(p => ({ ...p, to_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih tujuan..." required />
               <div className={styles.itemList}>
                 {transferItems.map((item) => (
