@@ -16,6 +16,7 @@
   width: 100%;
   max-width: 400px;
   box-shadow: var(--shadow-lg);
+  border-radius: 10px;
 
   @media (min-width: 768px) {
     padding: 32px 28px 28px;
@@ -35,6 +36,7 @@
   color: var(--color-slate-text);
   line-height: 1.5;
   margin-bottom: 24px;
+  white-space: pre-line;
 }
 
 .actions {

@@ -5,13 +5,14 @@ import { customerService } from '../../services/customerService';
 import { locationService } from '../../services/locationService';
 import { userService } from '../../services/userService';
 import { assignmentService } from '../../services/assignmentService';
+import { stockService } from '../../services/stockService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, EmptyState, Spinner, ConfirmDialog } from '../../components/common';
 import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS, ASSIGNMENT_STATUS_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
-import type { Transaction, Product, Customer, Location, User, DeliveryAssignment } from '../../types';
+import type { Transaction, Product, Customer, Location, User, DeliveryAssignment, StockLevel } from '../../types';
 import styles from './TransactionsPage.module.scss';
 
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
@@ -100,8 +101,13 @@ export function TransactionsPage() {
   const [debtPaymentAmount, setDebtPaymentAmount] = useState('');
   const [containerReturns, setContainerReturns] = useState<Record<string, string>>({});
 
+  // ── Stock levels (for negative-stock warning) ────────────────────────────────
+  const [stockLevels, setStockLevels] = useState<StockLevel[]>([]);
+  const [txWarnings, setTxWarnings] = useState<string[]>([]);
+  const [txConfirmOpen, setTxConfirmOpen] = useState(false);
+
   const load = useCallback(async () => {
-    const [txs, prods, custs, locs, asgns, usrs] = await Promise.all([
+    const [txs, prods, custs, locs, asgns, usrs, lvls] = await Promise.all([
       transactionService.list(selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat transaksi.'), 'error'); return []; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
       customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
@@ -110,6 +116,7 @@ export function TransactionsPage() {
       (isOwner || isKasir)
         ? userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; })
         : Promise.resolve([]),
+      stockService.getLevels().catch(() => []),
     ]);
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
@@ -117,6 +124,7 @@ export function TransactionsPage() {
     setLocations((locs as Location[]).filter((l) => l.isActive));
     setAssignments(asgns as DeliveryAssignment[]);
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
+    setStockLevels(lvls as StockLevel[]);
     setLoading(false);
   }, [selectedDate, role, user?.id, showToast]);
 
@@ -223,8 +231,7 @@ export function TransactionsPage() {
   const debt = Math.max(0, total - paid);
 
   // ── Submit ───────────────────────────────────────────────────────────────────
-  async function handleCreate() {
-    if (cart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
+  async function doCreate() {
     setSaving(true);
     const containerReturnsArr = Object.entries(containerReturns)
       .filter(([, qty]) => parseInt(qty) > 0)
@@ -262,6 +269,37 @@ export function TransactionsPage() {
     } finally {
       setSaving(false);
     }
+  }
+
+  function computeTxWarnings(): string[] {
+    if (!locationId) return [];
+    const warnings: string[] = [];
+    for (const item of cart) {
+      const product = products.find((p) => p.id === item.productId);
+      const level = stockLevels.find(
+        (l) => l.productId === item.productId && l.locationId === locationId
+      );
+      const available = !level
+        ? 0
+        : product?.category === 'refillable'
+          ? (level.quantityFilled ?? 0)
+          : (level.quantityTotal ?? 0);
+      if (available - item.quantity < 0) {
+        warnings.push(`${item.productName}: tersedia ${available}, diminta ${item.quantity}`);
+      }
+    }
+    return warnings;
+  }
+
+  async function handleCreate() {
+    if (cart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
+    const warnings = computeTxWarnings();
+    if (warnings.length > 0) {
+      setTxWarnings(warnings);
+      setTxConfirmOpen(true);
+      return;
+    }
+    await doCreate();
   }
 
   // ── Payment ──────────────────────────────────────────────────────────────────
@@ -1005,6 +1043,17 @@ export function TransactionsPage() {
         message="Batalkan penugasan ini? Tindakan ini tidak dapat diurungkan."
         confirmText="Ya, Batalkan"
         loading={cancellingAssignment}
+      />
+
+      {/* Negative stock warning for transaction/fulfillment */}
+      <ConfirmDialog
+        isOpen={txConfirmOpen}
+        onClose={() => setTxConfirmOpen(false)}
+        onConfirm={() => { setTxConfirmOpen(false); doCreate(); }}
+        title="Stok Tidak Mencukupi"
+        message={`Beberapa produk akan menghasilkan stok negatif:\n\n${txWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transaksi?`}
+        confirmText="Ya, Lanjutkan"
+        variant="danger"
       />
 
       {/* ── Assignment Creation Overlay (2-step) ─────────────────────────────────── */}

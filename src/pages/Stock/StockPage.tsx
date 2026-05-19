@@ -4,7 +4,7 @@ import { productService } from '../../services/productService';
 import { locationService } from '../../services/locationService';
 import { containerLoanService } from '../../services/containerLoanService';
 import { useToast } from '../../context/ToastContext';
-import { Button, Badge, Input, Select, EmptyState, Spinner } from '../../components/common';
+import { Button, Badge, Input, Select, EmptyState, Spinner, ConfirmDialog } from '../../components/common';
 import { MOVEMENT_TYPE_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
@@ -52,6 +52,10 @@ export function StockPage() {
   const [movementsLoading, setMovementsLoading] = useState(false);
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  // ── Transfer negative-stock warning ──────────────────────────────────────────
+  const [transferWarnings, setTransferWarnings] = useState<string[]>([]);
+  const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
 
   const load = useCallback(async () => {
     const [lvls, prods, locs] = await Promise.all([
@@ -106,7 +110,40 @@ export function StockPage() {
     finally { setSaving(false); }
   }
 
-  async function handleTransfer() {
+  function computeTransferWarnings(): string[] {
+    if (!transferShared.from_location_id) return [];
+    const warnings: string[] = [];
+    for (const item of transferItems) {
+      if (!item.product_id || !item.quantity) continue;
+      const qty = parseInt(item.quantity);
+      if (isNaN(qty) || qty <= 0) continue;
+      const product = products.find((p) => p.id === item.product_id);
+      const level = levels.find(
+        (l) => l.productId === item.product_id && l.locationId === transferShared.from_location_id
+      );
+      let available: number;
+      if (!level) {
+        available = 0;
+      } else if (product?.category === 'simple') {
+        available = level.quantityTotal ?? 0;
+      } else {
+        if (item.container_status === 'filled') {
+          available = level.quantityFilled ?? 0;
+        } else if (item.container_status === 'empty') {
+          available = level.quantityEmpty ?? 0;
+        } else {
+          continue; // no container_status selected — skip, server will validate
+        }
+      }
+      if (available - qty < 0) {
+        const productName = product?.name ?? item.product_id;
+        warnings.push(`${productName}: tersedia ${available}, diminta ${qty}`);
+      }
+    }
+    return warnings;
+  }
+
+  async function doTransfer() {
     setSaving(true); resetFeedback();
     try {
       await stockService.transferBulk({
@@ -124,6 +161,17 @@ export function StockPage() {
       showToast('Transfer stok berhasil.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
+  }
+
+  async function handleTransfer() {
+    resetFeedback();
+    const warnings = computeTransferWarnings();
+    if (warnings.length > 0) {
+      setTransferWarnings(warnings);
+      setTransferConfirmOpen(true);
+      return;
+    }
+    await doTransfer();
   }
 
   // -- Receive item helpers --
@@ -705,6 +753,17 @@ export function StockPage() {
           </div>
         )}
       </div>
+
+      {/* Transfer stok \u2014 peringatan stok negatif */}
+      <ConfirmDialog
+        isOpen={transferConfirmOpen}
+        onClose={() => setTransferConfirmOpen(false)}
+        onConfirm={() => { setTransferConfirmOpen(false); doTransfer(); }}
+        title="Stok Tidak Mencukupi"
+        message={`Beberapa produk akan menghasilkan stok negatif:\n\n${transferWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transfer?`}
+        confirmText="Ya, Lanjutkan"
+        variant="danger"
+      />
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import { createPortal } from 'react-dom';
+import type { ReactNode } from 'react';
 import styles from './ConfirmDialog.module.scss';
 import { Button } from '../Button/Button';
 
@@ -7,7 +8,7 @@ interface ConfirmDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   title: string;
-  message: string;
+  message: ReactNode;
   confirmText?: string;
   cancelText?: string;
   variant?: 'danger' | 'primary';
@@ -31,7 +32,7 @@ export function ConfirmDialog({
     <div className={styles.overlay} onClick={onClose}>
       <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
         <h3 className={styles.title}>{title}</h3>
-        <p className={styles.message}>{message}</p>
+        <div className={styles.message}>{message}</div>
         <div className={styles.actions}>
           <Button variant="ghost" onClick={onClose} disabled={loading}>
             {cancelText}
