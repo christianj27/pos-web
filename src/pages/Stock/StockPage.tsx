@@ -128,7 +128,16 @@ export function StockPage() {
 
   // -- Receive item helpers --
   function updateReceiveItem(key: string, patch: Partial<ReceiveItem>) {
-    setReceiveItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+    setReceiveItems((prev) => prev.map((item) => {
+      if (item._key !== key) return item;
+      const updated = { ...item, ...patch };
+      if ('product_id' in patch) {
+        const prod = products.find((p) => p.id === patch.product_id);
+        if (prod?.category === 'simple') updated.container_status = 'na';
+        else if (updated.container_status === 'na') updated.container_status = '';
+      }
+      return updated;
+    }));
   }
   function removeReceiveItem(key: string) {
     setReceiveItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
@@ -139,7 +148,16 @@ export function StockPage() {
 
   // -- Transfer item helpers --
   function updateTransferItem(key: string, patch: Partial<TransferItem>) {
-    setTransferItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+    setTransferItems((prev) => prev.map((item) => {
+      if (item._key !== key) return item;
+      const updated = { ...item, ...patch };
+      if ('product_id' in patch) {
+        const prod = products.find((p) => p.id === patch.product_id);
+        if (prod?.category === 'simple') updated.container_status = 'na';
+        else if (updated.container_status === 'na') updated.container_status = '';
+      }
+      return updated;
+    }));
   }
   function removeTransferItem(key: string) {
     setTransferItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
@@ -434,7 +452,9 @@ export function StockPage() {
                       </button>
                     </div>
                     <div className={styles.itemRowControls2}>
-                      <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateReceiveItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      {products.find((p) => p.id === item.product_id)?.category !== 'simple' && (
+                        <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateReceiveItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      )}
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateReceiveItem(item._key, { quantity: e.target.value })} required />
                     </div>
                     <Input label="Biaya Pembelian (Rp, opsional)" type="number" min="0" value={item.purchase_cost} onChange={(e) => updateReceiveItem(item._key, { purchase_cost: e.target.value })} />
@@ -448,7 +468,7 @@ export function StockPage() {
           </div>
         )}
 
-        {/* -- Transfer (owner + kurir) -- */}
+        {/* -- Transfer (owner + kasir) -- */}
         {!loading && tab === 'transfer' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Transfer Stok (Muat / Kembali)</h2>
@@ -468,7 +488,9 @@ export function StockPage() {
                       </button>
                     </div>
                     <div className={styles.itemRowControls2}>
-                      <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateTransferItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      {products.find((p) => p.id === item.product_id)?.category !== 'simple' && (
+                        <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateTransferItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" />
+                      )}
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateTransferItem(item._key, { quantity: e.target.value })} required />
                     </div>
                   </div>
@@ -496,7 +518,7 @@ export function StockPage() {
           </div>
         )}
 
-        {/* -- Tukar Agent (owner + kurir) -- */}
+        {/* -- Tukar Agent (owner) -- */}
         {!loading && tab === 'vendor' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Tukar Kontainer ke Agent</h2>
@@ -535,7 +557,7 @@ export function StockPage() {
           </div>
         )}
 
-        {/* -- Produksi (owner only) -- */}
+        {/* -- Produksi (owner + kasir) -- */}
         {!loading && tab === 'production' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Produksi Isi Ulang</h2>
