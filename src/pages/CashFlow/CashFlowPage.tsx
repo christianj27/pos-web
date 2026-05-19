@@ -156,7 +156,7 @@ export function CashFlowPage() {
             ) : (
               <div className={styles.entryList}>
                 {summary.entries.map((entry) => (
-                  <CashFlowRow key={entry.id} entry={entry} />
+                  <CashFlowRow key={entry.index} entry={entry} />
                 ))}
               </div>
             )}

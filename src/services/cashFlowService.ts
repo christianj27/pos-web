@@ -21,6 +21,7 @@ export const cashFlowService = {
 
       if (tx.paidAmount > 0) {
         entries.push({
+          index: `${tx.id}-cash`,
           id: `${tx.id}-cash`,
           flowType: 'cash_in',
           category: 'sale_payment',
@@ -35,6 +36,7 @@ export const cashFlowService = {
       const debtAmount = tx.totalAmount - tx.paidAmount;
       if (debtAmount > 0) {
         entries.push({
+          index: `${tx.id}-debt`,
           id: `${tx.id}-debt`,
           flowType: 'new_debt',
           category: 'debt_created',
@@ -51,6 +53,7 @@ export const cashFlowService = {
     for (const p of mockDb.debtPayments) {
       if (date && toWIBDate(p.createdAt) !== date) continue;
       entries.push({
+        index: `dp-${p.id}`,
         id: `dp-${p.id}`,
         flowType: 'cash_in',
         category: 'debt_payment',
@@ -68,6 +71,7 @@ export const cashFlowService = {
       if (date && toWIBDate(m.createdAt) !== date) continue;
       const typeLabel = m.movementType === 'production' ? 'Produksi' : 'Beli Stok';
       entries.push({
+        index: `sm-${m.id}`,
         id: `sm-${m.id}`,
         flowType: 'cash_out',
         category: 'stock_purchase',

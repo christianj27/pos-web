@@ -248,6 +248,7 @@ export type CashFlowType = 'cash_in' | 'cash_out' | 'new_debt';
 export type CashFlowCategory = 'sale_payment' | 'debt_payment' | 'stock_purchase' | 'debt_created';
 
 export interface CashFlowEntry {
+  index: string; // unique index for frontend rendering`
   id: string;
   flowType: CashFlowType;
   category: CashFlowCategory;
