@@ -20,12 +20,15 @@ export interface FulfillAssignmentPayload {
 }
 
 export const assignmentService = {
-  list: (role: string, userId?: string): Promise<DeliveryAssignment[]> => {
-    if (!USE_MOCK) return apiClient.get<DeliveryAssignment[]>('/api/assignments').then((r) => r.data);
-    const all = [...mockDb.assignments].reverse();
-    if (role === 'kurir') {
-      return delay(all.filter((a) => a.kurirId === userId));
+  list: (role: string, userId?: string, date?: string): Promise<DeliveryAssignment[]> => {
+    if (!USE_MOCK) {
+      const params = date ? `?date=${date}` : '';
+      return apiClient.get<DeliveryAssignment[]>(`/api/assignments${params}`).then((r) => r.data);
     }
+    const toWIBDate = (iso: string) => new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(iso));
+    let all = [...mockDb.assignments].reverse();
+    if (date) all = all.filter((a) => toWIBDate(a.createdAt) === date);
+    if (role === 'kurir') return delay(all.filter((a) => a.kurirId === userId));
     return delay(all);
   },
 

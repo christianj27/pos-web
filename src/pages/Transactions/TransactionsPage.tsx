@@ -106,7 +106,7 @@ export function TransactionsPage() {
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
       customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
       locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
-      assignmentService.list(role, user?.id).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat penugasan.'), 'error'); return []; }),
+      assignmentService.list(role, user?.id, selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat penugasan.'), 'error'); return []; }),
       (isOwner || isKasir)
         ? userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; })
         : Promise.resolve([]),
@@ -440,7 +440,6 @@ export function TransactionsPage() {
         </div>
 
         {/* Date filter — FR-TXN-015 */}
-        {statusFilter !== 'penugasan' && (
         <div className={styles.dateFilterRow}>
           <input
             type="date"
@@ -455,7 +454,6 @@ export function TransactionsPage() {
             </button>
           )}
         </div>
-        )}
 
         {/* Status filter tabs */}
         <div className={styles.tabsRow}>
