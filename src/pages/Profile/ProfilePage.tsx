@@ -15,38 +15,36 @@ export function ProfilePage() {
 
   const [name, setName] = useState(user?.name ?? '');
   const [savingName, setSavingName] = useState(false);
-  const [nameError, setNameError] = useState<string | null>(null);
 
   const [currentPwd, setCurrentPwd] = useState('');
   const [newPwd, setNewPwd] = useState('');
   const [confirmPwd, setConfirmPwd] = useState('');
   const [savingPwd, setSavingPwd] = useState(false);
-  const [pwdError, setPwdError] = useState<string | null>(null);
 
   async function handleSaveName(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim()) { setNameError('Nama tidak boleh kosong.'); return; }
-    setSavingName(true); setNameError(null);
+    if (!name.trim()) { showToast('Nama tidak boleh kosong.', 'error'); return; }
+    setSavingName(true);
     try {
       await userService.updateProfile({ name: name.trim() });
       showToast('Profil berhasil diperbarui.');
     } catch (err) {
-      setNameError(getErrorMessage(err, 'Gagal menyimpan nama.'));
+      showToast(getErrorMessage(err, 'Gagal menyimpan nama.'), 'error');
     } finally { setSavingName(false); }
   }
 
   async function handleSavePwd(e: React.FormEvent) {
     e.preventDefault();
-    if (!currentPwd || !newPwd || !confirmPwd) { setPwdError('Semua kolom wajib diisi.'); return; }
-    if (newPwd !== confirmPwd) { setPwdError('Konfirmasi kata sandi tidak cocok.'); return; }
-    if (newPwd.length < 8) { setPwdError('Kata sandi minimal 8 karakter.'); return; }
-    setSavingPwd(true); setPwdError(null);
+    if (!currentPwd || !newPwd || !confirmPwd) { showToast('Semua kolom wajib diisi.', 'error'); return; }
+    if (newPwd !== confirmPwd) { showToast('Konfirmasi kata sandi tidak cocok.', 'error'); return; }
+    if (newPwd.length < 8) { showToast('Kata sandi minimal 8 karakter.', 'error'); return; }
+    setSavingPwd(true);
     try {
       await userService.updateProfile({ currentPassword: currentPwd, newPassword: newPwd });
       showToast('Kata sandi berhasil diubah.');
       setCurrentPwd(''); setNewPwd(''); setConfirmPwd('');
     } catch (err) {
-      setPwdError(getErrorMessage(err, 'Kata sandi saat ini tidak benar.'));
+      showToast(getErrorMessage(err, 'Kata sandi saat ini tidak benar.'), 'error');
     } finally { setSavingPwd(false); }
   }
 
@@ -79,7 +77,6 @@ export function ProfilePage() {
         {/* Edit Name */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ubah Nama</h2>
-          {nameError && <div className={styles.errorBanner}>{nameError}</div>}
           <form className={styles.form} onSubmit={handleSaveName}>
             <Input
               label="Nama Tampil"
@@ -94,7 +91,6 @@ export function ProfilePage() {
         {/* Change Password */}
         <div className={styles.section}>
           <h2 className={styles.sectionTitle}>Ubah Kata Sandi</h2>
-          {pwdError && <div className={styles.errorBanner}>{pwdError}</div>}
           <form className={styles.form} onSubmit={handleSavePwd}>
             <Input
               label="Kata Sandi Saat Ini"

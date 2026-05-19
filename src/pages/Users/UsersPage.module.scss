@@ -39,14 +39,6 @@
 .backArrow { display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; border-radius: 50%; color: var(--color-slate-text); background: none; border: none; cursor: pointer; flex-shrink: 0; transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); } }
 .titleGroup { display: flex; align-items: center; gap: 8px; }
 
-.errorBanner {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  padding: 12px 16px;
-  font-size: 14px;
-  color: var(--color-danger);
-}
-
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
 
 .cardList { display: flex; flex-direction: column; gap: 8px; }

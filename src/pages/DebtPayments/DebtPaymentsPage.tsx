@@ -39,7 +39,6 @@ export function DebtPaymentsPage() {
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({ customer_id: '', amount: '', notes: '', method: 'cash' as 'cash' | 'transfer' | 'qris' });
 
   // ── Load outstanding customers ────────────────────────────────────────────
@@ -81,13 +80,12 @@ export function DebtPaymentsPage() {
 
   function openCreate() {
     setForm({ customer_id: '', amount: '', notes: '', method: 'cash' });
-    setSaveError(null);
     setCreateOpen(true);
   }
 
   async function handleCreate() {
-    if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
-    setSaving(true); setSaveError(null);
+    if (!form.customer_id || !form.amount) { showToast('Pelanggan dan jumlah wajib diisi.', 'error'); return; }
+    setSaving(true);
     try {
       await debtService.create({ customerId: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
@@ -95,7 +93,7 @@ export function DebtPaymentsPage() {
       // Refresh both tabs
       loadOutstanding();
       if (historyLoaded) { setHistoryLoaded(false); loadHistory(selectedDate); }
-    } catch (err) { setSaveError(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.')); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -218,7 +216,6 @@ export function DebtPaymentsPage() {
         footer={<><Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Batal</Button><Button onClick={handleCreate} loading={saving}>Simpan</Button></>}
       >
         <div className={styles.createForm}>
-          {saveError && <div className={styles.errorBanner}>{saveError}</div>}
           <Select label="Pelanggan" value={form.customer_id} onChange={(e) => setForm(p => ({ ...p, customer_id: e.target.value }))} options={customerOptions} placeholder="Pilih pelanggan..." required />
           <Input label="Jumlah Bayar (Rp)" type="number" min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
           <Select label="Metode Pembayaran" value={form.method} onChange={(e) => setForm(p => ({ ...p, method: e.target.value as 'cash' | 'transfer' | 'qris' }))} options={[{ value: 'cash', label: 'Tunai' }, { value: 'transfer', label: 'Transfer' }, { value: 'qris', label: 'QRIS' }]} required />

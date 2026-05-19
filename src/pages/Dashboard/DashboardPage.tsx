@@ -21,6 +21,7 @@ import { Button } from '../../components/common/Button/Button';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/apiError';
+import { useToast } from '../../context/ToastContext';
 import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
@@ -339,9 +340,9 @@ function WarehouseStockRow({ item }: { item: StockLevel }) {
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [stats, setStats]                       = useState<DashboardStats | null>(null);
   const [loading, setLoading]                   = useState(true);
-  const [error, setError]                       = useState<string | null>(null);
   const [selectedDate, setSelectedDate]         = useState<string>(getTodayWIB());
   const [lastUpdated, setLastUpdated]           = useState<Date | null>(null);
   const [clickedEntry, setClickedEntry]         = useState<WeeklyChartEntry | null>(null);
@@ -352,11 +353,11 @@ export function DashboardPage() {
   const fetchStats = useCallback(async () => {
     try {
       const data = await dashboardService.getStats(selectedDate);
+      console.log('Fetched dashboard stats:', data);
       setStats(data);
       setLastUpdated(new Date());
-      setError(null);
     } catch (err) {
-      setError(getErrorMessage(err, 'Gagal memuat data dashboard.'));
+      showToast(getErrorMessage(err, 'Gagal memuat data dashboard.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -426,8 +427,6 @@ export function DashboardPage() {
             </span>
           )}
         </div>
-
-        {error && <div className={styles.errorBanner}>{error}</div>}
 
         {/* Stat cards — FR-DSH-002 (6 cards, 2×3 on mobile) */}
         <section>

@@ -235,7 +235,6 @@
 .skipCustomerBtn { width: 100%; padding: 12px; font-size: 15px; font-weight: 500; color: var(--color-whisper-gray); background: none; border: none; text-decoration: underline; cursor: pointer; &:hover { color: var(--color-slate-text); } }
 
 // Step 3
-.errorBanner { background: #fef2f2; border: 1px solid #fecaca; padding: 12px 16px; font-size: 14px; color: var(--color-danger); }
 .summaryCard {
   border: 1px solid var(--color-light-violet-stroke);
   padding: 16px;

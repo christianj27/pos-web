@@ -4,6 +4,7 @@ import { cashFlowService } from '../../services/cashFlowService';
 import { Spinner } from '../../components/common/Spinner/Spinner';
 import { formatCurrency } from '../../utils/formatCurrency';
 import { getErrorMessage } from '../../utils/apiError';
+import { useToast } from '../../context/ToastContext';
 import type { CashFlowEntry, CashFlowSummary } from '../../types';
 import styles from './CashFlowPage.module.scss';
 
@@ -57,9 +58,9 @@ function CashFlowRow({ entry }: { entry: CashFlowEntry }) {
 
 export function CashFlowPage() {
   const navigate = useNavigate();
+  const { showToast } = useToast();
   const [summary, setSummary] = useState<CashFlowSummary | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<string>(getTodayWIB());
 
   const load = useCallback(async (date: string) => {
@@ -67,9 +68,8 @@ export function CashFlowPage() {
     try {
       const data = await cashFlowService.getSummary(date);
       setSummary(data);
-      setError(null);
     } catch (err) {
-      setError(getErrorMessage(err, 'Gagal memuat data arus kas.'));
+      showToast(getErrorMessage(err, 'Gagal memuat data arus kas.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -114,7 +114,6 @@ export function CashFlowPage() {
           )}
         </div>
 
-        {error && <div className={styles.errorBanner}>{error}</div>}
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
 
         {!loading && summary && (

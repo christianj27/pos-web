@@ -30,7 +30,6 @@ export function UsersPage() {
   const { showToast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<User | null>(null);
@@ -45,13 +44,12 @@ export function UsersPage() {
     try {
       const data = await userService.list();
       setUsers(data);
-      setError(null);
     } catch {
-      setError('Gagal memuat daftar pengguna.');
+      showToast('Gagal memuat daftar pengguna.', 'error');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -153,7 +151,6 @@ export function UsersPage() {
         </div>
 
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
-        {error && <div className={styles.errorBanner}>{error}</div>}
 
         {!loading && users.length === 0 && (
           <EmptyState message="Belum ada pengguna. Buat pengguna pertama untuk memulai." />

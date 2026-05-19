@@ -81,7 +81,6 @@ export function TransactionsPage() {
   const [assignProductSearch, setAssignProductSearch] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
   const [assignSaving, setAssignSaving] = useState(false);
-  const [assignSaveError, setAssignSaveError] = useState<string | null>(null);
 
   // ── Overlay (3-step) state ───────────────────────────────────────────────────
   const [overlayOpen, setOverlayOpen] = useState(false);
@@ -324,7 +323,6 @@ export function TransactionsPage() {
     setAssignCart([]);
     setAssignProductSearch('');
     setAssignNotes('');
-    setAssignSaveError(null);
     setAssignmentOverlayOpen(true);
   }
 
@@ -364,9 +362,9 @@ export function TransactionsPage() {
   }
 
   async function handleCreateAssignment() {
-    if (!assignKurir || !assignCustomer) { setAssignSaveError('Pilih kurir dan pelanggan.'); return; }
-    if (assignCart.length === 0) { setAssignSaveError('Tambahkan minimal satu produk.'); return; }
-    setAssignSaving(true); setAssignSaveError(null);
+    if (!assignKurir || !assignCustomer) { showToast('Pilih kurir dan pelanggan.', 'error'); return; }
+    if (assignCart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
+    setAssignSaving(true);
     try {
       await assignmentService.create({
         kurirId: assignKurir.id,
@@ -378,7 +376,7 @@ export function TransactionsPage() {
       closeAssignmentOverlay();
       load();
     } catch (err) {
-      setAssignSaveError(getErrorMessage(err, 'Gagal membuat penugasan.'));
+      showToast(getErrorMessage(err, 'Gagal membuat penugasan.'), 'error');
     } finally {
       setAssignSaving(false);
     }
@@ -1131,7 +1129,6 @@ export function TransactionsPage() {
           {assignStep === 2 && (
             <>
               <div className={styles.overlayBody}>
-                {assignSaveError && <div className={styles.errorBanner}>{assignSaveError}</div>}
                 <div className={styles.lockedFields}>
                   <div className={styles.lockedField}>
                     <span className={styles.lockedLabel}>Kurir</span>

@@ -20,13 +20,11 @@ export function CustomerDebtDetailPage() {
 
   const [history, setHistory] = useState<CustomerDebtHistory | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // ── Create payment modal ──────────────────────────────────────────────────
   const [allCustomers, setAllCustomers] = useState<Customer[]>([]);
   const [createOpen, setCreateOpen] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [form, setForm] = useState({ customer_id: customerId ?? '', amount: '', notes: '', method: 'cash' as 'cash' | 'transfer' | 'qris' });
 
   const load = useCallback(async () => {
@@ -35,9 +33,8 @@ export function CustomerDebtDetailPage() {
     try {
       const data = await debtService.getCustomerHistory(customerId);
       setHistory(data);
-      setError(null);
     } catch (err) {
-      setError(getErrorMessage(err, 'Gagal memuat riwayat hutang pelanggan.'));
+      showToast(getErrorMessage(err, 'Gagal memuat riwayat hutang pelanggan.'), 'error');
     } finally {
       setLoading(false);
     }
@@ -53,19 +50,18 @@ export function CustomerDebtDetailPage() {
 
   function openCreate() {
     setForm({ customer_id: customerId ?? '', amount: '', notes: '', method: 'cash' });
-    setSaveError(null);
     setCreateOpen(true);
   }
 
   async function handleCreate() {
-    if (!form.customer_id || !form.amount) { setSaveError('Pelanggan dan jumlah wajib diisi.'); return; }
-    setSaving(true); setSaveError(null);
+    if (!form.customer_id || !form.amount) { showToast('Pelanggan dan jumlah wajib diisi.', 'error'); return; }
+    setSaving(true);
     try {
       await debtService.create({ customerId: form.customer_id, amount: parseFloat(form.amount), method: form.method, note: form.notes || undefined });
       setCreateOpen(false);
       showToast('Pembayaran berhasil dicatat.');
       load();
-    } catch (err) { setSaveError(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.')); }
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan pembayaran hutang.'), 'error'); }
     finally { setSaving(false); }
   }
 
@@ -93,7 +89,6 @@ export function CustomerDebtDetailPage() {
         </div>
 
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
-        {error && <div className={styles.errorBanner}>{error}</div>}
 
         {!loading && history && (
           <>
@@ -168,7 +163,6 @@ export function CustomerDebtDetailPage() {
         footer={<><Button variant="ghost" onClick={() => setCreateOpen(false)} disabled={saving}>Batal</Button><Button onClick={handleCreate} loading={saving}>Simpan</Button></>}
       >
         <div className={styles.createForm}>
-          {saveError && <div className={styles.errorBanner}>{saveError}</div>}
           <Select label="Pelanggan" value={form.customer_id} onChange={(e) => setForm(p => ({ ...p, customer_id: e.target.value }))} options={customerOptions} placeholder="Pilih pelanggan..." required />
           <Input label="Jumlah Bayar (Rp)" type="number" min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
           <Select label="Metode Pembayaran" value={form.method} onChange={(e) => setForm(p => ({ ...p, method: e.target.value as 'cash' | 'transfer' | 'qris' }))} options={[{ value: 'cash', label: 'Tunai' }, { value: 'transfer', label: 'Transfer' }, { value: 'qris', label: 'QRIS' }]} required />
