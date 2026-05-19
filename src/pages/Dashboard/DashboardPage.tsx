@@ -353,7 +353,6 @@ export function DashboardPage() {
   const fetchStats = useCallback(async () => {
     try {
       const data = await dashboardService.getStats(selectedDate);
-      console.log('Fetched dashboard stats:', data);
       setStats(data);
       setLastUpdated(new Date());
     } catch (err) {

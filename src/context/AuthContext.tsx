@@ -98,9 +98,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     setApiCredentialHandlers(
       () => tokenRef.current,
-      () => { logout(); }
+      () => {
+        // Clear all in-memory tokens immediately
+        tokenRef.current = null;
+        setAccessTokenState(null);
+        setUser(null);
+        // Fire-and-forget: ask server to clear the HTTP-only refresh token cookie
+        axios.post(`${API_BASE}/api/auth/logout`, {}, { withCredentials: true }).catch(() => {});
+        // Hard redirect — replaces history entry so the user cannot navigate back
+        window.location.replace('/login');
+      }
     );
-  }, [logout]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, accessToken, isLoading, login, logout, setAccessToken }}>
