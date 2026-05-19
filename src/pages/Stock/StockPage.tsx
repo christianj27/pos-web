@@ -414,7 +414,7 @@ export function StockPage() {
                         </span>
                       </div>
                       <div className={styles.cardBadges}>
-                        <Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</Badge>
+                        <Badge variant="movement">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</Badge>
                         {(m.containerStatus === 'filled' || m.containerStatus === 'empty') && (
                           <Badge variant={m.containerStatus}>{m.containerStatus === 'filled' ? 'Terisi' : 'Kosong'}</Badge>
                         )}

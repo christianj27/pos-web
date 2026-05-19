@@ -9,6 +9,7 @@ type BadgeVariant =
   | 'delivery' | 'counter'
   | 'pending' | 'completed' | 'cancelled'
   | 'filled' | 'empty'
+  | 'movement'
   | 'default';
 
 interface BadgeProps {
