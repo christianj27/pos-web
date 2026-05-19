@@ -410,7 +410,7 @@ export function StockPage() {
                       <div className={styles.cardInfo}>
                         <span className={styles.cardName}>{m.productName}</span>
                         <span className={styles.cardRoute}>
-                          {m.fromLocationName ?? '—'} → {m.toLocationName ?? '—'}
+                          {m.fromLocationName ?? '—'} → {m.movementType === 'dispatch' && m.customerName ? m.customerName : (m.toLocationName ?? '—')}
                         </span>
                       </div>
                       <div className={styles.cardBadges}>

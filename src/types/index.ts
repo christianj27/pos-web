@@ -99,6 +99,7 @@ export interface StockMovement {
   note?: string;
   createdByName: string;
   createdAt: string;
+  customerName?: string;
 }
 
 // ─── Transaction ──────────────────────────────────────────────────────────────
