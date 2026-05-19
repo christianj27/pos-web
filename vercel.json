@@ -1,4 +1,5 @@
 {
+  "_comment": "This configuration file is used by Vercel to determine how to build and serve the application. The 'rewrites' section ensures that all routes are served by 'index.html', allowing for client-side routing in a single-page application.",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
