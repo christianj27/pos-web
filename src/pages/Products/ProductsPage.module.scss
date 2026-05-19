@@ -30,6 +30,7 @@
 .actions { display: flex; gap: 8px; align-items: center; }
 .actionBtn { font-size: 13px; font-weight: 500; color: var(--color-digital-violet); padding: 6px 12px; border-radius: 9999px; transition: background-color 0.15s; &:hover { background: var(--color-hover-violet); } }
 .deactivateBtn { color: var(--color-danger); &:hover { background: #fee2e2; } }
+.activateBtn { color: var(--color-success); &:hover { background: #dcfce7; } }
 .form { display: flex; flex-direction: column; gap: 20px; }
 .infoRow { display: flex; align-items: center; gap: 8px; }
 .infoLabel { font-size: 14px; font-weight: 500; color: var(--color-slate-text); }

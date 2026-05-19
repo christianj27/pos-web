@@ -114,12 +114,16 @@ export function ProductsPage() {
     }
   }
 
-  async function handleDeactivate() {
+  async function handleToggleActive() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try {
-      await productService.deactivate(confirmTarget.id);
-      showToast('Produk berhasil dinonaktifkan.');
+      await productService.toggleActive(confirmTarget.id);
+      if (confirmTarget.isActive) {
+        showToast('Produk berhasil dinonaktifkan.');
+      } else {
+        showToast('Produk berhasil diaktifkan kembali.');
+      }
       setConfirmTarget(null); load();
     } catch (err) {
       showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error');
@@ -170,9 +174,12 @@ export function ProductsPage() {
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(p)}>Edit</button>
-                  {p.isActive && (
-                    <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(p)}>Nonaktifkan</button>
-                  )}
+                  <button
+                    className={[styles.actionBtn, p.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                    onClick={() => setConfirmTarget(p)}
+                  >
+                    {p.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                  </button>
                 </div>
               </div>
             ))}
@@ -199,8 +206,10 @@ export function ProductsPage() {
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleDeactivate}
-        title="Nonaktifkan Produk" message={`Nonaktifkan ${confirmTarget?.name}? Produk tidak akan muncul di formulir baru.`} confirmText="Nonaktifkan" loading={confirmLoading} />
+      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleToggleActive}
+        title={confirmTarget?.isActive ? 'Nonaktifkan Produk' : 'Aktifkan Produk'}
+        message={confirmTarget?.isActive ? `Nonaktifkan ${confirmTarget?.name}? Produk tidak akan muncul di formulir baru.` : `Aktifkan kembali ${confirmTarget?.name}?`}
+        confirmText={confirmTarget?.isActive ? 'Nonaktifkan' : 'Aktifkan'} loading={confirmLoading} />
     </div>
   );
 }

@@ -104,16 +104,25 @@ export function LocationsPage() {
     }
   }
 
-  async function handleDeactivate() {
+  async function handleToggleActive() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try {
-      await locationService.deactivate(confirmTarget.id, {
-        name: formData.name,
-        assignedTo: formData.assigned_to || undefined,
-        isActive: false,
-      });
-      showToast('Lokasi berhasil dinonaktifkan.');
+      if (confirmTarget.isActive) {
+        await locationService.deactivate(confirmTarget.id, {
+          name: confirmTarget.name,
+          assignedTo: confirmTarget.assignedTo || undefined,
+          isActive: false,
+        });
+        showToast('Lokasi berhasil dinonaktifkan.');
+      } else {
+        await locationService.reactivate(confirmTarget.id, {
+          name: confirmTarget.name,
+          assignedTo: confirmTarget.assignedTo || undefined,
+          isActive: true,
+        });
+        showToast('Lokasi berhasil diaktifkan kembali.');
+      }
       setConfirmTarget(null);
       load();
     } catch (err) {
@@ -164,8 +173,13 @@ export function LocationsPage() {
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(l)}>Edit</button>
-                  {l.type !== 'warehouse' && l.isActive && (
-                    <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(l)}>Nonaktifkan</button>
+                  {l.type !== 'warehouse' && (
+                    <button
+                      className={[styles.actionBtn, l.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                      onClick={() => setConfirmTarget(l)}
+                    >
+                      {l.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
                   )}
                 </div>
               </div>
@@ -227,10 +241,10 @@ export function LocationsPage() {
       <ConfirmDialog
         isOpen={!!confirmTarget}
         onClose={() => setConfirmTarget(null)}
-        onConfirm={handleDeactivate}
-        title="Nonaktifkan Lokasi"
-        message={`Nonaktifkan ${confirmTarget?.name}? Kendaraan ini tidak akan bisa digunakan untuk memuat barang.`}
-        confirmText="Nonaktifkan"
+        onConfirm={handleToggleActive}
+        title={confirmTarget?.isActive ? 'Nonaktifkan Lokasi' : 'Aktifkan Lokasi'}
+        message={confirmTarget?.isActive ? `Nonaktifkan ${confirmTarget?.name}? Kendaraan ini tidak akan bisa digunakan untuk memuat barang.` : `Aktifkan kembali ${confirmTarget?.name}?`}
+        confirmText={confirmTarget?.isActive ? 'Nonaktifkan' : 'Aktifkan'}
         loading={confirmLoading}
       />
     </div>

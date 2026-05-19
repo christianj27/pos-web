@@ -100,10 +100,19 @@ export function CustomersPage() {
     }
   }
 
-  async function handleDeactivate() {
+  async function handleToggleActive() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
-    try { await customerService.deactivate(confirmTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: false }); showToast('Pelanggan berhasil dinonaktifkan.'); setConfirmTarget(null); load(); }
+    try {
+      if (confirmTarget.isActive) {
+        await customerService.deactivate(confirmTarget.id, { name: confirmTarget.name, phone: confirmTarget.phone || undefined, address: confirmTarget.address || undefined, isActive: false });
+        showToast('Pelanggan berhasil dinonaktifkan.');
+      } else {
+        await customerService.reactivate(confirmTarget.id, { name: confirmTarget.name, phone: confirmTarget.phone || undefined, address: confirmTarget.address || undefined, isActive: true });
+        showToast('Pelanggan berhasil diaktifkan kembali.');
+      }
+      setConfirmTarget(null); load();
+    }
     catch (err) { showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error'); }
     finally { setConfirmLoading(false); }
   }
@@ -162,7 +171,12 @@ export function CustomersPage() {
                   <div className={styles.cardActions}>
                     <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
                     <button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>
-                    {c.isActive && <button className={[styles.actionBtn, styles.deactivateBtn].join(' ')} onClick={() => setConfirmTarget(c)}>Nonaktifkan</button>}
+                    <button
+                      className={[styles.actionBtn, c.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                      onClick={() => setConfirmTarget(c)}
+                    >
+                      {c.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    </button>
                   </div>
                 )}
               </div>
@@ -215,8 +229,10 @@ export function CustomersPage() {
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleDeactivate}
-        title="Nonaktifkan Pelanggan" message={`Nonaktifkan ${confirmTarget?.name}?`} confirmText="Nonaktifkan" loading={confirmLoading} />
+      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleToggleActive}
+        title={confirmTarget?.isActive ? 'Nonaktifkan Pelanggan' : 'Aktifkan Pelanggan'}
+        message={confirmTarget?.isActive ? `Nonaktifkan ${confirmTarget?.name}?` : `Aktifkan kembali ${confirmTarget?.name}?`}
+        confirmText={confirmTarget?.isActive ? 'Nonaktifkan' : 'Aktifkan'} loading={confirmLoading} />
     </div>
   );
 }

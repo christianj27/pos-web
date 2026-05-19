@@ -28,10 +28,11 @@ export const productService = {
     return delay({ ...mockDb.products[idx] });
   },
 
-  deactivate: (id: string): Promise<void> => {
-    if (!USE_MOCK) return apiClient.delete(`/api/products/${id}`).then((r) => r.data);
+  toggleActive: (id: string): Promise<void> => {
+    if (!USE_MOCK) return apiClient.patch(`/api/products/${id}`).then((r) => r.data);
     const p = mockDb.products.find((p) => p.id === id);
-    if (p) p.isActive = false;
+    if (p) p.isActive = !p.isActive;
     return delay(undefined);
   },
+  
 };

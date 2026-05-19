@@ -38,4 +38,11 @@ export const locationService = {
     if (l) l.isActive = false;
     return delay(undefined);
   },
+
+  reactivate: (id: string, data: { name?: string; assignedTo?: string; isActive?: boolean }): Promise<void> => {
+    if (!USE_MOCK) return apiClient.put(`/api/locations/${id}`, data).then((r) => r.data);
+    const l = mockDb.locations.find((l) => l.id === id);
+    if (l) l.isActive = true;
+    return delay(undefined);
+  },
 };

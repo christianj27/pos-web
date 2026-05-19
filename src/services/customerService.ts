@@ -27,6 +27,13 @@ export const customerService = {
     return delay(undefined);
   },
 
+  reactivate: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<void> => {
+    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, data).then((r) => r.data);
+    const c = mockDb.customers.find((c) => c.id === id);
+    if (c) c.isActive = true;
+    return delay(undefined);
+  },
+
   getPricing: (id: string): Promise<CustomerPricingItem[]> => {
     if (!USE_MOCK) return apiClient.get<CustomerPricingItem[]>(`/api/customers/${id}/pricing`).then((r) => r.data);
     const pricing = mockDb.customerPricing[id];
