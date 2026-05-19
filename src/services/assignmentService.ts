@@ -75,7 +75,7 @@ export const assignmentService = {
     if (!truck) throw new Error('Kurir ini belum memiliki kendaraan aktif.');
 
     const tx = await transactionService.create({
-      type: 'delivery',
+      transactionType: 'delivery',
       customerId: assignment.customerId,
       locationId: truck.id,
       items: payload.items,
