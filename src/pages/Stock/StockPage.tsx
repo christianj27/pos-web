@@ -677,7 +677,7 @@ export function StockPage() {
                   {negativeEntries.length > 0 && (
                     <>
                       <div className={styles.containerLoanSectionTitle}>
-                        Kontainer pelanggan ada di truk kami
+                        Kontainer pelanggan ada di kami
                       </div>
                       {Array.from(negativeByCustomer.entries()).map(([custId, entries]) => (
                         <div key={custId} className={`${styles.containerLoanGroup} ${styles.containerLoanGroupNegative}`}>
@@ -687,7 +687,7 @@ export function StockPage() {
                               <div className={styles.containerLoanInfo}>
                                 <span className={styles.containerLoanProduct}>{e.productName}</span>
                                 <span className={`${styles.containerLoanNet} ${styles.containerLoanNetNegative}`}>
-                                    <strong>{Math.abs(e.net)}</strong> unit kontainer mereka ada di truk kami
+                                    <strong>{Math.abs(e.net)}</strong> unit kontainer mereka ada di kami
                                   </span>
                                 <span className={styles.containerLoanNoteInfo}>
                                   Kirim kembali sebagai galon terisi di pengiriman berikutnya
