@@ -107,6 +107,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         axios.post(`${API_BASE}/api/auth/logout`, {}, { withCredentials: true }).catch(() => {});
         // Hard redirect — replaces history entry so the user cannot navigate back
         window.location.replace('/login');
+      },
+      (token) => {
+        // Sync the refreshed token back into memory so subsequent requests use it
+        tokenRef.current = token;
+        setAccessTokenState(token);
       }
     );
   }, []);

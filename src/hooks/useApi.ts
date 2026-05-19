@@ -15,13 +15,16 @@ export const apiClient = axios.create({
 let _getToken: (() => string | null) | null = null;
 let _refreshing: Promise<string | null> | null = null;
 let _onAuthFailure: (() => void) | null = null;
+let _onTokenRefreshed: ((token: string) => void) | null = null;
 
 export function setApiCredentialHandlers(
   getToken: () => string | null,
-  onAuthFailure: () => void
+  onAuthFailure: () => void,
+  onTokenRefreshed: (token: string) => void
 ) {
   _getToken = getToken;
   _onAuthFailure = onAuthFailure;
+  _onTokenRefreshed = onTokenRefreshed;
 }
 
 // Request interceptor — attach access token
@@ -46,7 +49,8 @@ apiClient.interceptors.response.use(
         _refreshing = axios
           .post(`${API_BASE}/api/auth/refresh`, {}, { withCredentials: true })
           .then((res) => {
-            const newToken = res.data.access_token as string;
+            const newToken = res.data.accessToken as string;
+            _onTokenRefreshed?.(newToken);
             return newToken;
           })
           .catch(() => {
