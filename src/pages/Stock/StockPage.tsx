@@ -415,6 +415,9 @@ export function StockPage() {
                       </div>
                       <div className={styles.cardBadges}>
                         <Badge variant="default">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</Badge>
+                        {(m.containerStatus === 'filled' || m.containerStatus === 'empty') && (
+                          <Badge variant={m.containerStatus}>{m.containerStatus === 'filled' ? 'Terisi' : 'Kosong'}</Badge>
+                        )}
                         <span className={styles.cardQty}>{m.quantity}</span>
                       </div>
                     </div>
