@@ -63,7 +63,7 @@ export function LainnyaPage() {
   const masterCards: MasterCard[] = [
     { label: 'Pengguna', description: 'Kelola akun pengguna sistem', to: '/users', icon: <UsersIcon /> },
     { label: 'Produk', description: 'Kelola katalog produk', to: '/products', icon: <ProductIcon /> },
-    { label: 'Lokasi', description: 'Kelola lokasi stok & kurir', to: '/locations', icon: <LocationIcon /> },
+    { label: 'Lokasi', description: 'Kelola lokasi stok & kendaraan', to: '/locations', icon: <LocationIcon /> },
     { label: 'Pembayaran Hutang', description: 'Riwayat pembayaran hutang', to: '/debt-payments', icon: <DebtIcon /> },
     { label: 'Arus Kas', description: 'Riwayat arus kas harian', to: '/cash-flow', icon: <CashFlowIcon /> },
   ];
