@@ -432,7 +432,7 @@ export function StockPage() {
                                   <span className={styles.cardSub}>{l.productUnit}</span>
                                 </div>
                                 <div className={styles.cardBadges}>
-                                  {isLow && <Badge variant="inactive">Stok Habis</Badge>}
+                                  {isLow && <Badge variant="kasir">Stok Habis</Badge>}
                                   {l.productCategory === 'refillable' ? (
                                     <div style={{ textAlign: 'right', fontSize: 13, lineHeight: 1.6 }}>
                                       <div><span style={{ color: 'var(--color-whisper-gray)' }}>Terisi:</span> <strong style={{ color: 'var(--color-deep-space-violet)' }}>{l.quantityFilled ?? 0}</strong></div>
