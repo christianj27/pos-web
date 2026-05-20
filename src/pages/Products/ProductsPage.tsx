@@ -37,13 +37,10 @@ export function ProductsPage() {
   const [confirmLoading, setConfirmLoading] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const data = await productService.list();
-      setProducts(data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const data = await productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; });
+    setProducts(data);
+    setLoading(false);
+  }, [showToast]);
 
   useEffect(() => { load(); }, [load]);
 

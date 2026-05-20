@@ -36,13 +36,10 @@ export function CustomersPage() {
   const [savingPricing, setSavingPricing] = useState(false);
 
   const load = useCallback(async () => {
-    try {
-      const data = await customerService.list();
-      setCustomers(data);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    const data = await customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return [] as Customer[]; });
+    setCustomers(data);
+    setLoading(false);
+  }, [showToast]);
 
   useEffect(() => { load(); }, [load]);
 
