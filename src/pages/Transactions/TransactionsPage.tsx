@@ -892,7 +892,7 @@ export function TransactionsPage() {
 
                 <Input
                   label="Jumlah Dibayar (Rp)"
-                  type="number"
+                  currency
                   min="0"
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(e.target.value)}
@@ -906,7 +906,7 @@ export function TransactionsPage() {
                 {selectedCustomer && (selectedCustomer.outstandingDebt ?? 0) > 0 && (
                   <Input
                     label="Bayar Hutang Lama (Rp, opsional)"
-                    type="number"
+                    currency
                     min="0"
                     value={debtPaymentAmount}
                     onChange={(e) => setDebtPaymentAmount(e.target.value)}
@@ -1012,7 +1012,7 @@ export function TransactionsPage() {
             </p>
             <Input
               label="Jumlah Bayar (Rp)"
-              type="number"
+              currency
               min="1"
               value={paymentAmount}
               onChange={(e) => setPaymentAmount(e.target.value)}

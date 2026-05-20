@@ -172,7 +172,7 @@ export function CustomerDebtDetailPage() {
       >
         <div className={styles.createForm}>
           <Select label="Pelanggan" value={form.customer_id} onChange={(e) => setForm(p => ({ ...p, customer_id: e.target.value }))} options={customerOptions} placeholder="Pilih pelanggan..." required />
-          <Input label="Jumlah Bayar (Rp)" type="number" min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
+          <Input label="Jumlah Bayar (Rp)" currency min="1" value={form.amount} onChange={(e) => setForm(p => ({ ...p, amount: e.target.value }))} required />
           <Select label="Metode Pembayaran" value={form.method} onChange={(e) => setForm(p => ({ ...p, method: e.target.value as 'cash' | 'transfer' | 'qris' }))} options={[{ value: 'cash', label: 'Tunai' }, { value: 'transfer', label: 'Transfer' }, { value: 'qris', label: 'QRIS' }]} required />
           <Input label="Catatan (opsional)" value={form.notes} onChange={(e) => setForm(p => ({ ...p, notes: e.target.value }))} />
         </div>

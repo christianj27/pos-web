@@ -199,7 +199,7 @@ export function ProductsPage() {
           )}
           <Select label="Jenis" value={formData.type} onChange={(e) => setField('type', e.target.value)} options={TYPE_OPTIONS} placeholder="Pilih jenis..." error={formErrors.type} required />
           <Select label="Satuan" value={formData.unit} onChange={(e) => setField('unit', e.target.value)} options={UNIT_OPTIONS} placeholder="Pilih satuan..." error={formErrors.unit} required />
-          <Input label="Harga Dasar (Rp)" type="number" min="0" value={formData.base_price} onChange={(e) => setField('base_price', e.target.value)} error={formErrors.base_price} required />
+          <Input label="Harga Dasar (Rp)" currency min="0" value={formData.base_price} onChange={(e) => setField('base_price', e.target.value)} error={formErrors.base_price} required />
         </div>
       </Modal>
 

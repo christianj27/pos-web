@@ -1,17 +1,50 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styles from './Input.module.scss';
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string;
   error?: string;
   hint?: string;
+  currency?: boolean;
 }
 
-export function Input({ label, error, hint, id, className, type, ...props }: InputProps) {
+function formatCurrency(val: string | number | readonly string[] | undefined): string {
+  if (val === undefined || val === null || val === '') return '';
+  const digits = String(val).replace(/\D/g, '');
+  if (!digits) return '';
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+}
+
+export function Input({ label, error, hint, id, className, type, currency, value, onChange, ...props }: InputProps) {
   const [showPwd, setShowPwd] = useState(false);
+  const [displayValue, setDisplayValue] = useState(() => (currency ? formatCurrency(value) : ''));
+
+  useEffect(() => {
+    if (currency) {
+      setDisplayValue(formatCurrency(value));
+    }
+  }, [currency, value]);
+
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   const isPassword = type === 'password';
-  const inputType = isPassword ? (showPwd ? 'text' : 'password') : type;
+  const inputType = currency ? 'text' : (isPassword ? (showPwd ? 'text' : 'password') : type);
+
+  function handleCurrencyChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const raw = e.target.value.replace(/\D/g, '');
+    const formatted = formatCurrency(raw);
+    setDisplayValue(formatted);
+    if (onChange) {
+      const fakeEvent = {
+        ...e,
+        target: { ...e.target, value: raw },
+        currentTarget: { ...e.currentTarget, value: raw },
+      } as React.ChangeEvent<HTMLInputElement>;
+      onChange(fakeEvent);
+    }
+  }
+
+  const inputValue = currency ? displayValue : value;
+  const inputOnChange = currency ? handleCurrencyChange : onChange;
 
   return (
     <div className={[styles.wrapper, className ?? ''].join(' ')}>
@@ -25,7 +58,10 @@ export function Input({ label, error, hint, id, className, type, ...props }: Inp
         <input
           id={inputId}
           type={inputType}
+          inputMode={currency ? 'numeric' : undefined}
           className={[styles.input, error ? styles.inputError : ''].join(' ')}
+          value={inputValue}
+          onChange={inputOnChange}
           {...props}
         />
         {isPassword && (

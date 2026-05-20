@@ -547,7 +547,7 @@ export function StockPage() {
                       )}
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => updateReceiveItem(item._key, { quantity: e.target.value })} required />
                     </div>
-                    <Input label="Biaya Pembelian (Rp, opsional)" type="number" min="0" value={item.purchase_cost} onChange={(e) => updateReceiveItem(item._key, { purchase_cost: e.target.value })} />
+                    <Input label="Biaya Pembelian (Rp, opsional)" currency min="0" value={item.purchase_cost} onChange={(e) => updateReceiveItem(item._key, { purchase_cost: e.target.value })} />
                   </div>
                 ))}
               </div>
@@ -636,7 +636,7 @@ export function StockPage() {
                       <Input label="Jml Terisi Diterima" type="number" min="1" value={item.filled_quantity} onChange={(e) => updateVendorItem(item._key, { filled_quantity: e.target.value })} required />
                     </div>
                     <div className={styles.itemRowControls}>
-                       <Input label="Biaya Pembelian (Rp)" type="number" min="0" value={item.purchase_cost} onChange={(e) => updateVendorItem(item._key, { purchase_cost: e.target.value })} required />
+                       <Input label="Biaya Pembelian (Rp)" currency min="0" value={item.purchase_cost} onChange={(e) => updateVendorItem(item._key, { purchase_cost: e.target.value })} required />
                     </div>
                   </div>
                 ))}
@@ -664,7 +664,7 @@ export function StockPage() {
                 <Select label="Produk" value={productionForm.product_id} onChange={(e) => setProductionForm(p => ({ ...p, product_id: e.target.value }))} options={selfProducedOptions} placeholder="Pilih produk..." required />
                 <Select label="Lokasi" value={productionForm.location_id} onChange={(e) => setProductionForm(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
                 <Input label="Jumlah Diisi" type="number" min="1" value={productionForm.quantity} onChange={(e) => setProductionForm(p => ({ ...p, quantity: e.target.value }))} required />
-                <Input label="Biaya Produksi (Rp, opsional)" type="number" min="0" value={productionForm.production_cost} onChange={(e) => setProductionForm(p => ({ ...p, production_cost: e.target.value }))} />
+                <Input label="Biaya Produksi (Rp, opsional)" currency min="0" value={productionForm.production_cost} onChange={(e) => setProductionForm(p => ({ ...p, production_cost: e.target.value }))} />
                 <Input label="Catatan (opsional)" value={productionForm.notes} onChange={(e) => setProductionForm(p => ({ ...p, notes: e.target.value }))} />
                 <Button onClick={handleProduction} loading={saving} fullWidth>Simpan Produksi</Button>
               </div>

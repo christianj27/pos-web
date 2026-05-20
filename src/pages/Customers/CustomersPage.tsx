@@ -3,7 +3,7 @@ import { customerService } from '../../services/customerService';
 import { productService } from '../../services/productService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
-import { formatCurrency } from '../../utils/formatCurrency';
+import { formatCurrency, formatNumber } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
@@ -191,7 +191,7 @@ export function CustomersPage() {
           <Input label="Nama" value={formData.name} onChange={(e) => setField('name', e.target.value)} error={formErrors.name} required />
           <Input label="Telepon (opsional)" type="tel" value={formData.phone} onChange={(e) => setField('phone', e.target.value)} />
           <Input label="Alamat (opsional)" value={formData.address} onChange={(e) => setField('address', e.target.value)} />
-          {isOwner && <Input label="Saldo Hutang Awal (Rp, opsional)" type="number" min="0" step="1" value={formData.initialDebt} onChange={(e) => setField('initialDebt', e.target.value)} />}
+          {isOwner && <Input label="Saldo Hutang Awal (Rp, opsional)" currency min="0" value={formData.initialDebt} onChange={(e) => setField('initialDebt', e.target.value)} />}
         </div>
       </Modal>
 
@@ -215,9 +215,9 @@ export function CustomersPage() {
                 <div className={styles.pricingInput}>
                   <Input
                     label="Harga Khusus (Rp)"
-                    type="number"
+                    currency
                     min="0"
-                    placeholder={String(base)}
+                    placeholder={formatNumber(base)}
                     value={pricingUpdates[p.id] ?? (existing?.customPrice ? String(existing.customPrice) : '')}
                     onChange={(e) => setPricingUpdates((prev) => ({ ...prev, [p.id]: e.target.value }))}
                   />
