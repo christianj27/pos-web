@@ -55,6 +55,7 @@ export interface Customer {
   address?: string;
   isActive: boolean;
   outstandingDebt?: number;
+  initialDebt?: number;
   createdAt: string;
 }
 
@@ -239,6 +240,7 @@ export interface DebtTransaction {
 export interface CustomerDebtHistory {
   customerId: string;
   customerName: string;
+  initialDebt: number;
   outstandingDebt: number;
   debtTransactions: DebtTransaction[];
   payments: DebtPayment[];

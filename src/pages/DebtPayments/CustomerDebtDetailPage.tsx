@@ -98,6 +98,14 @@ export function CustomerDebtDetailPage() {
               <span className={styles.debtBannerAmount}>{formatCurrency(history.outstandingDebt)}</span>
             </div>
 
+            {/* Initial debt info row */}
+            {history.initialDebt > 0 && (
+              <div className={styles.initialDebtRow}>
+                <span className={styles.initialDebtLabel}>Saldo Awal Hutang</span>
+                <span className={styles.initialDebtAmount}>{formatCurrency(history.initialDebt)}</span>
+              </div>
+            )}
+
             {/* Debt-creating transactions */}
             <section>
               <h2 className={styles.sectionTitle}>Transaksi Pembuat Hutang</h2>

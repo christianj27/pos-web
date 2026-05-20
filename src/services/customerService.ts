@@ -6,17 +6,23 @@ export const customerService = {
   list: (): Promise<Customer[]> =>
     USE_MOCK ? delay([...mockDb.customers]) : apiClient.get<Customer[]>('/api/customers').then((r) => r.data),
 
-  create: (data: { name: string; phone?: string; address?: string }): Promise<Customer> => {
+  create: (data: { name: string; phone?: string; address?: string; initialDebt?: number }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.post<Customer>('/api/customers', data).then((r) => r.data);
-    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, isActive: true, outstandingDebt: 0, createdAt: new Date().toISOString() };
+    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, isActive: true, outstandingDebt: data.initialDebt ?? 0, initialDebt: data.initialDebt ?? 0, createdAt: new Date().toISOString() };
     mockDb.customers.push(c);
     return delay({ ...c });
   },
 
-  update: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<Customer> => {
+  update: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean; initialDebt?: number }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.put<Customer>(`/api/customers/${id}`, data).then((r) => r.data);
     const idx = mockDb.customers.findIndex((c) => c.id === id);
-    if (idx !== -1) Object.assign(mockDb.customers[idx], data);
+    if (idx !== -1) {
+      const oldInitialDebt = mockDb.customers[idx].initialDebt ?? 0;
+      Object.assign(mockDb.customers[idx], data);
+      if (data.initialDebt != null) {
+        mockDb.customers[idx].outstandingDebt = (mockDb.customers[idx].outstandingDebt ?? 0) + (data.initialDebt - oldInitialDebt);
+      }
+    }
     return delay({ ...mockDb.customers[idx] });
   },
 

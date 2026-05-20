@@ -9,8 +9,8 @@ import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
 import styles from './CustomersPage.module.scss';
 
-interface CustomerFormData { name: string; phone: string; address: string; }
-const EMPTY_FORM: CustomerFormData = { name: '', phone: '', address: '' };
+interface CustomerFormData { name: string; phone: string; address: string; initialDebt: string; }
+const EMPTY_FORM: CustomerFormData = { name: '', phone: '', address: '', initialDebt: '' };
 
 export function CustomersPage() {
   const { user } = useAuth();
@@ -50,7 +50,7 @@ export function CustomersPage() {
 
   function openEdit(c: Customer) {
     setEditTarget(c);
-    setFormData({ name: c.name, phone: c.phone ?? '', address: c.address ?? '' });
+    setFormData({ name: c.name, phone: c.phone ?? '', address: c.address ?? '', initialDebt: c.initialDebt != null && c.initialDebt > 0 ? String(c.initialDebt) : '' });
     setFormErrors({}); setModalOpen(true);
   }
 
@@ -80,12 +80,13 @@ export function CustomersPage() {
   async function handleSave() {
     if (!validate()) return;
     setSaving(true);
+    const initialDebt = formData.initialDebt ? parseFloat(formData.initialDebt) : undefined;
     try {
       if (editTarget) {
-        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: editTarget.isActive });
+        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: editTarget.isActive, initialDebt });
         showToast('Pelanggan berhasil diperbarui.');
       } else {
-        await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined });
+        await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, initialDebt });
         showToast('Pelanggan berhasil dibuat.');
       }
       setModalOpen(false); load();
@@ -193,6 +194,7 @@ export function CustomersPage() {
           <Input label="Nama" value={formData.name} onChange={(e) => setField('name', e.target.value)} error={formErrors.name} required />
           <Input label="Telepon (opsional)" type="tel" value={formData.phone} onChange={(e) => setField('phone', e.target.value)} />
           <Input label="Alamat (opsional)" value={formData.address} onChange={(e) => setField('address', e.target.value)} />
+          {isOwner && <Input label="Saldo Hutang Awal (Rp, opsional)" type="number" min="0" step="1" value={formData.initialDebt} onChange={(e) => setField('initialDebt', e.target.value)} />}
         </div>
       </Modal>
 

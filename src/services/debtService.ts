@@ -53,6 +53,7 @@ export const debtService = {
     return delay({
       customerId,
       customerName: customer?.name ?? '',
+      initialDebt: customer?.initialDebt ?? 0,
       outstandingDebt: customer?.outstandingDebt ?? 0,
       debtTransactions,
       payments: [...payments],
