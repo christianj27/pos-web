@@ -135,3 +135,55 @@
 .emptyWrap { padding: 40px 0; text-align: center; }
 .emptyText { font-size: 14px; color: var(--color-whisper-gray); }
 
+// ── Monthly export ────────────────────────────────────────────────────────────
+.exportRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 10px;
+  background: var(--color-white-canvas);
+  flex-wrap: wrap;
+}
+.exportLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+}
+.exportControls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.monthInput {
+  padding: 8px 12px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 8px;
+  font-size: 14px;
+  color: var(--color-deep-space-violet);
+  background: var(--color-white-canvas);
+  cursor: pointer;
+  &:focus { outline: 2px solid var(--color-digital-violet); outline-offset: 2px; }
+}
+.exportBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 8px;
+  background: var(--color-digital-violet);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  &:hover:not(:disabled) { opacity: 0.88; }
+  &:disabled { opacity: 0.6; cursor: not-allowed; }
+}
+
