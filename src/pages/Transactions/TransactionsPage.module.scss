@@ -196,6 +196,7 @@
 .productInfo { display: flex; flex-direction: column; gap: 2px; flex: 1; }
 .productName { font-weight: 600; font-size: 15px; color: var(--color-deep-space-violet); }
 .productPrice { font-size: 13px; color: var(--color-whisper-gray); }
+.basePriceStrike { text-decoration: line-through; opacity: 0.6; }
 .qtyControl { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
 .qtyBtn {
   width: 36px; height: 36px; border-radius: 50%;

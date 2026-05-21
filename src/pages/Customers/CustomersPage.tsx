@@ -142,7 +142,7 @@ export function CustomersPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Pelanggan</h1>
-          {isOwner && <Button onClick={openCreate} size="sm">+ Tambah Pelanggan</Button>}
+          <Button onClick={openCreate} size="sm">+ Tambah Pelanggan</Button>
         </div>
 
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
@@ -165,18 +165,16 @@ export function CustomersPage() {
                     <Badge variant={c.isActive ? 'active' : 'inactive'}>{c.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
                   </div>
                 </div>
-                {isOwner && (
-                  <div className={styles.cardActions}>
-                    <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
-                    <button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>
-                    <button
-                      className={[styles.actionBtn, c.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
-                      onClick={() => setConfirmTarget(c)}
-                    >
-                      {c.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
-                  </div>
-                )}
+                <div className={styles.cardActions}>
+                  <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
+                  {isOwner && (<button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>)}     
+                  <button
+                    className={[styles.actionBtn, c.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                    onClick={() => setConfirmTarget(c)}
+                  >
+                    {c.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                  </button>
+                </div>
               </div>
             ))}
           </div>

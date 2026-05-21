@@ -12,7 +12,7 @@ import { TRANSACTION_TYPE_LABELS, TRANSACTION_STATUS_LABELS, ASSIGNMENT_STATUS_L
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
-import type { Transaction, Product, Customer, Location, User, DeliveryAssignment, StockLevel } from '../../types';
+import type { Transaction, Product, Customer, Location, User, DeliveryAssignment, StockLevel, CustomerPricingItem } from '../../types';
 import styles from './TransactionsPage.module.scss';
 
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
@@ -106,6 +106,25 @@ export function TransactionsPage() {
   const [txWarnings, setTxWarnings] = useState<string[]>([]);
   const [txConfirmOpen, setTxConfirmOpen] = useState(false);
 
+  // ── Customer pricing overrides ───────────────────────────────────────────────
+  const [customerPricing, setCustomerPricing] = useState<CustomerPricingItem[]>([]);
+  const [assignCustomerPricing, setAssignCustomerPricing] = useState<CustomerPricingItem[]>([]);
+
+  function effectivePrice(productId: string, pricing: CustomerPricingItem[]): number {
+    const item = pricing.find((p) => p.productId === productId);
+    if (item?.customPrice != null) return item.customPrice;
+    return products.find((p) => p.id === productId)?.basePrice ?? 0;
+  }
+
+  async function fetchCustomerPricing(customerId: string): Promise<CustomerPricingItem[]> {
+    try {
+      const raw = await customerService.getPricing(customerId);
+      return Array.isArray(raw) ? raw : ((raw as { items?: CustomerPricingItem[] }).items ?? []);
+    } catch {
+      return [];
+    }
+  }
+
   const load = useCallback(async () => {
     const [txs, prods, custs, locs, asgns, usrs, lvls] = await Promise.all([
       transactionService.list(selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat transaksi.'), 'error'); return []; }),
@@ -152,6 +171,7 @@ export function TransactionsPage() {
     setTxType(defaultType); setLocationId('');
     setPaymentMethod('cash'); setPaidAmount(''); setNotes('');
     setSkipCustomer(false); setDebtPaymentAmount(''); setContainerReturns({});
+    setCustomerPricing([]);
     // Auto-fill location for locked roles
     if (isKasir) {
       const wh = locations.find((l) => l.type === 'warehouse' && l.isActive);
@@ -171,18 +191,22 @@ export function TransactionsPage() {
     else closeOverlay();
   }
 
-  function advanceToStep2() {
+  async function advanceToStep2() {
+    if (selectedCustomer) {
+      setCustomerPricing(await fetchCustomerPricing(selectedCustomer.id));
+    }
     setStep(2);
   }
 
   function handleSkipCustomer() {
     setSelectedCustomer(null);
     setSkipCustomer(true);
+    setCustomerPricing([]);
     setStep(2);
   }
 
   function advanceToStep3() {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !locationId) return;
     const t = cart.reduce((s, c) => s + c.quantity * c.unitPrice, 0);
     setPaidAmount(String(t));
     setStep(3);
@@ -195,7 +219,7 @@ export function TransactionsPage() {
       if (existing) {
         return prev.map((c) => c.productId === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
       }
-      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: prod.basePrice }];
+      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: effectivePrice(prod.id, customerPricing) }];
     });
   }
 
@@ -217,7 +241,7 @@ export function TransactionsPage() {
         if (existing) {
           return prev.map((c) => c.productId === prod.id ? { ...c, quantity: val } : c);
         }
-        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: prod.basePrice }];
+        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: effectivePrice(prod.id, customerPricing) }];
       });
     }
   }
@@ -329,7 +353,7 @@ export function TransactionsPage() {
   }
 
   // ── Fulfillment (open overlay pre-filled with assignment) ────────────────────
-  function openFulfillment(assignment: DeliveryAssignment) {
+  async function openFulfillment(assignment: DeliveryAssignment) {
     const customer = customers.find((c) => c.id === assignment.customerId) ?? null;
     setFulfillAssignment(assignment);
     setSelectedCustomer(customer);
@@ -347,6 +371,7 @@ export function TransactionsPage() {
     setSkipCustomer(false);
     setDebtPaymentAmount('');
     setContainerReturns({});
+    setCustomerPricing(await fetchCustomerPricing(assignment.customerId));
     setStep(2);
     setOverlayOpen(true);
   }
@@ -361,7 +386,15 @@ export function TransactionsPage() {
     setAssignCart([]);
     setAssignProductSearch('');
     setAssignNotes('');
+    setAssignCustomerPricing([]);
     setAssignmentOverlayOpen(true);
+  }
+
+  async function advanceAssignToStep2() {
+    if (assignCustomer) {
+      setAssignCustomerPricing(await fetchCustomerPricing(assignCustomer.id));
+    }
+    setAssignStep(2);
   }
 
   function closeAssignmentOverlay() { setAssignmentOverlayOpen(false); }
@@ -370,7 +403,7 @@ export function TransactionsPage() {
     setAssignCart((prev) => {
       const existing = prev.find((c) => c.productId === prod.id);
       if (existing) return prev.map((c) => c.productId === prod.id ? { ...c, quantity: c.quantity + 1 } : c);
-      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: prod.basePrice }];
+      return [...prev, { productId: prod.id, productName: prod.name, quantity: 1, unitPrice: effectivePrice(prod.id, assignCustomerPricing) }];
     });
   }
 
@@ -390,7 +423,7 @@ export function TransactionsPage() {
       setAssignCart((prev) => {
         const existing = prev.find((c) => c.productId === prod.id);
         if (existing) return prev.map((c) => c.productId === prod.id ? { ...c, quantity: val } : c);
-        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: prod.basePrice }];
+        return [...prev, { productId: prod.id, productName: prod.name, quantity: val, unitPrice: effectivePrice(prod.id, assignCustomerPricing) }];
       });
     }
   }
@@ -788,11 +821,18 @@ export function TransactionsPage() {
                 <ul className={styles.productList}>
                   {filteredProducts.map((prod) => {
                     const qty = cartQty(prod.id);
+                    const price = effectivePrice(prod.id, customerPricing);
                     return (
                       <li key={prod.id} className={styles.productRow}>
                         <div className={styles.productInfo}>
                           <span className={styles.productName}>{prod.name}</span>
-                          <span className={styles.productPrice}>{formatCurrency(prod.basePrice)} / {prod.unit}</span>
+                          <span className={styles.productPrice}>
+                            {formatCurrency(price)}
+                            {price !== prod.basePrice && (
+                              <span className={styles.basePriceStrike}> ({formatCurrency(prod.basePrice)})</span>
+                            )}
+                            {' '}/ {prod.unit}
+                          </span>
                         </div>
                         <div className={styles.qtyControl}>
                           <button
@@ -827,10 +867,14 @@ export function TransactionsPage() {
                 </div>
                 <Button
                   onClick={advanceToStep3}
-                  disabled={cart.length === 0}
+                  disabled={cart.length === 0 || !locationId}
                   style={{ width: '100%' }}
                 >
-                  {cart.length === 0 ? 'Pilih minimal satu produk' : 'Lanjut ke Konfirmasi'}
+                  {cart.length === 0
+                    ? 'Pilih minimal satu produk'
+                    : !locationId
+                      ? 'Pilih lokasi stok terlebih dahulu'
+                      : 'Lanjut ke Konfirmasi'}
                 </Button>
               </div>
             </>
@@ -1160,7 +1204,7 @@ export function TransactionsPage() {
               </div>
               <div className={styles.overlayFooter}>
                 <Button
-                  onClick={() => setAssignStep(2)}
+                  onClick={advanceAssignToStep2}
                   disabled={!assignKurir || !assignCustomer}
                   style={{ width: '100%' }}
                 >
@@ -1199,11 +1243,18 @@ export function TransactionsPage() {
                 <ul className={styles.productList}>
                   {filteredAssignProducts.map((prod) => {
                     const qty = assignCartQty(prod.id);
+                    const price = effectivePrice(prod.id, assignCustomerPricing);
                     return (
                       <li key={prod.id} className={styles.productRow}>
                         <div className={styles.productInfo}>
                           <span className={styles.productName}>{prod.name}</span>
-                          <span className={styles.productPrice}>{formatCurrency(prod.basePrice)} / {prod.unit}</span>
+                          <span className={styles.productPrice}>
+                            {formatCurrency(price)}
+                            {price !== prod.basePrice && (
+                              <span className={styles.basePriceStrike}> ({formatCurrency(prod.basePrice)})</span>
+                            )}
+                            {' '}/ {prod.unit}
+                          </span>
                         </div>
                         <div className={styles.qtyControl}>
                           <button className={styles.qtyBtn} onClick={() => decrementAssignQty(prod.id)} disabled={qty === 0} aria-label="Kurangi">−</button>
