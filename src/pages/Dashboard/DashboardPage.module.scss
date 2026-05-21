@@ -219,6 +219,24 @@
   padding: 32px 0;
 }
 
+// ─── Staff revenue pie chart (FR-DSH-010) ─────────────────────────────────────
+
+.pieChartCanvas {
+  position: relative;
+  height: 280px;
+
+  @media (min-width: 768px) {
+    height: 320px;
+  }
+}
+
+.pieChartEmpty {
+  font-size: 14px;
+  color: var(--color-whisper-gray);
+  text-align: center;
+  padding: 32px 0;
+}
+
 // ─── Chart detail panel ───────────────────────────────────────────────────────
 
 .chartDetailPanel {

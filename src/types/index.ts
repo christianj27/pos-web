@@ -211,6 +211,13 @@ export interface CustomerDebtSummary {
   outstandingDebt: number;
 }
 
+export interface StaffRevenueSummary {
+  staffId: string;
+  staffName: string;
+  revenue: number;
+  transactionCount: number;
+}
+
 export interface DashboardStats {
   todayRevenue: number;
   todayTransactions: number;
@@ -223,6 +230,7 @@ export interface DashboardStats {
   recentTransactions: RecentTransaction[];
   warehouseStock: StockLevel[];
   customerDebts: CustomerDebtSummary[];
+  staffRevenue: StaffRevenueSummary[];
 }
 
 // ─── Debt History ─────────────────────────────────────────────────────────────

@@ -17,7 +17,7 @@ export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 import type {
   AuthUser, User, Location, Product, Customer, CustomerPricingItem,
   StockLevel, StockMovement, Transaction, DebtPayment, ContainerLoan, DashboardStats,
-  DeliveryAssignment,
+  DeliveryAssignment, StaffRevenueSummary,
 } from '../types';
 
 // ─── Auth credentials ─────────────────────────────────────────────────────────
@@ -298,6 +298,12 @@ export const mockDb = {
       { productId: 'prod-5', productName: 'Gas LPG 12 kg',       productUnit: 'tabung 12kg', productCategory: 'refillable', locationId: 'loc-1', locationName: 'Gudang Utama', quantityFilled: 3,    quantityEmpty: 2,    quantityTotal: null },
       { productId: 'prod-6', productName: 'Air Isi Ulang 240ml', productUnit: 'cup',         productCategory: 'simple',     locationId: 'loc-1', locationName: 'Gudang Utama', quantityFilled: null, quantityEmpty: null, quantityTotal: 200  },
     ],
+    staffRevenue: [
+      { staffId: 'user-2', staffName: 'Andi Kurir',   revenue: 145000, transactionCount: 2 },
+      { staffId: 'user-1', staffName: 'Budi Santoso', revenue: 100000, transactionCount: 1 },
+      { staffId: 'user-3', staffName: 'Sari Kasir',   revenue:  25000, transactionCount: 2 },
+      { staffId: 'user-4', staffName: 'Rudi Kurir',   revenue:      0, transactionCount: 1 },
+    ] as StaffRevenueSummary[],
   } as DashboardStats,
 };
 

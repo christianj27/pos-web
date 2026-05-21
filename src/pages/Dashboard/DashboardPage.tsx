@@ -6,12 +6,14 @@ import {
   LinearScale,
   BarElement,
   Tooltip,
+  ArcElement,
+  Legend,
   type ChartEvent,
   type ActiveElement,
   type TooltipItem,
   type Plugin,
 } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import { Bar, Pie } from 'react-chartjs-2';
 import { dashboardService } from '../../services/dashboardService';
 import { transactionService } from '../../services/transactionService';
 import { usePolling } from '../../hooks/usePolling';
@@ -22,10 +24,10 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary } from '../../types';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
 
 // Draws formatted revenue value above each bar
 const barDatalabelPlugin: Plugin<'bar'> = {
@@ -336,6 +338,85 @@ function WarehouseStockRow({ item }: { item: StockLevel }) {
   );
 }
 
+// --- Pie chart color palette (index-based) ------------------------------------
+const PIE_COLORS = [
+  '#576cdb', // digital violet
+  '#e67e22', // orange
+  '#27ae60', // green
+  '#e74c3c', // red
+  '#8e44ad', // purple
+  '#16a085', // teal
+];
+
+// --- Staff revenue pie chart (FR-DSH-010) -------------------------------------
+
+function StaffRevenuePieChart({ entries }: { entries: StaffRevenueSummary[] }) {
+  const filtered = entries.filter((e) => e.revenue > 0);
+  if (filtered.length === 0) {
+    return <p className={styles.pieChartEmpty}>Tidak ada data pendapatan untuk hari ini.</p>;
+  }
+
+  const data = {
+    labels: filtered.map((e) => e.staffName),
+    datasets: [
+      {
+        data: filtered.map((e) => e.revenue),
+        backgroundColor: filtered.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]),
+        borderWidth: 2,
+        borderColor: '#ffffff',
+      },
+    ],
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          color: '#6c7693',
+          font: { size: 12 },
+          padding: 16,
+          generateLabels: (chart: ChartJS) => {
+            const meta = chart.getDatasetMeta(0);
+            return (chart.data.labels as string[]).map((label, i) => {
+              const value = (chart.data.datasets[0].data[i] as number) ?? 0;
+              const total = (chart.data.datasets[0].data as number[]).reduce((s, v) => s + v, 0);
+              const pct   = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+              return {
+                text: `${label}  ${pct}%`,
+                fillStyle: PIE_COLORS[i % PIE_COLORS.length],
+                strokeStyle: '#ffffff',
+                lineWidth: 2,
+                hidden: (meta.data[i] as unknown as { hidden?: boolean })?.hidden ?? false,
+                index: i,
+              };
+            });
+          },
+        },
+      },
+      tooltip: {
+        callbacks: {
+          label: (ctx: TooltipItem<'pie'>) => {
+            const value  = ctx.parsed ?? 0;
+            const total  = (ctx.dataset.data as number[]).reduce((s, v) => s + v, 0);
+            const pct    = total > 0 ? ((value / total) * 100).toFixed(1) : '0';
+            return ` ${formatCurrency(value)}  (${pct}%)`;
+          },
+        },
+      },
+    },
+    animation: { duration: 300 },
+  };
+
+  return (
+    <div className={styles.pieChartCanvas}>
+      <Pie data={data} options={options} />
+    </div>
+  );
+}
+
 // --- Page ---------------------------------------------------------------------
 
 export function DashboardPage() {
@@ -530,6 +611,18 @@ export function DashboardPage() {
               </>
             ) : (
               <p className={styles.chartEmpty}>Tidak ada data pendapatan untuk minggu ini.</p>
+            )}
+          </div>
+        </section>
+
+        {/* Staff revenue pie chart — FR-DSH-010 */}
+        <section>
+          <h2 className={styles.sectionTitle}>Pendapatan per Staf</h2>
+          <div className={styles.chartWrapper}>
+            {stats ? (
+              <StaffRevenuePieChart entries={stats.staffRevenue ?? []} />
+            ) : (
+              <p className={styles.pieChartEmpty}>Tidak ada data pendapatan untuk hari ini.</p>
             )}
           </div>
         </section>
