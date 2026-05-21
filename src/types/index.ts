@@ -150,6 +150,8 @@ export interface DeliveryAssignment {
   kurirName: string;
   customerId: string;
   customerName: string;
+  locationId?: string;
+  locationName?: string;
   items: DeliveryAssignmentItem[];
   notes?: string;
   status: DeliveryAssignmentStatus;

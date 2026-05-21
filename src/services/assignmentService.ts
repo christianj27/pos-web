@@ -6,6 +6,7 @@ import type { DeliveryAssignment, DeliveryAssignmentItem } from '../types';
 export interface CreateAssignmentPayload {
   kurirId: string;
   customerId: string;
+  locationId: string;
   items: { productId: string; quantity: number; unitPrice: number }[];
   notes?: string;
 }
@@ -36,9 +37,11 @@ export const assignmentService = {
     if (!USE_MOCK) return apiClient.post<DeliveryAssignment>('/api/assignments', payload).then((r) => r.data);
     const kurir = mockDb.users.find((u) => u.id === payload.kurirId);
     const customer = mockDb.customers.find((c) => c.id === payload.customerId);
+    const location = mockDb.locations.find((l) => l.id === payload.locationId);
 
     if (!kurir) throw new Error('Kurir tidak ditemukan.');
     if (!customer) throw new Error('Pelanggan tidak ditemukan.');
+    if (!location) throw new Error('Lokasi tidak ditemukan.');
 
     const items: DeliveryAssignmentItem[] = payload.items.map((i) => {
       const prod = mockDb.products.find((p) => p.id === i.productId);
@@ -56,6 +59,8 @@ export const assignmentService = {
       kurirName: kurir.name,
       customerId: customer.id,
       customerName: customer.name,
+      locationId: location.id,
+      locationName: location.name,
       items,
       notes: payload.notes,
       status: 'pending',
@@ -72,15 +77,20 @@ export const assignmentService = {
     const assignment = mockDb.assignments.find((a) => a.id === id);
     if (!assignment) throw new Error('Penugasan tidak ditemukan.');
 
-    const truck = mockDb.locations.find(
-      (l) => l.type === 'vehicle' && l.assignedTo === assignment.kurirId && l.isActive,
-    );
-    if (!truck) throw new Error('Kurir ini belum memiliki kendaraan aktif.');
+    // Use location stored on the assignment; fall back to kurir's vehicle for old records
+    let locationId = assignment.locationId;
+    if (!locationId) {
+      const truck = mockDb.locations.find(
+        (l) => l.type === 'vehicle' && l.assignedTo === assignment.kurirId && l.isActive,
+      );
+      if (!truck) throw new Error('Kurir ini belum memiliki kendaraan aktif.');
+      locationId = truck.id;
+    }
 
     const tx = await transactionService.create({
       transactionType: 'delivery',
       customerId: assignment.customerId,
-      locationId: truck.id,
+      locationId,
       items: payload.items,
       paidAmount: payload.paidAmount,
       paymentMethod: payload.paymentMethod,

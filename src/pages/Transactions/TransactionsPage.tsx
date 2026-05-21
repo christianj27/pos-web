@@ -82,6 +82,7 @@ export function TransactionsPage() {
   const [assignProductSearch, setAssignProductSearch] = useState('');
   const [assignNotes, setAssignNotes] = useState('');
   const [assignSaving, setAssignSaving] = useState(false);
+  const [assignLocationId, setAssignLocationId] = useState('');
 
   // ── Overlay (3-step) state ───────────────────────────────────────────────────
   const [overlayOpen, setOverlayOpen] = useState(false);
@@ -317,6 +318,21 @@ export function TransactionsPage() {
 
   async function handleCreate() {
     if (cart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
+
+    // Mandatory notes when the kurir delivers different quantities than assigned
+    if (fulfillAssignment) {
+      const hasPartialDelivery =
+        cart.some((c) => {
+          const orig = fulfillAssignment.items.find((i) => i.productId === c.productId);
+          return !orig || orig.quantity !== c.quantity;
+        }) ||
+        fulfillAssignment.items.some((i) => !cart.find((c) => c.productId === i.productId));
+      if (hasPartialDelivery && !notes.trim()) {
+        showToast('Catatan wajib diisi jika jumlah pengiriman berbeda dari penugasan.', 'error');
+        return;
+      }
+    }
+
     const warnings = computeTxWarnings();
     if (warnings.length > 0) {
       setTxWarnings(warnings);
@@ -363,8 +379,9 @@ export function TransactionsPage() {
     })));
     setProductSearch('');
     setTxType('delivery');
+    // Pre-fill from assignment location; fall back to kurir's own vehicle
     const truck = locations.find((l) => l.type === 'vehicle' && l.assignedTo === user?.id && l.isActive);
-    setLocationId(truck?.id ?? '');
+    setLocationId(assignment.locationId ?? truck?.id ?? '');
     setPaymentMethod('cash');
     setPaidAmount('');
     setNotes('');
@@ -387,6 +404,7 @@ export function TransactionsPage() {
     setAssignProductSearch('');
     setAssignNotes('');
     setAssignCustomerPricing([]);
+    setAssignLocationId('');
     setAssignmentOverlayOpen(true);
   }
 
@@ -434,12 +452,14 @@ export function TransactionsPage() {
 
   async function handleCreateAssignment() {
     if (!assignKurir || !assignCustomer) { showToast('Pilih kurir dan pelanggan.', 'error'); return; }
+    if (!assignLocationId) { showToast('Pilih lokasi stok.', 'error'); return; }
     if (assignCart.length === 0) { showToast('Tambahkan minimal satu produk.', 'error'); return; }
     setAssignSaving(true);
     try {
       await assignmentService.create({
         kurirId: assignKurir.id,
         customerId: assignCustomer.id,
+        locationId: assignLocationId,
         items: assignCart.map((c) => ({ productId: c.productId, quantity: c.quantity, unitPrice: c.unitPrice })),
         notes: assignNotes.trim() || undefined,
       });
@@ -574,6 +594,7 @@ export function TransactionsPage() {
                 <div className={styles.assignmentBody}>
                   <p className={styles.assignmentCustomer}>{a.customerName}</p>
                   <p className={styles.assignmentKurir}>Kurir: {a.kurirName}</p>
+                  {a.locationName && <p className={styles.assignmentKurir}>Lokasi: {a.locationName}</p>}
                   <p className={styles.assignmentItemsText}>
                     {a.items.map((i) => `${i.quantity}× ${i.productName}`).join(', ')}
                   </p>
@@ -1201,6 +1222,28 @@ export function TransactionsPage() {
                     </li>
                   ))}
                 </ul>
+
+                <p className={styles.lockedLabel} style={{ fontWeight: 600, marginTop: 16, marginBottom: 4 }}>Pilih Lokasi Stok</p>
+                <ul className={styles.customerList}>
+                  {locations.map((l) => (
+                    <li key={l.id}>
+                      <button
+                        className={[styles.customerRow, assignLocationId === l.id ? styles.customerRowSelected : ''].join(' ')}
+                        onClick={() => setAssignLocationId(l.id)}
+                      >
+                        <div className={styles.customerInfo}>
+                          <span className={styles.customerName}>{l.name}</span>
+                          <span className={styles.customerPhone}>{l.type === 'warehouse' ? 'Gudang' : 'Kendaraan'}</span>
+                        </div>
+                        {assignLocationId === l.id && (
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" width="20" height="20" className={styles.checkIcon}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className={styles.overlayFooter}>
                 <Button
@@ -1228,6 +1271,10 @@ export function TransactionsPage() {
                   <div className={styles.lockedField}>
                     <span className={styles.lockedLabel}>Pelanggan</span>
                     <span className={styles.lockedValue}>{assignCustomer?.name}</span>
+                  </div>
+                  <div className={styles.lockedField}>
+                    <span className={styles.lockedLabel}>Lokasi Stok</span>
+                    <span className={styles.lockedValue}>{locations.find((l) => l.id === assignLocationId)?.name ?? '—'}</span>
                   </div>
                 </div>
                 <div className={styles.searchWrap}>

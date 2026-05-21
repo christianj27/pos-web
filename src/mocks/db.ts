@@ -230,6 +230,7 @@ export const mockDb = {
       id: 'asgn-1',
       kurirId: 'user-2', kurirName: 'Andi Kurir',
       customerId: 'cust-1', customerName: 'Toko Bu Ani',
+      locationId: 'loc-2', locationName: 'Truk Andi',
       items: [
         { productId: 'prod-1', productName: 'Galon Aqua',  quantity: 2, unitPrice: 4500 },
         { productId: 'prod-4', productName: 'Gas LPG 3 kg', quantity: 1, unitPrice: 20000 },
@@ -243,6 +244,7 @@ export const mockDb = {
       id: 'asgn-2',
       kurirId: 'user-4', kurirName: 'Rudi Kurir',
       customerId: 'cust-2', customerName: 'Warung Pak Joko',
+      locationId: 'loc-3', locationName: 'Truk Rudi',
       items: [
         { productId: 'prod-2', productName: 'Galon Vit', quantity: 3, unitPrice: 4800 },
       ],
