@@ -70,17 +70,19 @@ const OWNER_NAV: NavItem[] = [
 ];
 
 const KURIR_NAV: NavItem[] = [
-  { to: '/transactions', label: 'Transaksi', icon: <TxIcon /> },
-  { to: '/stock',        label: 'Stok',      icon: <StockIcon /> },
-  { to: '/customers',    label: 'Pelanggan', icon: <CustomerIcon /> },
-  { to: '/profile',      label: 'Profil',    icon: <ProfileIcon /> },
+  { to: '/dashboard',    label: 'Dashboard',  icon: <HomeIcon /> },
+  { to: '/transactions', label: 'Transaksi',  icon: <TxIcon /> },
+  { to: '/stock',        label: 'Stok',       icon: <StockIcon /> },
+  { to: '/customers',    label: 'Pelanggan',  icon: <CustomerIcon /> },
+  { to: '/profile',      label: 'Profil',     icon: <ProfileIcon /> },
 ];
 
 const KASIR_NAV: NavItem[] = [
-  { to: '/transactions', label: 'Transaksi', icon: <TxIcon /> },
-  { to: '/stock',        label: 'Stok',      icon: <StockIcon /> },
-  { to: '/customers',    label: 'Pelanggan', icon: <CustomerIcon /> },
-  { to: '/profile',      label: 'Profil',    icon: <ProfileIcon /> },
+  { to: '/dashboard',    label: 'Dashboard',  icon: <HomeIcon /> },
+  { to: '/transactions', label: 'Transaksi',  icon: <TxIcon /> },
+  { to: '/stock',        label: 'Stok',       icon: <StockIcon /> },
+  { to: '/customers',    label: 'Pelanggan',  icon: <CustomerIcon /> },
+  { to: '/profile',      label: 'Profil',     icon: <ProfileIcon /> },
 ];
 
 const NAV_BY_ROLE: Record<string, NavItem[]> = {

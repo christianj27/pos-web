@@ -48,7 +48,7 @@ export default function App() {
             <Route path="/" element={<AppRoot />} />
 
             <Route path="/dashboard" element={
-              <RequireAuth allowedRoles={['owner']}><DashboardPage /></RequireAuth>
+              <RequireAuth allowedRoles={['owner', 'kasir', 'kurir']}><DashboardPage /></RequireAuth>
             } />
 
             <Route path="/users" element={

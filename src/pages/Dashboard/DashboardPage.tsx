@@ -24,6 +24,7 @@ import { formatCurrency } from '../../utils/formatCurrency';
 import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
@@ -137,7 +138,7 @@ function StatCard({ label, value, icon, colorClass, valueClass, badge, delta }: 
 
 // --- Chart detail panel -------------------------------------------------------
 
-function ChartDetailPanel({ entry, onClose }: { entry: WeeklyChartEntry; onClose: () => void }) {
+function ChartDetailPanel({ entry, onClose, showPurchaseCost }: { entry: WeeklyChartEntry; onClose: () => void; showPurchaseCost: boolean }) {
   const dateLabel = new Intl.DateTimeFormat('id-ID', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   }).format(new Date(entry.date + 'T00:00:00'));
@@ -157,10 +158,12 @@ function ChartDetailPanel({ entry, onClose }: { entry: WeeklyChartEntry; onClose
           <span className={styles.chartDetailLabel}>Transaksi</span>
           <span className={styles.chartDetailValue}>{entry.transactionCount}</span>
         </div>
-        <div className={styles.chartDetailItem}>
-          <span className={styles.chartDetailLabel}>Biaya Pembelian</span>
-          <span className={styles.chartDetailValue}>{formatCurrency(entry.purchaseCost)}</span>
-        </div>
+        {showPurchaseCost && (
+          <div className={styles.chartDetailItem}>
+            <span className={styles.chartDetailLabel}>Biaya Pembelian</span>
+            <span className={styles.chartDetailValue}>{formatCurrency(entry.purchaseCost)}</span>
+          </div>
+        )}
         <div className={styles.chartDetailItem}>
           <span className={styles.chartDetailLabel}>Rata-rata / Transaksi</span>
           <span className={styles.chartDetailValue}>
@@ -422,6 +425,8 @@ function StaffRevenuePieChart({ entries }: { entries: StaffRevenueSummary[] }) {
 export function DashboardPage() {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const isOwner = user?.role === 'owner';
   const [stats, setStats]                       = useState<DashboardStats | null>(null);
   const [loading, setLoading]                   = useState(true);
   const [selectedDate, setSelectedDate]         = useState<string>(getTodayWIB());
@@ -433,7 +438,7 @@ export function DashboardPage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const data = await dashboardService.getStats(selectedDate);
+      const data = await dashboardService.getStats(selectedDate, user);
       setStats(data);
       setLastUpdated(new Date());
     } catch (err) {
@@ -441,7 +446,7 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate]);
+  }, [selectedDate, user]);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
   usePolling(fetchStats, DASHBOARD_POLLING_INTERVAL);
@@ -526,18 +531,20 @@ export function DashboardPage() {
                 </svg>
               }
             />
-            <StatCard
-              label="Biaya Pembelian"
-              value={stats ? formatCurrency(stats.todayPurchaseCost) : '\u2014'}
-              colorClass={styles.iconOrange}
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-                  <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
-                  <line x1="3" y1="6" x2="21" y2="6" />
-                  <path d="M16 10a4 4 0 01-8 0" />
-                </svg>
-              }
-            />
+            {isOwner && (
+              <StatCard
+                label="Biaya Pembelian"
+                value={stats ? formatCurrency(stats.todayPurchaseCost) : '\u2014'}
+                colorClass={styles.iconOrange}
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                    <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z" />
+                    <line x1="3" y1="6" x2="21" y2="6" />
+                    <path d="M16 10a4 4 0 01-8 0" />
+                  </svg>
+                }
+              />
+            )}
             <StatCard
               label="Pembayaran Hutang Diterima"
               value={stats ? formatCurrency(stats.todayDebtCollected) : '\u2014'}
@@ -606,6 +613,7 @@ export function DashboardPage() {
                   <ChartDetailPanel
                     entry={clickedEntry}
                     onClose={() => setClickedEntry(null)}
+                    showPurchaseCost={isOwner}
                   />
                 )}
               </>
@@ -615,17 +623,19 @@ export function DashboardPage() {
           </div>
         </section>
 
-        {/* Staff revenue pie chart — FR-DSH-010 */}
-        <section>
-          <h2 className={styles.sectionTitle}>Pendapatan per Staf</h2>
-          <div className={styles.chartWrapper}>
-            {stats ? (
-              <StaffRevenuePieChart entries={stats.staffRevenue ?? []} />
-            ) : (
-              <p className={styles.pieChartEmpty}>Tidak ada data pendapatan untuk hari ini.</p>
-            )}
-          </div>
-        </section>
+        {/* Staff revenue pie chart — FR-DSH-010 (owner only) */}
+        {isOwner && (
+          <section>
+            <h2 className={styles.sectionTitle}>Pendapatan per Staf</h2>
+            <div className={styles.chartWrapper}>
+              {stats ? (
+                <StaffRevenuePieChart entries={stats.staffRevenue ?? []} />
+              ) : (
+                <p className={styles.pieChartEmpty}>Tidak ada data pendapatan untuk hari ini.</p>
+              )}
+            </div>
+          </section>
+        )}
 
         {/* Recent transactions — FR-DSH-003 */}
         <section>
