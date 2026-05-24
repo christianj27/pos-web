@@ -210,6 +210,13 @@ export function TransactionsPage() {
     if (cart.length === 0 || !locationId) return;
     const t = cart.reduce((s, c) => s + c.quantity * c.unitPrice, 0);
     setPaidAmount(String(t));
+    const initialReturns: Record<string, string> = {};
+    cart.forEach((c) => {
+      if (products.find((p) => p.id === c.productId)?.category === 'refillable') {
+        initialReturns[c.productId] = String(c.quantity);
+      }
+    });
+    setContainerReturns(initialReturns);
     setStep(3);
   }
 
