@@ -173,14 +173,12 @@ export function LocationsPage() {
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(l)}>Edit</button>
-                  {l.type !== 'warehouse' && (
-                    <button
+                  <button
                       className={[styles.actionBtn, l.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
                       onClick={() => setConfirmTarget(l)}
                     >
                       {l.isActive ? 'Nonaktifkan' : 'Aktifkan'}
-                    </button>
-                  )}
+                  </button>
                 </div>
               </div>
             ))}
