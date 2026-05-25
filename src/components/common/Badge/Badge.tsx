@@ -10,6 +10,7 @@ type BadgeVariant =
   | 'pending' | 'completed' | 'cancelled'
   | 'filled' | 'empty'
   | 'movement'
+  | 'confidential'
   | 'default';
 
 interface BadgeProps {

@@ -130,7 +130,7 @@ export function TransactionsPage() {
     const [txs, prods, custs, locs, asgns, usrs, lvls] = await Promise.all([
       transactionService.list(selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat transaksi.'), 'error'); return []; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
-      customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
+      customerService.list(role).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
       locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
       assignmentService.list(role, user?.id, selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat penugasan.'), 'error'); return []; }),
       (isOwner || isKasir)
@@ -756,7 +756,10 @@ export function TransactionsPage() {
                         onClick={() => setSelectedCustomer(c)}
                       >
                         <div className={styles.customerInfo}>
-                          <span className={styles.customerName}>{c.name}</span>
+                          <div className={styles.customerNameRow}>
+                            <span className={styles.customerName}>{c.name}</span>
+                            {isOwner && c.isConfidential && <Badge variant="confidential">Konfidensial</Badge>}
+                          </div>
                           {c.phone && <span className={styles.customerPhone}>{c.phone}</span>}
                           {(c.outstandingDebt ?? 0) > 0 && (
                             <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstandingDebt!)}</span>
@@ -1236,7 +1239,10 @@ export function TransactionsPage() {
                         onClick={() => setAssignCustomer(c)}
                       >
                         <div className={styles.customerInfo}>
-                          <span className={styles.customerName}>{c.name}</span>
+                          <div className={styles.customerNameRow}>
+                            <span className={styles.customerName}>{c.name}</span>
+                            {isOwner && c.isConfidential && <Badge variant="confidential">Konfidensial</Badge>}
+                          </div>
                           {c.phone && <span className={styles.customerPhone}>{c.phone}</span>}
                           {(c.outstandingDebt ?? 0) > 0 && (
                             <span className={styles.customerDebt}>Hutang: {formatCurrency(c.outstandingDebt!)}</span>

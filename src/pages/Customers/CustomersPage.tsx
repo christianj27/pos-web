@@ -9,8 +9,8 @@ import { ApiError, getErrorMessage } from '../../utils/apiError';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
 import styles from './CustomersPage.module.scss';
 
-interface CustomerFormData { name: string; phone: string; address: string; initialDebt: string; }
-const EMPTY_FORM: CustomerFormData = { name: '', phone: '', address: '', initialDebt: '' };
+interface CustomerFormData { name: string; phone: string; address: string; initialDebt: string; isConfidential: boolean; }
+const EMPTY_FORM: CustomerFormData = { name: '', phone: '', address: '', initialDebt: '', isConfidential: false };
 
 export function CustomersPage() {
   const { user } = useAuth();
@@ -36,10 +36,10 @@ export function CustomersPage() {
   const [savingPricing, setSavingPricing] = useState(false);
 
   const load = useCallback(async () => {
-    const data = await customerService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return [] as Customer[]; });
+    const data = await customerService.list(user?.role).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return [] as Customer[]; });
     setCustomers(data);
     setLoading(false);
-  }, [showToast]);
+  }, [showToast, user?.role]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -47,7 +47,7 @@ export function CustomersPage() {
 
   function openEdit(c: Customer) {
     setEditTarget(c);
-    setFormData({ name: c.name, phone: c.phone ?? '', address: c.address ?? '', initialDebt: c.initialDebt != null && c.initialDebt > 0 ? String(c.initialDebt) : '' });
+    setFormData({ name: c.name, phone: c.phone ?? '', address: c.address ?? '', initialDebt: c.initialDebt != null && c.initialDebt > 0 ? String(c.initialDebt) : '', isConfidential: c.isConfidential ?? false });
     setFormErrors({}); setModalOpen(true);
   }
 
@@ -80,10 +80,10 @@ export function CustomersPage() {
     const initialDebt = formData.initialDebt ? parseFloat(formData.initialDebt) : undefined;
     try {
       if (editTarget) {
-        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: editTarget.isActive, initialDebt });
+        await customerService.update(editTarget.id, { name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, isActive: editTarget.isActive, initialDebt, isConfidential: isOwner ? formData.isConfidential : undefined });
         showToast('Pelanggan berhasil diperbarui.');
       } else {
-        await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, initialDebt });
+        await customerService.create({ name: formData.name, phone: formData.phone || undefined, address: formData.address || undefined, initialDebt, isConfidential: isOwner ? formData.isConfidential : undefined });
         showToast('Pelanggan berhasil dibuat.');
       }
       setModalOpen(false); load();
@@ -163,6 +163,7 @@ export function CustomersPage() {
                   </div>
                   <div className={styles.cardBadges}>
                     <Badge variant={c.isActive ? 'active' : 'inactive'}>{c.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
+                    {isOwner && c.isConfidential && <Badge variant="confidential">Konfidensial</Badge>}
                   </div>
                 </div>
                 <div className={styles.cardActions}>
@@ -190,6 +191,16 @@ export function CustomersPage() {
           <Input label="Telepon (opsional)" type="tel" value={formData.phone} onChange={(e) => setField('phone', e.target.value)} />
           <Input label="Alamat (opsional)" value={formData.address} onChange={(e) => setField('address', e.target.value)} />
           {isOwner && <Input label="Saldo Hutang Awal (Rp, opsional)" currency min="0" value={formData.initialDebt} onChange={(e) => setField('initialDebt', e.target.value)} />}
+          {isOwner && (
+            <label className={styles.checkboxRow}>
+              <input
+                type="checkbox"
+                checked={formData.isConfidential}
+                onChange={(e) => setFormData((p) => ({ ...p, isConfidential: e.target.checked }))}
+              />
+              Konfidensial — hanya owner yang dapat melihat pelanggan ini
+            </label>
+          )}
         </div>
       </Modal>
 

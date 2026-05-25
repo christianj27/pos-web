@@ -3,17 +3,19 @@ import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { Customer, CustomerPricingItem } from '../types';
 
 export const customerService = {
-  list: (): Promise<Customer[]> =>
-    USE_MOCK ? delay([...mockDb.customers]) : apiClient.get<Customer[]>('/api/customers').then((r) => r.data),
+  list: (role?: string): Promise<Customer[]> =>
+    USE_MOCK
+      ? delay(mockDb.customers.filter((c) => role === 'owner' || !c.isConfidential))
+      : apiClient.get<Customer[]>('/api/customers').then((r) => r.data),
 
-  create: (data: { name: string; phone?: string; address?: string; initialDebt?: number }): Promise<Customer> => {
+  create: (data: { name: string; phone?: string; address?: string; initialDebt?: number; isConfidential?: boolean }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.post<Customer>('/api/customers', data).then((r) => r.data);
-    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, isActive: true, outstandingDebt: data.initialDebt ?? 0, initialDebt: data.initialDebt ?? 0, createdAt: new Date().toISOString() };
+    const c: Customer = { id: uid(), name: data.name, phone: data.phone, address: data.address, isActive: true, isConfidential: data.isConfidential ?? false, outstandingDebt: data.initialDebt ?? 0, initialDebt: data.initialDebt ?? 0, createdAt: new Date().toISOString() };
     mockDb.customers.push(c);
     return delay({ ...c });
   },
 
-  update: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean; initialDebt?: number }): Promise<Customer> => {
+  update: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean; initialDebt?: number; isConfidential?: boolean }): Promise<Customer> => {
     if (!USE_MOCK) return apiClient.put<Customer>(`/api/customers/${id}`, data).then((r) => r.data);
     const idx = mockDb.customers.findIndex((c) => c.id === id);
     if (idx !== -1) {

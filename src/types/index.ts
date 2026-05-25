@@ -54,6 +54,7 @@ export interface Customer {
   phone?: string;
   address?: string;
   isActive: boolean;
+  isConfidential?: boolean;
   outstandingDebt?: number;
   initialDebt?: number;
   createdAt: string;

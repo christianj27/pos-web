@@ -54,10 +54,10 @@ export const mockDb = {
   ] as Product[],
 
   customers: [
-    { id: 'cust-1', name: 'Toko Bu Ani',      phone: '08121234567', address: 'Jl. Mawar No. 1, Jakarta',    isActive: true,  outstandingDebt: 50000,  createdAt: '2025-01-05T08:00:00.000Z' },
-    { id: 'cust-2', name: 'Warung Pak Joko',  phone: '08129876543', address: 'Jl. Melati No. 5, Jakarta',   isActive: true,  outstandingDebt: 20000,  createdAt: '2025-01-06T08:00:00.000Z' },
-    { id: 'cust-3', name: 'Restoran Sedap',   phone: '0812111222',  address: 'Jl. Kenanga No. 10, Bandung', isActive: true,  outstandingDebt: 125000, createdAt: '2025-01-10T08:00:00.000Z' },
-    { id: 'cust-4', name: 'Toko Lama Tutup',  phone: undefined,     address: 'Jl. Lama No. 99',             isActive: false, outstandingDebt: 0,      createdAt: '2024-12-01T08:00:00.000Z' },
+    { id: 'cust-1', name: 'Toko Bu Ani',      phone: '08121234567', address: 'Jl. Mawar No. 1, Jakarta',    isActive: true,  isConfidential: false, outstandingDebt: 50000,  createdAt: '2025-01-05T08:00:00.000Z' },
+    { id: 'cust-2', name: 'Warung Pak Joko',  phone: '08129876543', address: 'Jl. Melati No. 5, Jakarta',   isActive: true,  isConfidential: false, outstandingDebt: 20000,  createdAt: '2025-01-06T08:00:00.000Z' },
+    { id: 'cust-3', name: 'Restoran Sedap',   phone: '0812111222',  address: 'Jl. Kenanga No. 10, Bandung', isActive: true,  isConfidential: false, outstandingDebt: 125000, createdAt: '2025-01-10T08:00:00.000Z' },
+    { id: 'cust-4', name: 'Toko Lama Tutup',  phone: undefined,     address: 'Jl. Lama No. 99',             isActive: false, isConfidential: false, outstandingDebt: 0,      createdAt: '2024-12-01T08:00:00.000Z' },
   ] as Customer[],
 
   customerPricing: {
