@@ -16,6 +16,7 @@ import {
 import { Bar, Pie } from 'react-chartjs-2';
 import { dashboardService } from '../../services/dashboardService';
 import { transactionService } from '../../services/transactionService';
+import { stockService } from '../../services/stockService';
 import { usePolling } from '../../hooks/usePolling';
 import { Spinner } from '../../components/common/Spinner/Spinner';
 import { Modal } from '../../components/common/Modal/Modal';
@@ -25,7 +26,7 @@ import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary } from '../../types';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
@@ -53,6 +54,15 @@ const barDatalabelPlugin: Plugin<'bar'> = {
 const DASHBOARD_POLLING_INTERVAL = 5000;
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = { cash: 'Tunai', transfer: 'Transfer', qris: 'QRIS' };
+
+const MOVEMENT_TYPE_LABELS: Record<string, string> = {
+  receive:     'Terima',
+  dispatch:    'Kirim',
+  transfer:    'Transfer',
+  defect:      'Defek',
+  production:  'Produksi',
+  adjustment:  'Penyesuaian',
+};
 
 // --- Design tokens (must match SCSS variables) --------------------------------
 const COLOR_DIGITAL_VIOLET   = '#576cdb';
@@ -341,7 +351,145 @@ function WarehouseStockRow({ item }: { item: StockLevel }) {
   );
 }
 
+// --- Daily stock movement summary row (FR-DSH-012) ----------------------------
+
+function DeltaChip({ value, label }: { value: number; label: string }) {
+  if (value === 0) return null;
+  const cls = value > 0 ? styles.deltaPos : styles.deltaNeg;
+  const sign = value > 0 ? '+' : '';
+  return <span className={[styles.deltaChip, cls].join(' ')}>{sign}{value} {label}</span>;
+}
+
+function DailyStockSummaryRow({ item, onClick }: { item: DailyStockProductSummary; onClick: () => void }) {
+  const isRefillable = item.productCategory === 'refillable';
+  const movCount = item.breakdown.reduce((s, b) => {
+    // count non-zero breakdown entries (at least one delta ≠ 0)
+    const hasActivity = b.filledDelta !== 0 || b.emptyDelta !== 0 || b.simpleDelta !== 0;
+    return s + (hasActivity ? 1 : 0);
+  }, 0);
+
+  return (
+    <div
+      className={styles.summaryRow}
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') onClick(); }}
+    >
+      <div className={styles.summaryProductInfo}>
+        <span className={styles.summaryProductName}>{item.productName}</span>
+        <span className={styles.summaryProductUnit}>{item.productUnit}</span>
+      </div>
+      <div className={styles.summaryRight}>
+        <div className={styles.summaryDeltas}>
+          {isRefillable ? (
+            <>
+              <DeltaChip value={item.netFilledDelta} label="isi" />
+              <DeltaChip value={item.netEmptyDelta}  label="kosong" />
+            </>
+          ) : (
+            <DeltaChip value={item.netSimpleDelta} label={item.productUnit} />
+          )}
+          {movCount > 0 && (
+            <span className={styles.movCountBadge}>{movCount} jenis</span>
+          )}
+        </div>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="14" height="14" className={styles.summaryChevron}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </div>
+    </div>
+  );
+}
+
+// --- Stock movement detail modal (FR-DSH-012) ---------------------------------
+
+function StockMovementDetailModal({
+  product,
+  movements,
+  isOwner,
+  onClose,
+}: {
+  product: DailyStockProductSummary;
+  movements: StockMovement[];
+  isOwner: boolean;
+  onClose: () => void;
+}) {
+  const isRefillable = product.productCategory === 'refillable';
+
+  const CONTAINER_STATUS_LABELS: Record<string, string> = { filled: 'Terisi', empty: 'Kosong', na: '—' };
+
+  function directionLabel(m: StockMovement): string {
+    if (m.movementType === 'production') return '±';
+    const isIn  = m.toLocationId   != null && m.fromLocationId == null;
+    const isOut = m.fromLocationId != null && m.toLocationId   == null;
+    if (isIn)  return '+';
+    if (isOut) return '−';
+    return '↔';
+  }
+
+  function directionClass(m: StockMovement): string {
+    if (m.movementType === 'production') return styles.movDirNeutral;
+    const isIn  = m.toLocationId   != null && m.fromLocationId == null;
+    const isOut = m.fromLocationId != null && m.toLocationId   == null;
+    if (isIn)  return styles.movDirIn;
+    if (isOut) return styles.movDirOut;
+    return styles.movDirNeutral;
+  }
+
+  return (
+    <Modal
+      isOpen
+      onClose={onClose}
+      title={`Gerakan Stok — ${product.productName}`}
+      footer={<Button variant="ghost" onClick={onClose}>Tutup</Button>}
+    >
+      {movements.length === 0 ? (
+        <p className={styles.recentEmpty}>Tidak ada pergerakan stok untuk produk ini.</p>
+      ) : (
+        <>
+          <div className={styles.movDetailHeader}>
+            <span>Waktu</span>
+            <span>Jenis</span>
+            {isRefillable && <span>Status</span>}
+            <span style={{ textAlign: 'right' }}>Qty</span>
+          </div>
+          {movements.map((m) => {
+            const time = new Intl.DateTimeFormat('id-ID', {
+              hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jakarta',
+            }).format(new Date(m.createdAt));
+            return (
+              <div key={m.id} className={styles.movDetailRow}>
+                <span className={styles.movDetailTime}>{time}</span>
+                <div className={styles.movDetailType}>
+                  <span>{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</span>
+                  <span className={styles.movDetailStaff}>{m.createdByName}</span>
+                </div>
+                {isRefillable && (
+                  <span className={styles.movDetailStatus}>
+                    {CONTAINER_STATUS_LABELS[m.containerStatus ?? 'na'] ?? '—'}
+                  </span>
+                )}
+                <span className={[styles.movDetailQty, directionClass(m)].join(' ')}>
+                  {directionLabel(m)}{m.quantity}
+                </span>
+              </div>
+            );
+          })}
+          {isOwner && movements.some((m) => m.purchaseCost != null && m.purchaseCost > 0) && (
+            <div className={styles.movDetailCostRow}>
+              <span>Total Biaya Pembelian</span>
+              <strong>{formatCurrency(movements.reduce((s, m) => s + (m.purchaseCost ?? 0), 0))}</strong>
+            </div>
+          )}
+        </>
+      )}
+    </Modal>
+  );
+}
+
 // --- Pie chart color palette (index-based) ------------------------------------
+
 const PIE_COLORS = [
   '#576cdb', // digital violet
   '#e67e22', // orange
@@ -435,6 +583,9 @@ export function DashboardPage() {
   const [, forceRender]                         = useState(0);
   const [detailTx, setDetailTx]                 = useState<Transaction | null>(null);
   const [detailLoading, setDetailLoading]       = useState(false);
+  const [detailStockProduct, setDetailStockProduct]   = useState<DailyStockProductSummary | null>(null);
+  const [detailStockMovements, setDetailStockMovements] = useState<StockMovement[] | null>(null);
+  const [detailStockLoading, setDetailStockLoading]   = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -477,6 +628,20 @@ export function DashboardPage() {
   const handleBarClick = (entry: WeeklyChartEntry) => {
     setClickedEntry((prev) => prev?.date === entry.date ? null : entry);
   };
+
+  async function handleProductSummaryClick(product: DailyStockProductSummary) {
+    setDetailStockProduct(product);
+    setDetailStockMovements(null);
+    setDetailStockLoading(true);
+    try {
+      const all = await stockService.getMovements(selectedDate);
+      setDetailStockMovements(
+        all.filter((m) => m.productId === product.productId && !m.isReversed && !m.isReversal),
+      );
+    } finally {
+      setDetailStockLoading(false);
+    }
+  }
 
   return (
     <>
@@ -670,6 +835,24 @@ export function DashboardPage() {
           )}
         </section>
 
+        {/* Daily stock movement summary — FR-DSH-012 */}
+        <section>
+          <h2 className={styles.sectionTitle}>Pergerakan Stok</h2>
+          {stats?.dailyStockSummary && stats.dailyStockSummary.length > 0 ? (
+            <div className={styles.summaryList}>
+              {stats.dailyStockSummary.map((item) => (
+                <DailyStockSummaryRow
+                  key={item.productId}
+                  item={item}
+                  onClick={() => handleProductSummaryClick(item)}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className={styles.recentEmpty}>Tidak ada pergerakan stok pada tanggal ini.</p>
+          )}
+        </section>
+
         {/* Warehouse stock summary — FR-DSH-004 */}
         <section>
           <h2 className={styles.sectionTitle}>Stok Gudang</h2>
@@ -774,6 +957,16 @@ export function DashboardPage() {
             )}
           </div>
         </Modal>
+      )}
+
+      {/* Stock movement detail modal — FR-DSH-012 */}
+      {detailStockProduct && !detailStockLoading && detailStockMovements && (
+        <StockMovementDetailModal
+          product={detailStockProduct}
+          movements={detailStockMovements}
+          isOwner={isOwner}
+          onClose={() => { setDetailStockProduct(null); setDetailStockMovements(null); }}
+        />
       )}
     </>
   );

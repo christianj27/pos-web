@@ -236,6 +236,24 @@ export interface StaffRevenueSummary {
   transactionCount: number;
 }
 
+export interface DailyMovementBreakdownItem {
+  movementType: string;
+  filledDelta: number;
+  emptyDelta: number;
+  simpleDelta: number;
+}
+
+export interface DailyStockProductSummary {
+  productId: string;
+  productName: string;
+  productUnit: string;
+  productCategory: ProductCategory;
+  netFilledDelta: number;
+  netEmptyDelta: number;
+  netSimpleDelta: number;
+  breakdown: DailyMovementBreakdownItem[];
+}
+
 export interface DashboardStats {
   todayRevenue: number;
   todayTransactions: number;
@@ -249,6 +267,7 @@ export interface DashboardStats {
   warehouseStock: StockLevel[];
   customerDebts: CustomerDebtSummary[];
   staffRevenue: StaffRevenueSummary[];
+  dailyStockSummary: DailyStockProductSummary[];
 }
 
 // ─── Debt History ─────────────────────────────────────────────────────────────

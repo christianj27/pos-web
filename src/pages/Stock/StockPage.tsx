@@ -378,15 +378,15 @@ export function StockPage() {
   async function handleBulkLoanSubmit() {
     setSaving(true);
     try {
-      const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
-      await containerLoanService.createBulk({
-        customerId: bulkLoanCustomer,
-        note: bulkLoanNote || undefined,
-        items: bulkLoanItems.map((item) => ({
-          productId: item.product_id,
-          quantity: sign * parseInt(item.quantity),
-        })).filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity)),
-      });
+      // const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
+      // await containerLoanService.createBulk({
+      //   customerId: bulkLoanCustomer,
+      //   note: bulkLoanNote || undefined,
+      //   items: bulkLoanItems.map((item) => ({
+      //     productId: item.product_id,
+      //     quantity: sign * parseInt(item.quantity),
+      //   })).filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity)),
+      // });
       setBulkLoanOpen(false);
       setBulkLoanCustomer(''); setBulkLoanNote('');
       setBulkLoanItems([{ _key: newKey(), product_id: '', quantity: '' }]);

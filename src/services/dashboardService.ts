@@ -1,6 +1,67 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { AuthUser, DashboardStats, StaffRevenueSummary } from '../types';
+import type { AuthUser, DashboardStats, DailyMovementBreakdownItem, DailyStockProductSummary, StaffRevenueSummary } from '../types';
+
+function toWIBDate(isoString: string): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
+}
+
+function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
+  const filtered = mockDb.stockMovements.filter(
+    (m) => (!date || toWIBDate(m.createdAt) === date) && !m.isReversed && !m.isReversal,
+  );
+
+  const byProduct = new Map<string, typeof filtered>();
+  for (const m of filtered) {
+    if (!byProduct.has(m.productId)) byProduct.set(m.productId, []);
+    byProduct.get(m.productId)!.push(m);
+  }
+
+  const result: DailyStockProductSummary[] = [];
+  for (const movements of byProduct.values()) {
+    const first = movements[0];
+    const prod  = mockDb.products.find((p) => p.id === first.productId);
+    const isRefillable = prod?.category === 'refillable';
+
+    const byTypeMap = new Map<string, DailyMovementBreakdownItem>();
+    for (const m of movements) {
+      const type = m.movementType;
+      if (!byTypeMap.has(type))
+        byTypeMap.set(type, { movementType: type, filledDelta: 0, emptyDelta: 0, simpleDelta: 0 });
+      const item = byTypeMap.get(type)!;
+
+      if (m.movementType === 'production') {
+        item.filledDelta += m.quantity;
+        item.emptyDelta  -= m.quantity;
+      } else {
+        const isIn  = m.toLocationId   != null && m.fromLocationId == null;
+        const isOut = m.fromLocationId != null && m.toLocationId   == null;
+        const dir   = isIn ? 1 : isOut ? -1 : 0;
+        if (isRefillable) {
+          if (m.containerStatus === 'filled')      item.filledDelta += dir * m.quantity;
+          else if (m.containerStatus === 'empty')  item.emptyDelta  += dir * m.quantity;
+        } else {
+          item.simpleDelta += dir * m.quantity;
+        }
+      }
+    }
+
+    const breakdown = [...byTypeMap.values()];
+    result.push({
+      productId:      first.productId,
+      productName:    first.productName,
+      productUnit:    prod?.unit ?? '',
+      productCategory: prod?.category ?? 'simple',
+      netFilledDelta: breakdown.reduce((s, t) => s + t.filledDelta, 0),
+      netEmptyDelta:  breakdown.reduce((s, t) => s + t.emptyDelta,  0),
+      netSimpleDelta: breakdown.reduce((s, t) => s + t.simpleDelta, 0),
+      breakdown,
+    });
+  }
+
+  result.sort((a, b) => a.productName.localeCompare(b.productName));
+  return result;
+}
 
 export const dashboardService = {
   getStats: (_date?: string, _user?: AuthUser | null): Promise<DashboardStats> => {
@@ -46,6 +107,7 @@ export const dashboardService = {
         previousDayRevenue:   prevDayRevenue,
         customerDebts,
         staffRevenue,
+        dailyStockSummary: computeDailyStockSummary(_date),
       });
     }
 
@@ -75,6 +137,7 @@ export const dashboardService = {
       staffRevenue:         [],
       totalOutstandingDebt: totalDebt,
       customerDebts,
+      dailyStockSummary: computeDailyStockSummary(_date),
     });
   },
 };
