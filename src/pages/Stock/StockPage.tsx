@@ -18,6 +18,7 @@ interface ReceiveItem { _key: string; product_id: string; quantity: string; cont
 interface BulkLoanItem { _key: string; product_id: string; quantity: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
 interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; purchase_cost: string; }
+interface AdjustItem { _key: string; product_id: string; quantity: string; direction: '+' | '-'; container_status: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
 function getTodayWIB(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
@@ -60,7 +61,8 @@ export function StockPage() {
   const [reverseTarget, setReverseTarget] = useState<StockMovement | null>(null);
 
   // ── Adjustment form ───────────────────────────────────────────────────────────
-  const [adjustForm, setAdjustForm] = useState({ location_id: '', product_id: '', quantity: '', direction: '+' as '+' | '-', container_status: '', note: '' });
+  const [adjustShared, setAdjustShared] = useState({ location_id: '', note: '' });
+  const [adjustItems, setAdjustItems] = useState<AdjustItem[]>([{ _key: newKey(), product_id: '', quantity: '', direction: '+' as '+' | '-', container_status: '' }]);
 
   // ── Bulk manual container loan form ──────────────────────────────────────────
   const [bulkLoanOpen, setBulkLoanOpen] = useState(false);
@@ -316,6 +318,26 @@ export function StockPage() {
     setVendorItems((prev) => [...prev, { _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
   }
 
+  // ── Adjust item helpers ───────────────────────────────────────────────────────
+  function updateAdjustItem(key: string, patch: Partial<AdjustItem>) {
+    setAdjustItems((prev) => prev.map((item) => {
+      if (item._key !== key) return item;
+      const updated = { ...item, ...patch };
+      if ('product_id' in patch) {
+        const prod = products.find((p) => p.id === patch.product_id);
+        if (prod?.category === 'simple') updated.container_status = 'na';
+        else if (updated.container_status === 'na') updated.container_status = '';
+      }
+      return updated;
+    }));
+  }
+  function removeAdjustItem(key: string) {
+    setAdjustItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
+  }
+  function addAdjustItem() {
+    setAdjustItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', direction: '+', container_status: '' }]);
+  }
+
   async function handleReverseMovement(movement: StockMovement) {
     setSaving(true);
     try {
@@ -330,18 +352,24 @@ export function StockPage() {
   async function handleAdjust() {
     setSaving(true);
     try {
-      const qty = parseInt(adjustForm.quantity);
-      if (!qty || !adjustForm.location_id || !adjustForm.product_id || !adjustForm.note.trim()) {
-        showToast('Isi semua field yang wajib.', 'error'); return;
+      if (!adjustShared.location_id || !adjustShared.note.trim()) {
+        showToast('Lokasi dan catatan wajib diisi.', 'error'); return;
       }
-      await stockService.adjust({
-        locationId: adjustForm.location_id,
-        productId: adjustForm.product_id,
-        adjustmentQuantity: adjustForm.direction === '+' ? qty : -qty,
-        containerStatus: adjustForm.container_status || undefined,
-        note: adjustForm.note.trim(),
+      const validItems = adjustItems.filter((item) => item.product_id && parseInt(item.quantity) >= 1);
+      if (validItems.length === 0) {
+        showToast('Tambahkan minimal satu produk dengan jumlah valid.', 'error'); return;
+      }
+      await stockService.adjustBulk({
+        locationId: adjustShared.location_id,
+        note: adjustShared.note.trim(),
+        items: validItems.map((item) => ({
+          productId: item.product_id,
+          adjustmentQuantity: item.direction === '+' ? parseInt(item.quantity) : -parseInt(item.quantity),
+          containerStatus: item.container_status || undefined,
+        })),
       });
-      setAdjustForm({ location_id: '', product_id: '', quantity: '', direction: '+', container_status: '', note: '' });
+      setAdjustShared({ location_id: '', note: '' });
+      setAdjustItems([{ _key: newKey(), product_id: '', quantity: '', direction: '+', container_status: '' }]);
       showToast('Penyesuaian stok berhasil dicatat.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan penyesuaian.'), 'error'); }
     finally { setSaving(false); }
@@ -761,32 +789,48 @@ export function StockPage() {
         {!loading && tab === 'adjustment' && (
           <div className={styles.formCard}>
             <h2 className={styles.formTitle}>Penyesuaian Stok</h2>
-            <p className={styles.formSubtitle}>Koreksi stok sistem jika tidak sesuai kondisi fisik. Gunakan catatan yang jelas sebagai alasan.</p>
+            <p className={styles.formSubtitle}>Koreksi stok sistem jika tidak sesuai kondisi fisik. Bisa sesuaikan beberapa produk sekaligus. Gunakan catatan yang jelas sebagai alasan.</p>
             <div className={styles.form}>
-              <Select label="Lokasi" value={adjustForm.location_id} onChange={(e) => setAdjustForm(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
-              <Select label="Produk" value={adjustForm.product_id} onChange={(e) => setAdjustForm(p => ({ ...p, product_id: e.target.value, container_status: '' }))} options={productOptions} placeholder="Pilih produk..." required />
-              {products.find((p) => p.id === adjustForm.product_id)?.category === 'refillable' && (
-                <Select label="Status Kontainer" value={adjustForm.container_status} onChange={(e) => setAdjustForm(p => ({ ...p, container_status: e.target.value }))} options={containerOptions} placeholder="— Pilih —" required />
-              )}
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-slate-text)', marginBottom: 6 }}>Jumlah</div>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                  <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
-                    <button
-                      type="button"
-                      onClick={() => setAdjustForm(p => ({ ...p, direction: '+' }))}
-                      style={{ padding: '8px 16px', background: adjustForm.direction === '+' ? 'var(--color-deep-space-violet)' : 'transparent', color: adjustForm.direction === '+' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 16 }}
-                    >+</button>
-                    <button
-                      type="button"
-                      onClick={() => setAdjustForm(p => ({ ...p, direction: '-' }))}
-                      style={{ padding: '8px 16px', background: adjustForm.direction === '-' ? 'var(--color-danger)' : 'transparent', color: adjustForm.direction === '-' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 16 }}
-                    >−</button>
+              <Select label="Lokasi" value={adjustShared.location_id} onChange={(e) => setAdjustShared(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
+              <div className={styles.itemList}>
+                {adjustItems.map((item) => (
+                  <div key={item._key} className={styles.itemRow}>
+                    <div className={styles.itemRowHeader}>
+                      <Select label="Produk" value={item.product_id} onChange={(e) => updateAdjustItem(item._key, { product_id: e.target.value })} options={productOptions} placeholder="Pilih produk..." required />
+                      <button className={styles.removeItemBtn} onClick={() => removeAdjustItem(item._key)} disabled={adjustItems.length === 1} aria-label="Hapus item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                    <div className={styles.itemRowControls2}>
+                      {products.find((p) => p.id === item.product_id)?.category === 'refillable' && (
+                        <Select label="Status Kontainer" value={item.container_status} onChange={(e) => updateAdjustItem(item._key, { container_status: e.target.value })} options={containerOptions} placeholder="— Pilih —" required />
+                      )}
+                      <div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-slate-text)', marginBottom: 6 }}>Jumlah</div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                          <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                            <button
+                              type="button"
+                              onClick={() => updateAdjustItem(item._key, { direction: '+' })}
+                              style={{ padding: '8px 14px', background: item.direction === '+' ? '#16a34a' : 'transparent', color: item.direction === '+' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}
+                            >+</button>
+                            <button
+                              type="button"
+                              onClick={() => updateAdjustItem(item._key, { direction: '-' })}
+                              style={{ padding: '8px 14px', background: item.direction === '-' ? 'var(--color-danger)' : 'transparent', color: item.direction === '-' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15 }}
+                            >−</button>
+                          </div>
+                          <Input label="" type="number" min="1" value={item.quantity} onChange={(e) => updateAdjustItem(item._key, { quantity: e.target.value })} required />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <Input label="" type="number" min="1" value={adjustForm.quantity} onChange={(e) => setAdjustForm(p => ({ ...p, quantity: e.target.value }))} required />
-                </div>
+                ))}
               </div>
-              <Input label="Alasan / Catatan (wajib)" value={adjustForm.note} onChange={(e) => setAdjustForm(p => ({ ...p, note: e.target.value }))} required />
+              <button className={styles.addItemBtn} onClick={addAdjustItem} type="button">+ Tambah Produk</button>
+              <Input label="Alasan / Catatan (wajib)" value={adjustShared.note} onChange={(e) => setAdjustShared(p => ({ ...p, note: e.target.value }))} required />
               <Button onClick={handleAdjust} loading={saving} fullWidth>Simpan Penyesuaian</Button>
             </div>
           </div>

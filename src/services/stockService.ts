@@ -222,5 +222,18 @@ export const stockService = {
   adjust: (data: { locationId: string; productId: string; adjustmentQuantity: number; containerStatus?: string; note: string }): Promise<void> => {
     return apiClient.post('/api/stock/adjustment', data).then(() => undefined);
   },
+
+  /** Bulk stock adjustment — multiple products in one operation. Owner only. */
+  adjustBulk: (data: {
+    locationId: string;
+    note: string;
+    items: { productId: string; adjustmentQuantity: number; containerStatus?: string }[];
+  }): Promise<void> => {
+    if (!USE_MOCK) return apiClient.post('/api/stock/adjustment/bulk', data).then(() => undefined);
+    return data.items.reduce(
+      (p, item) => p.then(() => stockService.adjust({ locationId: data.locationId, productId: item.productId, adjustmentQuantity: item.adjustmentQuantity, containerStatus: item.containerStatus, note: data.note })),
+      Promise.resolve() as Promise<void>,
+    );
+  },
 };
 
