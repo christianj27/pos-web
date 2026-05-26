@@ -3,17 +3,19 @@ import { stockService } from '../../services/stockService';
 import { productService } from '../../services/productService';
 import { locationService } from '../../services/locationService';
 import { containerLoanService } from '../../services/containerLoanService';
+import { customerService } from '../../services/customerService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Input, Select, EmptyState, Spinner, ConfirmDialog } from '../../components/common';
 import { MOVEMENT_TYPE_LABELS } from '../../utils/constants';
 import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
-import type { StockLevel, StockMovement, Product, Location, ContainerLoan } from '../../types';
+import type { StockLevel, StockMovement, Product, Location, ContainerLoan, Customer } from '../../types';
 import styles from './StockPage.module.scss';
 
-type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'container_loans';
+type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'adjustment' | 'container_loans';
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
+interface BulkLoanItem { _key: string; product_id: string; quantity: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
 interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; purchase_cost: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
@@ -52,6 +54,20 @@ export function StockPage() {
   const [movementsLoading, setMovementsLoading] = useState(false);
   const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+
+  // ── Reversal confirm ──────────────────────────────────────────────────────────
+  const [reverseTarget, setReverseTarget] = useState<StockMovement | null>(null);
+
+  // ── Adjustment form ───────────────────────────────────────────────────────────
+  const [adjustForm, setAdjustForm] = useState({ location_id: '', product_id: '', quantity: '', direction: '+' as '+' | '-', container_status: '', note: '' });
+
+  // ── Bulk manual container loan form ──────────────────────────────────────────
+  const [bulkLoanOpen, setBulkLoanOpen] = useState(false);
+  const [bulkLoanDirection, setBulkLoanDirection] = useState<'pinjam' | 'terima'>('pinjam');
+  const [bulkLoanCustomer, setBulkLoanCustomer] = useState('');
+  const [bulkLoanNote, setBulkLoanNote] = useState('');
+  const [bulkLoanItems, setBulkLoanItems] = useState<BulkLoanItem[]>([{ _key: newKey(), product_id: '', quantity: '' }]);
 
   // ── Transfer negative-stock warning ──────────────────────────────────────────
   const [transferWarnings, setTransferWarnings] = useState<string[]>([]);
@@ -60,14 +76,16 @@ export function StockPage() {
   const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
   const load = useCallback(async () => {
-    const [lvls, prods, locs] = await Promise.all([
+    const [lvls, prods, locs, custs] = await Promise.all([
       stockService.getLevels().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat level stok.'), 'error'); return []; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
       locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
+      customerService.list().catch(() => []),
     ]);
     setLevels(lvls as StockLevel[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
     setLocations((locs as Location[]).filter((l) => l.isActive));
+    setCustomers((custs as Customer[]).filter((c) => c.isActive));
     setLoading(false);
   }, [showToast]);
 
@@ -298,6 +316,59 @@ export function StockPage() {
     setVendorItems((prev) => [...prev, { _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
   }
 
+  async function handleReverseMovement(movement: StockMovement) {
+    setSaving(true);
+    try {
+      await stockService.reverseMovement(movement.id);
+      showToast('Pergerakan stok berhasil dibatalkan.');
+      loadMovements(movementsDate);
+      load();
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal membatalkan pergerakan.'), 'error'); }
+    finally { setSaving(false); setReverseTarget(null); }
+  }
+
+  async function handleAdjust() {
+    setSaving(true);
+    try {
+      const qty = parseInt(adjustForm.quantity);
+      if (!qty || !adjustForm.location_id || !adjustForm.product_id || !adjustForm.note.trim()) {
+        showToast('Isi semua field yang wajib.', 'error'); return;
+      }
+      await stockService.adjust({
+        locationId: adjustForm.location_id,
+        productId: adjustForm.product_id,
+        adjustmentQuantity: adjustForm.direction === '+' ? qty : -qty,
+        containerStatus: adjustForm.container_status || undefined,
+        note: adjustForm.note.trim(),
+      });
+      setAdjustForm({ location_id: '', product_id: '', quantity: '', direction: '+', container_status: '', note: '' });
+      showToast('Penyesuaian stok berhasil dicatat.'); load();
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan penyesuaian.'), 'error'); }
+    finally { setSaving(false); }
+  }
+
+  async function handleBulkLoanSubmit() {
+    setSaving(true);
+    try {
+      const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
+      await containerLoanService.createBulk({
+        customerId: bulkLoanCustomer,
+        note: bulkLoanNote || undefined,
+        items: bulkLoanItems.map((item) => ({
+          productId: item.product_id,
+          quantity: sign * parseInt(item.quantity),
+        })).filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity)),
+      });
+      setBulkLoanOpen(false);
+      setBulkLoanCustomer(''); setBulkLoanNote('');
+      setBulkLoanItems([{ _key: newKey(), product_id: '', quantity: '' }]);
+      setBulkLoanDirection('pinjam');
+      showToast('Pinjaman kontainer berhasil dicatat.');
+      loadContainerLoans();
+    } catch (err) { showToast(getErrorMessage(err, 'Gagal mencatat pinjaman.'), 'error'); }
+    finally { setSaving(false); }
+  }
+
   async function handleProduction() {
     setSaving(true); resetFeedback();
     try {
@@ -323,6 +394,7 @@ export function StockPage() {
     ...(isOwner || isKasir     ? [{ key: 'production'      as Tab, label: 'Produksi' }] : []),
     ...(isOwner || isKasir     ? [{ key: 'transfer'        as Tab, label: 'Transfer' }] : []),
     ...(isOwner                ? [{ key: 'defect'          as Tab, label: 'Defek/Rusak' }] : []),
+    ...(isOwner                ? [{ key: 'adjustment'      as Tab, label: 'Penyesuaian' }] : []),
   ];
   void isKurir; // used via role-based tab logic above
 
@@ -492,15 +564,17 @@ export function StockPage() {
             ) : movements.length === 0 ? <EmptyState message="Belum ada riwayat pergerakan stok." /> : (
               <div className={styles.cardList}>
                 {movements.map((m) => (
-                  <div key={m.id} className={styles.card}>
+                  <div key={m.id} className={[styles.card, m.isReversed ? styles.cardReversed : ''].join(' ')}>
                     <div className={styles.cardTop}>
                       <div className={styles.cardInfo}>
-                        <span className={styles.cardName}>{m.productName}</span>
+                        <span className={styles.cardName} style={m.isReversed ? { textDecoration: 'line-through', opacity: 0.5 } : undefined}>{m.productName}</span>
                         <span className={styles.cardRoute}>
                           {m.fromLocationName ?? '—'} → {m.movementType === 'dispatch' && m.customerName ? m.customerName : (m.toLocationName ?? '—')}
                         </span>
                       </div>
                       <div className={styles.cardBadges}>
+                        {m.isReversed && <Badge variant="cancelled">Dibatalkan</Badge>}
+                        {m.isReversal && <Badge variant="kasir">Koreksi</Badge>}
                         <Badge variant="movement">{MOVEMENT_TYPE_LABELS[m.movementType] ?? m.movementType}</Badge>
                         {(m.containerStatus === 'filled' || m.containerStatus === 'empty') && (
                           <Badge variant={m.containerStatus}>{m.containerStatus === 'filled' ? 'Terisi' : 'Kosong'}</Badge>
@@ -514,7 +588,18 @@ export function StockPage() {
                           ? formatCurrency(m.purchaseCost)
                           : '—'}
                       </span>
-                      <span className={styles.cardDate}>{formatDate(m.createdAt)}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        {isOwner && !m.isReversed && !m.isReversal && m.movementType !== 'dispatch' && (
+                          <button
+                            className={styles.cancelMvtBtn}
+                            onClick={() => setReverseTarget(m)}
+                            disabled={saving}
+                          >
+                            Batalkan
+                          </button>
+                        )}
+                        <span className={styles.cardDate}>{formatDate(m.createdAt)}</span>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -672,13 +757,106 @@ export function StockPage() {
           </div>
         )}
 
+        {/* -- Penyesuaian (owner only) -- */}
+        {!loading && tab === 'adjustment' && (
+          <div className={styles.formCard}>
+            <h2 className={styles.formTitle}>Penyesuaian Stok</h2>
+            <p className={styles.formSubtitle}>Koreksi stok sistem jika tidak sesuai kondisi fisik. Gunakan catatan yang jelas sebagai alasan.</p>
+            <div className={styles.form}>
+              <Select label="Lokasi" value={adjustForm.location_id} onChange={(e) => setAdjustForm(p => ({ ...p, location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
+              <Select label="Produk" value={adjustForm.product_id} onChange={(e) => setAdjustForm(p => ({ ...p, product_id: e.target.value, container_status: '' }))} options={productOptions} placeholder="Pilih produk..." required />
+              {products.find((p) => p.id === adjustForm.product_id)?.category === 'refillable' && (
+                <Select label="Status Kontainer" value={adjustForm.container_status} onChange={(e) => setAdjustForm(p => ({ ...p, container_status: e.target.value }))} options={containerOptions} placeholder="— Pilih —" required />
+              )}
+              <div>
+                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-slate-text)', marginBottom: 6 }}>Jumlah</div>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                    <button
+                      type="button"
+                      onClick={() => setAdjustForm(p => ({ ...p, direction: '+' }))}
+                      style={{ padding: '8px 16px', background: adjustForm.direction === '+' ? 'var(--color-deep-space-violet)' : 'transparent', color: adjustForm.direction === '+' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 16 }}
+                    >+</button>
+                    <button
+                      type="button"
+                      onClick={() => setAdjustForm(p => ({ ...p, direction: '-' }))}
+                      style={{ padding: '8px 16px', background: adjustForm.direction === '-' ? 'var(--color-danger)' : 'transparent', color: adjustForm.direction === '-' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 16 }}
+                    >−</button>
+                  </div>
+                  <Input label="" type="number" min="1" value={adjustForm.quantity} onChange={(e) => setAdjustForm(p => ({ ...p, quantity: e.target.value }))} required />
+                </div>
+              </div>
+              <Input label="Alasan / Catatan (wajib)" value={adjustForm.note} onChange={(e) => setAdjustForm(p => ({ ...p, note: e.target.value }))} required />
+              <Button onClick={handleAdjust} loading={saving} fullWidth>Simpan Penyesuaian</Button>
+            </div>
+          </div>
+        )}
+
         {/* -- Kontainer (Owner only) -- */}
         {tab === 'container_loans' && (
           <div className={styles.formCard}>
-            <h2 className={styles.formTitle}>Pinjaman Kontainer</h2>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+              <h2 className={styles.formTitle} style={{ margin: 0 }}>Pinjaman Kontainer</h2>
+              <Button onClick={() => setBulkLoanOpen((v) => !v)}>+ Kontainer Manual</Button>
+            </div>
             <p className={styles.formSubtitle}>
               Saldo kontainer per pelanggan. <strong>Oranye:</strong> pelanggan masih memegang kontainer kami. <strong>Biru:</strong> kami memegang kontainer mereka — kembalikan terisi di pengiriman berikutnya.
             </p>
+
+            {/* -- Bulk manual loan form -- */}
+            {bulkLoanOpen && (
+              <div className={styles.form} style={{ marginBottom: 24, padding: 16, background: 'var(--color-cloud-gray)', borderRadius: 12 }}>
+                <h3 style={{ margin: '0 0 12px', fontSize: 15 }}>Input Kontainer Manual</h3>
+                <div style={{ display: 'flex', border: '1px solid var(--color-border)', borderRadius: 8, overflow: 'hidden', marginBottom: 12 }}>
+                  <button
+                    type="button"
+                    onClick={() => setBulkLoanDirection('pinjam')}
+                    style={{ flex: 1, padding: '10px', background: bulkLoanDirection === 'pinjam' ? 'var(--color-deep-space-violet)' : 'transparent', color: bulkLoanDirection === 'pinjam' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+                  >Pinjam ke Pelanggan</button>
+                  <button
+                    type="button"
+                    onClick={() => setBulkLoanDirection('terima')}
+                    style={{ flex: 1, padding: '10px', background: bulkLoanDirection === 'terima' ? 'var(--color-deep-space-violet)' : 'transparent', color: bulkLoanDirection === 'terima' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+                  >Terima dari Pelanggan</button>
+                </div>
+                <Select
+                  label="Pelanggan"
+                  value={bulkLoanCustomer}
+                  onChange={(e) => setBulkLoanCustomer(e.target.value)}
+                  options={customers.map((c) => ({ value: c.id, label: c.name }))}
+                  placeholder="Pilih pelanggan..."
+                  required
+                />
+                <div className={styles.itemList}>
+                  {bulkLoanItems.map((item) => (
+                    <div key={item._key} className={styles.itemRow}>
+                      <div className={styles.itemRowHeader}>
+                        <Select
+                          label="Produk"
+                          value={item.product_id}
+                          onChange={(e) => setBulkLoanItems((prev) => prev.map((i) => i._key === item._key ? { ...i, product_id: e.target.value } : i))}
+                          options={products.filter((p) => p.category === 'refillable').map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }))}
+                          placeholder="Pilih produk..."
+                          required
+                        />
+                        <button className={styles.removeItemBtn} onClick={() => setBulkLoanItems((prev) => prev.length > 1 ? prev.filter((i) => i._key !== item._key) : prev)} disabled={bulkLoanItems.length === 1} aria-label="Hapus item">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="18" height="18">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => setBulkLoanItems((prev) => prev.map((i) => i._key === item._key ? { ...i, quantity: e.target.value } : i))} required />
+                    </div>
+                  ))}
+                </div>
+                <button className={styles.addItemBtn} type="button" onClick={() => setBulkLoanItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '' }])}>+ Tambah Produk</button>
+                <Input label="Catatan (opsional)" value={bulkLoanNote} onChange={(e) => setBulkLoanNote(e.target.value)} />
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <Button onClick={handleBulkLoanSubmit} loading={saving} fullWidth>Simpan</Button>
+                  <Button variant="secondary" onClick={() => setBulkLoanOpen(false)} fullWidth>Batal</Button>
+                </div>
+              </div>
+            )}
             {containerLoansLoading ? (
               <div className={styles.loadingWrap}><Spinner /></div>
             ) : (() => {
@@ -798,7 +976,7 @@ export function StockPage() {
         )}
       </div>
 
-      {/* Transfer stok \u2014 peringatan stok negatif */}
+      {/* Transfer stok — peringatan stok negatif */}
       <ConfirmDialog
         isOpen={transferConfirmOpen}
         onClose={() => setTransferConfirmOpen(false)}
@@ -806,6 +984,17 @@ export function StockPage() {
         title="Stok Tidak Mencukupi"
         message={`Beberapa produk akan menghasilkan stok negatif:\n\n${transferWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transfer?`}
         confirmText="Ya, Lanjutkan"
+        variant="danger"
+      />
+
+      {/* Batalkan pergerakan stok */}
+      <ConfirmDialog
+        isOpen={!!reverseTarget}
+        onClose={() => setReverseTarget(null)}
+        onConfirm={() => reverseTarget && handleReverseMovement(reverseTarget)}
+        title="Batalkan Pergerakan Stok?"
+        message={reverseTarget ? `Batalkan "${MOVEMENT_TYPE_LABELS[reverseTarget.movementType] ?? reverseTarget.movementType}" untuk ${reverseTarget.productName} (qty: ${reverseTarget.quantity})?\n\nSemua pergerakan dalam batch yang sama juga akan dibatalkan.` : ''}
+        confirmText="Ya, Batalkan"
         variant="danger"
       />
     </div>

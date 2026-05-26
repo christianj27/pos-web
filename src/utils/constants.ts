@@ -47,6 +47,7 @@ export const MOVEMENT_TYPE_LABELS: Record<string, string> = {
   defect: 'Rusak/Defek',
   production: 'Produksi',
   vendor_exchange: 'Tukar Agent',
+  adjustment: 'Penyesuaian',
 };
 
 export const ASSIGNMENT_STATUS_LABELS: Record<string, string> = {

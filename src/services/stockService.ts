@@ -173,7 +173,7 @@ export const stockService = {
     note?: string;
     items: { productId: string; quantity: number; containerStatus?: string; purchaseCost?: number }[];
   }): Promise<void> => {
-    // return apiClient.post('/api/stock/movements/bulk', { movementType: 'receive', toLocationId: data.toLocationId, note: data.note, items: data.items }).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/movements/bulk', { movementType: 'receive', toLocationId: data.toLocationId, note: data.note, items: data.items }).then(() => undefined);
     return data.items.reduce(
       (p, item) => p.then(() => stockService.receive({ ...item, toLocationId: data.toLocationId, note: data.note })),
       Promise.resolve() as Promise<void>,
@@ -190,7 +190,7 @@ export const stockService = {
     note?: string;
     items: { productId: string; quantity: number; containerStatus?: string }[];
   }): Promise<void> => {
-    // return apiClient.post('/api/stock/transfer/bulk', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/transfer/bulk', data).then(() => undefined);
     return data.items.reduce(
       (p, item) => p.then(() => stockService.transfer({ ...item, fromLocationId: data.fromLocationId, toLocationId: data.toLocationId, note: data.note })),
       Promise.resolve() as Promise<void>,
@@ -206,11 +206,21 @@ export const stockService = {
     note?: string;
     items: { productId: string; emptyQuantity: number; filledQuantity: number; purchaseCost: number }[];
   }): Promise<void> => {
-    // return apiClient.post('/api/stock/vendor-exchange/bulk', data).then((r) => r.data);
+    if (!USE_MOCK) return apiClient.post('/api/stock/vendor-exchange/bulk', data).then(() => undefined);
     return data.items.reduce(
       (p, item) => p.then(() => stockService.vendorExchange({ ...item, locationId: data.locationId, note: data.note })),
       Promise.resolve() as Promise<void>,
     );
+  },
+
+  /** Cancel/reverse a stock movement batch. Owner only. */
+  reverseMovement: (id: string): Promise<StockMovement[]> => {
+    return apiClient.post<StockMovement[]>(`/api/stock/movements/${id}/reverse`).then((r) => r.data);
+  },
+
+  /** Create a stock adjustment to reconcile physical vs system stock. Owner only. */
+  adjust: (data: { locationId: string; productId: string; adjustmentQuantity: number; containerStatus?: string; note: string }): Promise<void> => {
+    return apiClient.post('/api/stock/adjustment', data).then(() => undefined);
   },
 };
 

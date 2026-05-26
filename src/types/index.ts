@@ -69,7 +69,7 @@ export interface CustomerPricingItem {
 
 // ─── Stock ────────────────────────────────────────────────────────────────────
 export type ContainerStatus = 'filled' | 'empty';
-export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production' | 'vendor_exchange';
+export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production' | 'vendor_exchange' | 'adjustment';
 
 export interface StockLevel {
   productId: string;
@@ -102,6 +102,21 @@ export interface StockMovement {
   createdByName: string;
   createdAt: string;
   customerName?: string;
+  batchId?: string | null;
+  isReversed?: boolean;
+  isReversal?: boolean;
+}
+
+export interface BulkContainerLoanItem {
+  productId: string;
+  quantity: number;
+  note?: string;
+}
+
+export interface CreateBulkContainerLoanRequest {
+  customerId: string;
+  items: BulkContainerLoanItem[];
+  note?: string;
 }
 
 // ─── Transaction ──────────────────────────────────────────────────────────────
