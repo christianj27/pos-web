@@ -646,6 +646,9 @@ export function StockPage() {
                         <span className={styles.cardRoute}>
                           {m.fromLocationName ?? '—'} → {m.movementType === 'dispatch' && m.customerName ? m.customerName : (m.toLocationName ?? '—')}
                         </span>
+                        {m.note && (
+                          <span className={styles.cardNote}>{m.note}</span>
+                        )}
                       </div>
                       <div className={styles.cardBadges}>
                         {m.isReversed && <Badge variant="cancelled">Dibatalkan</Badge>}

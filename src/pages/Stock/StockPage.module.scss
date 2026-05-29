@@ -33,6 +33,7 @@
 .cardMetaText { font-size: 12px; color: var(--color-whisper-gray); }
 .cardMetaRight { font-size: 12px; color: var(--color-whisper-gray); text-align: right; }
 .cardRoute { font-size: 13px; color: var(--color-slate-text); display: flex; align-items: center; gap: 4px; }
+.cardNote { font-size: 12px; color: var(--color-whisper-gray); font-style: italic; padding: 2px 6px; background: var(--color-light-violet-stroke); border-radius: 4px; display: inline-block; margin-top: 2px; width: fit-content; max-width: 100%; }
 .cardBottom { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; border-top: 1px solid var(--color-light-violet-stroke); padding-top: 8px; }
 .cardCost { font-size: 13px; font-weight: 600; color: var(--color-digital-violet); }
 .cardDate { font-size: 12px; color: var(--color-whisper-gray); }
