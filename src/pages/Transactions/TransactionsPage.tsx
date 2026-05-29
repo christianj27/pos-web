@@ -683,7 +683,7 @@ export function TransactionsPage() {
                         + Bayar
                       </button>
                     )}
-                    {tx.status !== 'cancelled' && (
+                    {tx.status !== 'cancelled' && isOwner && (
                       <button
                         className={[styles.txActionBtn, styles.cancelBtn].join(' ')}
                         onClick={() => setCancelTx(tx)}
