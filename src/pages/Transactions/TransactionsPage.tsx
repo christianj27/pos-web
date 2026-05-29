@@ -1120,15 +1120,13 @@ export function TransactionsPage() {
         loading={cancellingAssignment}
       />
 
-      {/* Negative stock warning for transaction/fulfillment */}
+      {/* Negative stock warning for transaction/fulfillment — hard block */}
       <ConfirmDialog
         isOpen={txConfirmOpen}
         onClose={() => setTxConfirmOpen(false)}
-        onConfirm={() => { setTxConfirmOpen(false); doCreate(); }}
         title="Stok Tidak Mencukupi"
-        message={`Beberapa produk akan menghasilkan stok negatif:\n\n${txWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transaksi?`}
-        confirmText="Ya, Lanjutkan"
-        variant="danger"
+        message={`Beberapa produk tidak memiliki stok yang cukup:\n\n${txWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah produk untuk melanjutkan.`}
+        cancelText="Tutup"
       />
 
       {/* ── Assignment Creation Overlay (2-step) ─────────────────────────────────── */}

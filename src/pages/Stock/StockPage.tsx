@@ -1070,26 +1070,22 @@ export function StockPage() {
         )}
       </div>
 
-      {/* Transfer stok — peringatan stok negatif */}
+      {/* Transfer stok — hard block stok negatif */}
       <ConfirmDialog
         isOpen={transferConfirmOpen}
         onClose={() => setTransferConfirmOpen(false)}
-        onConfirm={() => { setTransferConfirmOpen(false); doTransfer(); }}
         title="Stok Tidak Mencukupi"
-        message={`Beberapa produk akan menghasilkan stok negatif:\n\n${transferWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transfer?`}
-        confirmText="Ya, Lanjutkan"
-        variant="danger"
+        message={`Beberapa produk tidak memiliki stok yang cukup:\n\n${transferWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
+        cancelText="Tutup"
       />
 
-      {/* Pinjaman kontainer — peringatan stok negatif */}
+      {/* Pinjaman kontainer — hard block stok negatif */}
       <ConfirmDialog
         isOpen={bulkLoanConfirmOpen}
         onClose={() => setBulkLoanConfirmOpen(false)}
-        onConfirm={() => { setBulkLoanConfirmOpen(false); doBulkLoanSubmit(); }}
         title="Stok Tidak Mencukupi"
-        message={`Beberapa kontainer akan menghasilkan stok negatif:\n\n${bulkLoanWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan pencatatan pinjaman?`}
-        confirmText="Ya, Lanjutkan"
-        variant="danger"
+        message={`Beberapa kontainer tidak memiliki stok yang cukup:\n\n${bulkLoanWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
+        cancelText="Tutup"
       />
 
       {/* Batalkan pergerakan stok */}

@@ -6,7 +6,7 @@ import { Button } from '../Button/Button';
 interface ConfirmDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm?: () => void;
   title: string;
   message: ReactNode;
   confirmText?: string;
@@ -37,9 +37,11 @@ export function ConfirmDialog({
           <Button variant="ghost" onClick={onClose} disabled={loading}>
             {cancelText}
           </Button>
-          <Button variant={variant} onClick={onConfirm} loading={loading}>
-            {confirmText}
-          </Button>
+          {onConfirm && (
+            <Button variant={variant} onClick={onConfirm} loading={loading}>
+              {confirmText}
+            </Button>
+          )}
         </div>
       </div>
     </div>,
