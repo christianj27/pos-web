@@ -1,6 +1,6 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
-import type { ContainerLoan } from '../types';
+import type { ContainerLoan, CreateBulkContainerLoanRequest } from '../types';
 
 export const containerLoanService = {
   list: (customerId?: string): Promise<ContainerLoan[]> => {
@@ -26,5 +26,22 @@ export const containerLoanService = {
     };
     mockDb.containerLoans.push(loan);
     return delay({ ...loan });
+  },
+
+  createBulk: (data: CreateBulkContainerLoanRequest): Promise<ContainerLoan[]> => {
+    if (!USE_MOCK) return apiClient.post<ContainerLoan[]>('/api/container-loans/bulk', data).then((r) => r.data);
+    const customer = mockDb.customers.find((c) => c.id === data.customerId);
+    const loans: ContainerLoan[] = data.items.map((item) => {
+      const product = mockDb.products.find((p) => p.id === item.productId);
+      const loan: ContainerLoan = {
+        id: uid(), customerId: data.customerId, customerName: customer?.name ?? '',
+        productId: item.productId, productName: product?.name ?? '',
+        quantity: item.quantity, notes: item.note ?? data.note,
+        createdByName: 'Demo User', createdAt: new Date().toISOString(),
+      };
+      mockDb.containerLoans.push(loan);
+      return loan;
+    });
+    return delay([...loans]);
   },
 };

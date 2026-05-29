@@ -110,11 +110,13 @@ export interface StockMovement {
 export interface BulkContainerLoanItem {
   productId: string;
   quantity: number;
+  containerStatus: string;
   note?: string;
 }
 
 export interface CreateBulkContainerLoanRequest {
   customerId: string;
+  locationId: string;
   items: BulkContainerLoanItem[];
   note?: string;
 }

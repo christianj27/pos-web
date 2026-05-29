@@ -15,7 +15,7 @@ import styles from './StockPage.module.scss';
 
 type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'adjustment' | 'container_loans';
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
-interface BulkLoanItem { _key: string; product_id: string; quantity: string; }
+interface BulkLoanItem { _key: string; product_id: string; quantity: string; container_status: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
 interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; purchase_cost: string; }
 interface AdjustItem { _key: string; product_id: string; quantity: string; direction: '+' | '-'; container_status: string; }
@@ -53,7 +53,6 @@ export function StockPage() {
   const [containerLoansLoading, setContainerLoansLoading] = useState(false);
   const [movementsDate, setMovementsDate] = useState<string>(getTodayWIB());
   const [movementsLoading, setMovementsLoading] = useState(false);
-  const [returnQtyMap, setReturnQtyMap] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
@@ -68,12 +67,16 @@ export function StockPage() {
   const [bulkLoanOpen, setBulkLoanOpen] = useState(false);
   const [bulkLoanDirection, setBulkLoanDirection] = useState<'pinjam' | 'terima'>('pinjam');
   const [bulkLoanCustomer, setBulkLoanCustomer] = useState('');
+  const [bulkLoanLocation, setBulkLoanLocation] = useState('');
   const [bulkLoanNote, setBulkLoanNote] = useState('');
-  const [bulkLoanItems, setBulkLoanItems] = useState<BulkLoanItem[]>([{ _key: newKey(), product_id: '', quantity: '' }]);
+  const [bulkLoanItems, setBulkLoanItems] = useState<BulkLoanItem[]>([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
 
   // ── Transfer negative-stock warning ──────────────────────────────────────────
   const [transferWarnings, setTransferWarnings] = useState<string[]>([]);
   const [transferConfirmOpen, setTransferConfirmOpen] = useState(false);
+  // ── Bulk loan negative-stock warning ─────────────────────────────────────────
+  const [bulkLoanWarnings, setBulkLoanWarnings] = useState<string[]>([]);
+  const [bulkLoanConfirmOpen, setBulkLoanConfirmOpen] = useState(false);
   // ── Transfer auto-populate from vehicle ──────────────────────────────────────
   const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
@@ -160,6 +163,35 @@ export function StockPage() {
       if (available - qty < 0) {
         const productName = product?.name ?? item.product_id;
         warnings.push(`${productName}: tersedia ${available}, diminta ${qty}`);
+      }
+    }
+    return warnings;
+  }
+
+  function computeBulkLoanWarnings(): string[] {
+    if (bulkLoanDirection !== 'pinjam' || !bulkLoanLocation) return [];
+    const warnings: string[] = [];
+    for (const item of bulkLoanItems) {
+      if (!item.product_id || !item.quantity || !item.container_status) continue;
+      const qty = parseInt(item.quantity);
+      if (isNaN(qty) || qty <= 0) continue;
+      const product = products.find((p) => p.id === item.product_id);
+      const level = levels.find(
+        (l) => l.productId === item.product_id && l.locationId === bulkLoanLocation
+      );
+      let available: number;
+      if (!level) {
+        available = 0;
+      } else if (item.container_status === 'filled') {
+        available = level.quantityFilled ?? 0;
+      } else if (item.container_status === 'empty') {
+        available = level.quantityEmpty ?? 0;
+      } else {
+        continue;
+      }
+      if (available - qty < 0) {
+        const productName = product?.name ?? item.product_id;
+        warnings.push(`${productName} (${item.container_status === 'filled' ? 'Terisi' : 'Kosong'}): tersedia ${available}, diminta ${qty}`);
       }
     }
     return warnings;
@@ -375,26 +407,53 @@ export function StockPage() {
     finally { setSaving(false); }
   }
 
-  async function handleBulkLoanSubmit() {
+  async function doBulkLoanSubmit() {
     setSaving(true);
     try {
-      // const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
-      // await containerLoanService.createBulk({
-      //   customerId: bulkLoanCustomer,
-      //   note: bulkLoanNote || undefined,
-      //   items: bulkLoanItems.map((item) => ({
-      //     productId: item.product_id,
-      //     quantity: sign * parseInt(item.quantity),
-      //   })).filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity)),
-      // });
+      const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
+      const validItems = bulkLoanItems
+        .map((item) => ({
+          productId: item.product_id,
+          quantity: sign * parseInt(item.quantity),
+          containerStatus: item.container_status,
+        }))
+        .filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity) && item.containerStatus);
+      await containerLoanService.createBulk({
+        customerId: bulkLoanCustomer,
+        locationId: bulkLoanLocation,
+        note: bulkLoanNote || undefined,
+        items: validItems,
+      });
       setBulkLoanOpen(false);
-      setBulkLoanCustomer(''); setBulkLoanNote('');
-      setBulkLoanItems([{ _key: newKey(), product_id: '', quantity: '' }]);
+      setBulkLoanCustomer(''); setBulkLoanLocation(''); setBulkLoanNote('');
+      setBulkLoanItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
       setBulkLoanDirection('pinjam');
       showToast('Pinjaman kontainer berhasil dicatat.');
       loadContainerLoans();
+      load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal mencatat pinjaman.'), 'error'); }
     finally { setSaving(false); }
+  }
+
+  async function handleBulkLoanSubmit() {
+    if (!bulkLoanCustomer) { showToast('Pilih pelanggan terlebih dahulu.', 'error'); return; }
+    if (!bulkLoanLocation) { showToast('Pilih lokasi terlebih dahulu.', 'error'); return; }
+    const sign = bulkLoanDirection === 'pinjam' ? 1 : -1;
+    const validItems = bulkLoanItems
+      .map((item) => ({
+        productId: item.product_id,
+        quantity: sign * parseInt(item.quantity),
+        containerStatus: item.container_status,
+      }))
+      .filter((item) => item.productId && item.quantity !== 0 && !isNaN(item.quantity) && item.containerStatus);
+    if (validItems.length === 0) { showToast('Tambahkan minimal satu produk dengan status kontainer.', 'error'); return; }
+    const warnings = computeBulkLoanWarnings();
+    if (warnings.length > 0) {
+      setBulkLoanWarnings(warnings);
+      setBulkLoanConfirmOpen(true);
+      return;
+    }
+    await doBulkLoanSubmit();
   }
 
   async function handleProduction() {
@@ -434,18 +493,6 @@ export function StockPage() {
     } finally {
       setContainerLoansLoading(false);
     }
-  }
-
-  async function handleContainerReturn(customerId: string, productId: string, productName: string, qty: number) {
-    if (qty <= 0) return;
-    setSaving(true); resetFeedback();
-    try {
-      await containerLoanService.create({ customerId: customerId, productId: productId, quantity: -qty, notes: `Pengembalian manual — ${productName}` });
-      setReturnQtyMap((prev) => ({ ...prev, [`${customerId}-${productId}`]: '' }));
-      showToast('Pengembalian berhasil dicatat.');
-      loadContainerLoans();
-    } catch (err) { showToast(getErrorMessage(err, 'Gagal mencatat pengembalian.'), 'error'); }
-    finally { setSaving(false); }
   }
 
   // --- Levels helpers ----------------------------------------------------------
@@ -856,19 +903,32 @@ export function StockPage() {
                     type="button"
                     onClick={() => setBulkLoanDirection('pinjam')}
                     style={{ flex: 1, padding: '10px', background: bulkLoanDirection === 'pinjam' ? 'var(--color-deep-space-violet)' : 'transparent', color: bulkLoanDirection === 'pinjam' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
-                  >Pinjam ke Pelanggan</button>
+                  >Pinjamkan ke Pelanggan</button>
                   <button
                     type="button"
                     onClick={() => setBulkLoanDirection('terima')}
                     style={{ flex: 1, padding: '10px', background: bulkLoanDirection === 'terima' ? 'var(--color-deep-space-violet)' : 'transparent', color: bulkLoanDirection === 'terima' ? '#fff' : 'var(--color-slate-text)', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
-                  >Terima dari Pelanggan</button>
+                  >Pinjam dari Pelanggan</button>
                 </div>
+                <p style={{ fontSize: 12, color: 'var(--color-slate-text)', margin: '4px 0 12px' }}>
+                  {bulkLoanDirection === 'pinjam'
+                    ? 'Kontainer kami dipinjamkan ke pelanggan — stok kontainer di lokasi ini akan berkurang.'
+                    : 'Kontainer pelanggan dititipkan ke kami — stok kontainer di lokasi ini akan bertambah.'}
+                </p>
                 <Select
                   label="Pelanggan"
                   value={bulkLoanCustomer}
                   onChange={(e) => setBulkLoanCustomer(e.target.value)}
                   options={customers.map((c) => ({ value: c.id, label: c.name }))}
                   placeholder="Pilih pelanggan..."
+                  required
+                />
+                <Select
+                  label="Lokasi"
+                  value={bulkLoanLocation}
+                  onChange={(e) => setBulkLoanLocation(e.target.value)}
+                  options={locations.map((l) => ({ value: l.id, label: l.name }))}
+                  placeholder="Pilih lokasi..."
                   required
                 />
                 <div className={styles.itemList}>
@@ -889,15 +949,23 @@ export function StockPage() {
                           </svg>
                         </button>
                       </div>
+                      <Select
+                        label="Status Kontainer"
+                        value={item.container_status}
+                        onChange={(e) => setBulkLoanItems((prev) => prev.map((i) => i._key === item._key ? { ...i, container_status: e.target.value } : i))}
+                        options={[{ value: 'filled', label: 'Terisi' }, { value: 'empty', label: 'Kosong' }]}
+                        placeholder="Pilih status..."
+                        required
+                      />
                       <Input label="Jumlah" type="number" min="1" value={item.quantity} onChange={(e) => setBulkLoanItems((prev) => prev.map((i) => i._key === item._key ? { ...i, quantity: e.target.value } : i))} required />
                     </div>
                   ))}
                 </div>
-                <button className={styles.addItemBtn} type="button" onClick={() => setBulkLoanItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '' }])}>+ Tambah Produk</button>
+                <button className={styles.addItemBtn} type="button" onClick={() => setBulkLoanItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', container_status: '' }])}>+ Tambah Produk</button>
                 <Input label="Catatan (opsional)" value={bulkLoanNote} onChange={(e) => setBulkLoanNote(e.target.value)} />
                 <div style={{ display: 'flex', gap: 8 }}>
                   <Button onClick={handleBulkLoanSubmit} loading={saving} fullWidth>Simpan</Button>
-                  <Button variant="secondary" onClick={() => setBulkLoanOpen(false)} fullWidth>Batal</Button>
+                  <Button variant="secondary" onClick={() => { setBulkLoanOpen(false); setBulkLoanLocation(''); setBulkLoanCustomer(''); setBulkLoanNote(''); setBulkLoanItems([{ _key: newKey(), product_id: '', quantity: '', container_status: '' }]); setBulkLoanDirection('pinjam'); }} fullWidth>Batal</Button>
                 </div>
               </div>
             )}
@@ -951,37 +1019,16 @@ export function StockPage() {
                       {Array.from(positiveByCustomer.entries()).map(([custId, entries]) => (
                         <div key={custId} className={`${styles.containerLoanGroup} ${styles.containerLoanGroupPositive}`}>
                           <div className={styles.containerLoanCustomer}>{entries[0].customerName}</div>
-                          {entries.map((e) => {
-                            const mapKey = `${e.customerId}-${e.productId}`;
-                            const inputVal = returnQtyMap[mapKey] ?? '';
-                            return (
-                              <div key={e.productId} className={styles.containerLoanRow}>
-                                <div className={styles.containerLoanInfo}>
-                                  <span className={styles.containerLoanProduct}>{e.productName}</span>
-                                  <span className={`${styles.containerLoanNet} ${styles.containerLoanNetPositive}`}>
-                                    <strong>{e.net}</strong> unit belum dikembalikan
-                                  </span>
-                                </div>
-                                <div className={styles.containerReturnControl}>
-                                  <input
-                                    type="number"
-                                    min="0"
-                                    placeholder="0"
-                                    value={inputVal}
-                                    className={styles.containerReturnInput}
-                                    onChange={(ev) => setReturnQtyMap((prev) => ({ ...prev, [mapKey]: ev.target.value }))}
-                                  />
-                                  <Button
-                                    onClick={() => handleContainerReturn(e.customerId, e.productId, e.productName, parseInt(inputVal) || 0)}
-                                    loading={saving}
-                                    disabled={!inputVal || parseInt(inputVal) <= 0}
-                                  >
-                                    Catat
-                                  </Button>
-                                </div>
+                          {entries.map((e) => (
+                            <div key={e.productId} className={styles.containerLoanRow}>
+                              <div className={styles.containerLoanInfo}>
+                                <span className={styles.containerLoanProduct}>{e.productName}</span>
+                                <span className={`${styles.containerLoanNet} ${styles.containerLoanNetPositive}`}>
+                                  <strong>{e.net}</strong> unit belum dikembalikan
+                                </span>
                               </div>
-                            );
-                          })}
+                            </div>
+                          ))}
                         </div>
                       ))}
                     </>
@@ -1027,6 +1074,17 @@ export function StockPage() {
         onConfirm={() => { setTransferConfirmOpen(false); doTransfer(); }}
         title="Stok Tidak Mencukupi"
         message={`Beberapa produk akan menghasilkan stok negatif:\n\n${transferWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan transfer?`}
+        confirmText="Ya, Lanjutkan"
+        variant="danger"
+      />
+
+      {/* Pinjaman kontainer — peringatan stok negatif */}
+      <ConfirmDialog
+        isOpen={bulkLoanConfirmOpen}
+        onClose={() => setBulkLoanConfirmOpen(false)}
+        onConfirm={() => { setBulkLoanConfirmOpen(false); doBulkLoanSubmit(); }}
+        title="Stok Tidak Mencukupi"
+        message={`Beberapa kontainer akan menghasilkan stok negatif:\n\n${bulkLoanWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nLanjutkan pencatatan pinjaman?`}
         confirmText="Ya, Lanjutkan"
         variant="danger"
       />
