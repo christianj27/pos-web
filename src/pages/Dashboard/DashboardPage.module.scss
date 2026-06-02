@@ -842,3 +842,57 @@
   }
 }
 
+// --- Per-staff sold/received breakdown (FR-DSH-012 detail modal) --------------
+
+.staffSummaryHeader {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-whisper-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  span:nth-child(2),
+  span:nth-child(3) {
+    min-width: 64px;
+    text-align: center;
+  }
+}
+
+.staffSummaryRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+}
+
+.staffSummaryName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staffSummaryCell {
+  display: flex;
+  justify-content: center;
+  min-width: 64px;
+}
+
+.staffSummaryZero {
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+}
+

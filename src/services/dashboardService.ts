@@ -1,6 +1,6 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { AuthUser, DashboardStats, DailyMovementBreakdownItem, DailyStockProductSummary, StaffRevenueSummary } from '../types';
+import type { AuthUser, DashboardStats, DailyStockProductSummary, StaffRevenueSummary } from '../types';
 
 function toWIBDate(isoString: string): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
@@ -23,39 +23,27 @@ function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
     const prod  = mockDb.products.find((p) => p.id === first.productId);
     const isRefillable = prod?.category === 'refillable';
 
-    const byTypeMap = new Map<string, DailyMovementBreakdownItem>();
-    for (const m of movements) {
-      const type = m.movementType;
-      if (!byTypeMap.has(type))
-        byTypeMap.set(type, { movementType: type, filledDelta: 0, emptyDelta: 0, simpleDelta: 0 });
-      const item = byTypeMap.get(type)!;
+    const totalSold = isRefillable
+      ? movements.filter((m) => m.movementType === 'dispatch' && m.containerStatus === 'filled')
+                 .reduce((s, m) => s + m.quantity, 0)
+      : movements.filter((m) => m.movementType === 'dispatch')
+                 .reduce((s, m) => s + m.quantity, 0);
 
-      if (m.movementType === 'production') {
-        item.filledDelta += m.quantity;
-        item.emptyDelta  -= m.quantity;
-      } else {
-        const isIn  = m.toLocationId   != null && m.fromLocationId == null;
-        const isOut = m.fromLocationId != null && m.toLocationId   == null;
-        const dir   = isIn ? 1 : isOut ? -1 : 0;
-        if (isRefillable) {
-          if (m.containerStatus === 'filled')      item.filledDelta += dir * m.quantity;
-          else if (m.containerStatus === 'empty')  item.emptyDelta  += dir * m.quantity;
-        } else {
-          item.simpleDelta += dir * m.quantity;
-        }
-      }
-    }
+    const totalReceived = isRefillable
+      ? movements.filter((m) => m.toLocationId != null && m.fromLocationId == null && m.containerStatus === 'filled')
+                 .reduce((s, m) => s + m.quantity, 0)
+      : movements.filter((m) => m.toLocationId != null && m.fromLocationId == null)
+                 .reduce((s, m) => s + m.quantity, 0);
 
-    const breakdown = [...byTypeMap.values()];
+    if (totalSold === 0 && totalReceived === 0) continue;
+
     result.push({
-      productId:      first.productId,
-      productName:    first.productName,
-      productUnit:    prod?.unit ?? '',
+      productId:       first.productId,
+      productName:     first.productName,
+      productUnit:     prod?.unit ?? '',
       productCategory: prod?.category ?? 'simple',
-      netFilledDelta: breakdown.reduce((s, t) => s + t.filledDelta, 0),
-      netEmptyDelta:  breakdown.reduce((s, t) => s + t.emptyDelta,  0),
-      netSimpleDelta: breakdown.reduce((s, t) => s + t.simpleDelta, 0),
-      breakdown,
+      totalSold,
+      totalReceived,
     });
   }
 
