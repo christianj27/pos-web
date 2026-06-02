@@ -83,6 +83,9 @@ export function StockPage() {
   // ── Production negative-stock warning ────────────────────────────────────────
   const [productionWarnings, setProductionWarnings] = useState<string[]>([]);
   const [productionConfirmOpen, setProductionConfirmOpen] = useState(false);
+  // ── Defect negative-stock warning ─────────────────────────────────────────────
+  const [defectWarnings, setDefectWarnings] = useState<string[]>([]);
+  const [defectConfirmOpen, setDefectConfirmOpen] = useState(false);
   // ── Transfer auto-populate from vehicle ──────────────────────────────────────
   const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
@@ -239,6 +242,22 @@ export function StockPage() {
     return [];
   }
 
+  function computeDefectWarnings(): string[] {
+    if (!defectForm.product_id || !defectForm.from_location_id || !defectForm.quantity) return [];
+    const qty = parseInt(defectForm.quantity);
+    if (isNaN(qty) || qty <= 0) return [];
+    const product = products.find((p) => p.id === defectForm.product_id);
+    const level = levels.find(
+      (l) => l.productId === defectForm.product_id && l.locationId === defectForm.from_location_id
+    );
+    const available = product?.category === 'refillable' ? (level?.quantityFilled ?? 0) : (level?.quantityTotal ?? 0);
+    if (available - qty < 0) {
+      const productName = product?.name ?? defectForm.product_id;
+      return [`${productName}${product?.category === 'refillable' ? ' (Terisi)' : ''}: tersedia ${available}, diminta ${qty}`];
+    }
+    return [];
+  }
+
   async function doTransfer() {
     setSaving(true); resetFeedback();
     try {
@@ -347,9 +366,13 @@ export function StockPage() {
     setTransferItems((prev) => [...prev, { _key: newKey(), product_id: '', quantity: '', container_status: '' }]);
   }
 
-  async function handleDefect() {
+  async function doDefect() {
     setSaving(true); resetFeedback();
     try {
+      const product = products.find((p) => p.id === defectForm.product_id);
+      if (product?.category === 'refillable' && defectForm.container_status !== 'filled') {
+        showToast('Untuk produk refillable, defek hanya berlaku untuk kontainer terisi.', 'error'); return;
+      }
       await stockService.defect({
         productId: defectForm.product_id, fromLocationId: defectForm.from_location_id,
         quantity: parseInt(defectForm.quantity), containerStatus: defectForm.container_status || undefined,
@@ -359,6 +382,17 @@ export function StockPage() {
       showToast('Defek berhasil dicatat.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
+  }
+
+  async function handleDefect() {
+    resetFeedback();
+    const warnings = computeDefectWarnings();
+    if (warnings.length > 0) {
+      setDefectWarnings(warnings);
+      setDefectConfirmOpen(true);
+      return;
+    }
+    await doDefect();
   }
 
   async function doVendorExchange() {
@@ -826,19 +860,35 @@ export function StockPage() {
         )}
 
         {/* -- Defek/Rusak (owner only) -- */}
-        {!loading && tab === 'defect' && (
-          <div className={styles.formCard}>
-            <h2 className={styles.formTitle}>Catat Stok Rusak / Defek</h2>
-            <div className={styles.form}>
-              <Select label="Produk" value={defectForm.product_id} onChange={(e) => setDefectForm(p => ({ ...p, product_id: e.target.value }))} options={productOptions} placeholder="Pilih produk..." required />
-              <Select label="Dari Lokasi" value={defectForm.from_location_id} onChange={(e) => setDefectForm(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
-              <Input label="Jumlah" type="number" min="1" value={defectForm.quantity} onChange={(e) => setDefectForm(p => ({ ...p, quantity: e.target.value }))} required />
-              <Select label="Status Kontainer (opsional)" value={defectForm.container_status} onChange={(e) => setDefectForm(p => ({ ...p, container_status: e.target.value }))} options={containerOptions} placeholder="— Pilih —" />
-              <Input label="Catatan (opsional)" value={defectForm.notes} onChange={(e) => setDefectForm(p => ({ ...p, notes: e.target.value }))} />
-              <Button variant="danger" onClick={handleDefect} loading={saving} fullWidth>Catat Defek</Button>
+        {!loading && tab === 'defect' && (() => {
+          const defectProduct = products.find((p) => p.id === defectForm.product_id);
+          const defectContainerOptions = defectProduct?.category === 'refillable'
+            ? [{ value: 'filled', label: 'Terisi' }]
+            : containerOptions;
+          return (
+            <div className={styles.formCard}>
+              <h2 className={styles.formTitle}>Catat Stok Rusak / Defek</h2>
+              <p className={styles.formSubtitle}>Produk refillable: kontainer terisi yang rusak dikonversi menjadi kosong (bukan hilang dari stok). Produk satuan: stok dikurangi langsung. Defek kontainer kosong tidak berlaku — gunakan tab Tukar Agent.</p>
+              <div className={styles.form}>
+                <Select label="Produk" value={defectForm.product_id} onChange={(e) => setDefectForm(p => ({ ...p, product_id: e.target.value, container_status: '' }))} options={productOptions} placeholder="Pilih produk..." required />
+                <Select label="Dari Lokasi" value={defectForm.from_location_id} onChange={(e) => setDefectForm(p => ({ ...p, from_location_id: e.target.value }))} options={locationOptions} placeholder="Pilih lokasi..." required />
+                <Input label="Jumlah" type="number" min="1" value={defectForm.quantity} onChange={(e) => setDefectForm(p => ({ ...p, quantity: e.target.value }))} required />
+                {defectProduct?.category !== 'simple' && (
+                  <Select
+                    label={defectProduct?.category === 'refillable' ? 'Status Kontainer' : 'Status Kontainer (opsional)'}
+                    value={defectForm.container_status}
+                    onChange={(e) => setDefectForm(p => ({ ...p, container_status: e.target.value }))}
+                    options={defectContainerOptions}
+                    placeholder="— Pilih —"
+                    required={defectProduct?.category === 'refillable'}
+                  />
+                )}
+                <Input label="Catatan (wajib)" value={defectForm.notes} onChange={(e) => setDefectForm(p => ({ ...p, notes: e.target.value }))} required />
+                <Button variant="danger" onClick={handleDefect} loading={saving} fullWidth>Catat Defek</Button>
+              </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* -- Tukar Agent (owner) -- */}
         {!loading && tab === 'vendor' && (
@@ -1167,6 +1217,15 @@ export function StockPage() {
         onClose={() => setProductionConfirmOpen(false)}
         title="Stok Tidak Mencukupi"
         message={`Kontainer kosong tidak mencukupi:\n\n${productionWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
+        cancelText="Tutup"
+      />
+
+      {/* Defek stok — hard block stok negatif */}
+      <ConfirmDialog
+        isOpen={defectConfirmOpen}
+        onClose={() => setDefectConfirmOpen(false)}
+        title="Stok Tidak Mencukupi"
+        message={`Stok tidak mencukupi untuk defek:\n\n${defectWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
         cancelText="Tutup"
       />
 

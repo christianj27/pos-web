@@ -85,8 +85,9 @@ export const stockService = {
     });
     const level = findOrCreateLevel(data.productId, data.fromLocationId);
     if (prod?.category === 'refillable') {
-      if (data.containerStatus === 'filled') level.quantityFilled = Math.max(0, (level.quantityFilled ?? 0) - data.quantity);
-      else level.quantityEmpty = Math.max(0, (level.quantityEmpty ?? 0) - data.quantity);
+      // filled defect → convert to empty (not a stock loss)
+      level.quantityFilled = Math.max(0, (level.quantityFilled ?? 0) - data.quantity);
+      level.quantityEmpty = (level.quantityEmpty ?? 0) + data.quantity;
     } else {
       level.quantityTotal = Math.max(0, (level.quantityTotal ?? 0) - data.quantity);
     }
