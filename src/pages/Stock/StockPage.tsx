@@ -77,6 +77,12 @@ export function StockPage() {
   // ── Bulk loan negative-stock warning ─────────────────────────────────────────
   const [bulkLoanWarnings, setBulkLoanWarnings] = useState<string[]>([]);
   const [bulkLoanConfirmOpen, setBulkLoanConfirmOpen] = useState(false);
+  // ── Vendor exchange negative-stock warning ────────────────────────────────────
+  const [vendorWarnings, setVendorWarnings] = useState<string[]>([]);
+  const [vendorConfirmOpen, setVendorConfirmOpen] = useState(false);
+  // ── Production negative-stock warning ────────────────────────────────────────
+  const [productionWarnings, setProductionWarnings] = useState<string[]>([]);
+  const [productionConfirmOpen, setProductionConfirmOpen] = useState(false);
   // ── Transfer auto-populate from vehicle ──────────────────────────────────────
   const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
@@ -195,6 +201,42 @@ export function StockPage() {
       }
     }
     return warnings;
+  }
+
+  function computeVendorWarnings(): string[] {
+    if (!vendorShared.location_id) return [];
+    const warnings: string[] = [];
+    for (const item of vendorItems) {
+      if (!item.product_id || !item.empty_quantity) continue;
+      const qty = parseInt(item.empty_quantity);
+      if (isNaN(qty) || qty <= 0) continue;
+      const product = products.find((p) => p.id === item.product_id);
+      const level = levels.find(
+        (l) => l.productId === item.product_id && l.locationId === vendorShared.location_id
+      );
+      const available = level?.quantityEmpty ?? 0;
+      if (available - qty < 0) {
+        const productName = product?.name ?? item.product_id;
+        warnings.push(`${productName} (Kosong): tersedia ${available}, diminta ${qty}`);
+      }
+    }
+    return warnings;
+  }
+
+  function computeProductionWarnings(): string[] {
+    if (!productionForm.location_id || !productionForm.product_id || !productionForm.quantity) return [];
+    const qty = parseInt(productionForm.quantity);
+    if (isNaN(qty) || qty <= 0) return [];
+    const product = products.find((p) => p.id === productionForm.product_id);
+    const level = levels.find(
+      (l) => l.productId === productionForm.product_id && l.locationId === productionForm.location_id
+    );
+    const available = level?.quantityEmpty ?? 0;
+    if (available - qty < 0) {
+      const productName = product?.name ?? productionForm.product_id;
+      return [`${productName} (Kosong): tersedia ${available}, diminta ${qty}`];
+    }
+    return [];
   }
 
   async function doTransfer() {
@@ -319,7 +361,7 @@ export function StockPage() {
     finally { setSaving(false); }
   }
 
-  async function handleVendorExchange() {
+  async function doVendorExchange() {
     setSaving(true); resetFeedback();
     try {
       await stockService.vendorExchangeBulk({
@@ -337,6 +379,17 @@ export function StockPage() {
       showToast('Tukar agent berhasil dicatat.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
+  }
+
+  async function handleVendorExchange() {
+    resetFeedback();
+    const warnings = computeVendorWarnings();
+    if (warnings.length > 0) {
+      setVendorWarnings(warnings);
+      setVendorConfirmOpen(true);
+      return;
+    }
+    await doVendorExchange();
   }
 
   // -- Vendor item helpers --
@@ -456,7 +509,7 @@ export function StockPage() {
     await doBulkLoanSubmit();
   }
 
-  async function handleProduction() {
+  async function doProduction() {
     setSaving(true); resetFeedback();
     try {
       await stockService.production({
@@ -469,6 +522,17 @@ export function StockPage() {
       showToast('Produksi berhasil dicatat.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
+  }
+
+  async function handleProduction() {
+    resetFeedback();
+    const warnings = computeProductionWarnings();
+    if (warnings.length > 0) {
+      setProductionWarnings(warnings);
+      setProductionConfirmOpen(true);
+      return;
+    }
+    await doProduction();
   }
 
   // --- Tab config -------------------------------------------------------------
@@ -1085,6 +1149,24 @@ export function StockPage() {
         onClose={() => setBulkLoanConfirmOpen(false)}
         title="Stok Tidak Mencukupi"
         message={`Beberapa kontainer tidak memiliki stok yang cukup:\n\n${bulkLoanWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
+        cancelText="Tutup"
+      />
+
+      {/* Tukar agent — hard block stok negatif */}
+      <ConfirmDialog
+        isOpen={vendorConfirmOpen}
+        onClose={() => setVendorConfirmOpen(false)}
+        title="Stok Tidak Mencukupi"
+        message={`Beberapa kontainer tidak memiliki stok yang cukup:\n\n${vendorWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
+        cancelText="Tutup"
+      />
+
+      {/* Produksi — hard block stok negatif */}
+      <ConfirmDialog
+        isOpen={productionConfirmOpen}
+        onClose={() => setProductionConfirmOpen(false)}
+        title="Stok Tidak Mencukupi"
+        message={`Kontainer kosong tidak mencukupi:\n\n${productionWarnings.map((w) => `\u2022 ${w}`).join('\n')}\n\nKurangi jumlah untuk melanjutkan.`}
         cancelText="Tutup"
       />
 
