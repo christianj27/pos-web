@@ -223,6 +223,7 @@ export interface RecentTransaction {
   totalAmount: number;
   paidAmount: number;
   status: TransactionStatus;
+  paymentMethod?: string;
 }
 
 export interface CustomerDebtSummary {
@@ -247,6 +248,13 @@ export interface DailyStockProductSummary {
   totalSold: number;
 }
 
+export interface PaymentMethodBreakdownItem {
+  method: string; // 'cash' | 'transfer' | 'qris'
+  label: string; // 'Tunai' | 'Transfer' | 'QRIS'
+  amount: number;
+  count: number;
+}
+
 export interface DashboardStats {
   todayRevenue: number;
   todayTransactions: number;
@@ -261,6 +269,7 @@ export interface DashboardStats {
   customerDebts: CustomerDebtSummary[];
   staffRevenue: StaffRevenueSummary[];
   dailyStockSummary: DailyStockProductSummary[];
+  paymentMethodBreakdown?: PaymentMethodBreakdownItem[];
 }
 
 // ─── Debt History ─────────────────────────────────────────────────────────────

@@ -26,7 +26,8 @@ import { TRANSACTION_TYPE_LABELS } from '../../utils/constants';
 import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
+import { PaymentMethodModal } from './PaymentMethodModal';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary, PaymentMethodBreakdownItem } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
@@ -537,6 +538,7 @@ export function DashboardPage() {
   const [detailStockProduct, setDetailStockProduct]   = useState<DailyStockProductSummary | null>(null);
   const [detailStockMovements, setDetailStockMovements] = useState<StockMovement[] | null>(null);
   const [detailStockLoading, setDetailStockLoading]   = useState(false);
+  const [paymentModalOpen, setPaymentModalOpen]       = useState(false);
 
   const fetchStats = useCallback(async () => {
     try {
@@ -633,20 +635,22 @@ export function DashboardPage() {
         <section>
           <h2 className={styles.sectionTitle}>Hari {isToday ? 'Ini' : 'Terpilih'}</h2>
           <div className={styles.statsGrid}>
-            <StatCard
-              label="Pendapatan"
-              value={stats ? formatCurrency(stats.todayRevenue) : '\u2014'}
-              colorClass={styles.iconGreen}
-              delta={stats ? (
-                <RevDelta current={stats.todayRevenue} previous={stats.previousDayRevenue} />
-              ) : undefined}
-              icon={
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
-                  <line x1="12" y1="1" x2="12" y2="23" />
-                  <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
-                </svg>
-              }
-            />
+            <div onClick={() => setPaymentModalOpen(true)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setPaymentModalOpen(true); }} style={{ cursor: 'pointer' }}>
+              <StatCard
+                label="Pendapatan"
+                value={stats ? formatCurrency(stats.todayRevenue) : '\u2014'}
+                colorClass={styles.iconGreen}
+                delta={stats ? (
+                  <RevDelta current={stats.todayRevenue} previous={stats.previousDayRevenue} />
+                ) : undefined}
+                icon={
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="22" height="22">
+                    <line x1="12" y1="1" x2="12" y2="23" />
+                    <path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6" />
+                  </svg>
+                }
+              />
+            </div>
             {isOwner && (
               <StatCard
                 label="Biaya Pembelian"
@@ -918,6 +922,13 @@ export function DashboardPage() {
           onClose={() => { setDetailStockProduct(null); setDetailStockMovements(null); }}
         />
       )}
+
+      {/* Payment method breakdown modal — FR-DSH-013 */}
+      <PaymentMethodModal
+        paymentBreakdown={stats?.paymentMethodBreakdown ?? []}
+        isOpen={paymentModalOpen}
+        onClose={() => setPaymentModalOpen(false)}
+      />
     </>
   );
 }

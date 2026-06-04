@@ -1,6 +1,6 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { AuthUser, DashboardStats, DailyStockProductSummary, StaffRevenueSummary } from '../types';
+import type { AuthUser, DashboardStats, DailyStockProductSummary, StaffRevenueSummary, PaymentMethodBreakdownItem } from '../types';
 
 function toWIBDate(isoString: string): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
@@ -51,6 +51,39 @@ function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
   return result;
 }
 
+function computePaymentMethodBreakdown(transactions: Array<{ paymentMethod: string | undefined; paidAmount: number }>): PaymentMethodBreakdownItem[] {
+  const methodCounts = new Map<string, { amount: number; count: number }>();
+
+  for (const tx of transactions) {
+    const method = tx.paymentMethod?.toLowerCase() || 'unknown';
+    const existing = methodCounts.get(method) || { amount: 0, count: 0 };
+    methodCounts.set(method, {
+      amount: existing.amount + tx.paidAmount,
+      count: existing.count + 1,
+    });
+  }
+
+  const methodLabels: Record<string, string> = {
+    cash: 'Tunai',
+    transfer: 'Transfer',
+    qris: 'QRIS',
+  };
+
+  // Order: cash, transfer, qris
+  const result: PaymentMethodBreakdownItem[] = [];
+  for (const method of ['cash', 'transfer', 'qris']) {
+    const data = methodCounts.get(method) || { amount: 0, count: 0 };
+    result.push({
+      method,
+      label: methodLabels[method] || method,
+      amount: data.amount,
+      count: data.count,
+    });
+  }
+
+  return result;
+}
+
 export const dashboardService = {
   getStats: (_date?: string, _user?: AuthUser | null): Promise<DashboardStats> => {
     if (!USE_MOCK) return apiClient.get<DashboardStats>(`/api/dashboard${_date ? `?date=${_date}` : ''}`).then((r) => r.data);
@@ -88,6 +121,10 @@ export const dashboardService = {
         }
       }
       const staffRevenue = [...staffRevenueMap.values()].sort((a, b) => b.revenue - a.revenue);
+      const completedTxns = mockDb.dashboardStats.recentTransactions
+        .filter((tx) => tx.status === 'completed')
+        .map((tx) => ({ paymentMethod: tx.paymentMethod, paidAmount: tx.paidAmount }));
+      const paymentBreakdown = computePaymentMethodBreakdown(completedTxns);
       return delay({
         ...mockDb.dashboardStats,
         totalOutstandingDebt: totalDebt,
@@ -96,13 +133,14 @@ export const dashboardService = {
         customerDebts,
         staffRevenue,
         dailyStockSummary: computeDailyStockSummary(_date),
+        paymentMethodBreakdown: paymentBreakdown,
       });
     }
 
     // Non-owner: scope transaction-derived stats to current user
     const userName    = _user!.name;
     const userTxns    = mockDb.dashboardStats.recentTransactions.filter((tx) => tx.createdByName === userName);
-    const completedTx = userTxns.filter((tx) => tx.status === 'completed');
+    const completedTx = userTxns.filter((tx) => tx.status === 'completed').map((tx) => ({ paymentMethod: tx.paymentMethod, paidAmount: tx.paidAmount }));
     const todayRevenue      = completedTx.reduce((s, tx) => s + tx.paidAmount, 0);
     const todayTransactions = completedTx.length;
     const todayDebtCollected = (mockDb.debtPayments as Array<{ createdByName: string; amount: number }>)
@@ -112,6 +150,8 @@ export const dashboardService = {
     const zeroWeeklyChart = mockDb.dashboardStats.weeklyChart.map((e) => ({
       ...e, revenue: 0, transactionCount: 0, purchaseCost: 0,
     }));
+    // Payment breakdown for non-owner's own transactions
+    const userPaymentBreakdown = computePaymentMethodBreakdown(completedTx);
 
     return delay({
       ...mockDb.dashboardStats,
@@ -126,6 +166,7 @@ export const dashboardService = {
       totalOutstandingDebt: totalDebt,
       customerDebts,
       dailyStockSummary: computeDailyStockSummary(_date),
+      paymentMethodBreakdown: userPaymentBreakdown,
     });
   },
 };
