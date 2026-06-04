@@ -27,7 +27,7 @@ import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { PaymentMethodModal } from './PaymentMethodModal';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary, PaymentMethodBreakdownItem } from '../../types';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
