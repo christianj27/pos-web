@@ -105,6 +105,7 @@ export interface StockMovement {
   batchId?: string | null;
   isReversed?: boolean;
   isReversal?: boolean;
+  containerLoanId?: string | null;
 }
 
 export interface BulkContainerLoanItem {
