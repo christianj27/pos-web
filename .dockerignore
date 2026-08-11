@@ -1,0 +1,16 @@
+# ============================================================
+# .dockerignore — pos-web
+# PLACE: POS/Project/Frontend/pos-web/.dockerignore
+# node_modules is HUGE — excluding it makes the build context
+# go from hundreds of MB to a few KB.
+# ============================================================
+
+node_modules
+dist
+.git
+.gitignore
+.vscode
+*.log
+Dockerfile
+.dockerignore
+npm-debug.log*
