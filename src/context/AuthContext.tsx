@@ -4,7 +4,7 @@ import { USE_MOCK, MOCK_AUTH_USERS } from '../mocks/db';
 import { setApiCredentialHandlers } from '../hooks/useApi';
 import type { AuthUser, UserRole } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 interface AuthContextType {
   user: AuthUser | null;
