@@ -63,11 +63,11 @@ export function DebtPaymentsPage() {
     setHistoryLoaded(true);
   }, [showToast]);
 
-  useEffect(() => { loadOutstanding(); }, [loadOutstanding]);
+  useEffect(() => { void Promise.resolve().then(loadOutstanding); }, [loadOutstanding]);
 
   useEffect(() => {
     if (activeTab === 'history' && !historyLoaded) {
-      loadHistory(selectedDate);
+      void Promise.resolve().then(() => loadHistory(selectedDate));
     }
   }, [activeTab, historyLoaded, loadHistory, selectedDate]);
 

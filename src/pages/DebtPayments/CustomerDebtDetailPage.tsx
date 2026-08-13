@@ -38,15 +38,15 @@ export function CustomerDebtDetailPage() {
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, showToast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   useEffect(() => {
     customerService.list()
       .then((custs) => setAllCustomers((custs as Customer[]).filter((c) => c.isActive)))
       .catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat daftar pelanggan.'), 'error'); });
-  }, []);
+  }, [showToast]);
 
   function openCreate() {
     setForm({ customer_id: customerId ?? '', amount: '', notes: '', method: 'cash' });

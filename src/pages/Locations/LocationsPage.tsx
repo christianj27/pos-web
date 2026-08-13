@@ -47,7 +47,7 @@ export function LocationsPage() {
     setLoading(false);
   }, [showToast]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   const activeUsers = users.filter((u) => u.isActive && (u.role === 'owner' || u.role === 'kurir'));
   const userOptions = activeUsers.map((u) => ({ value: u.id, label: `${u.name} (${u.role})` }));

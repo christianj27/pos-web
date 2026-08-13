@@ -89,9 +89,9 @@ export function CashFlowPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [showToast]);
 
-  useEffect(() => { load(selectedDate); }, [load, selectedDate]);
+  useEffect(() => { void Promise.resolve().then(() => load(selectedDate)); }, [load, selectedDate]);
 
   const isToday = selectedDate === getTodayWIB();
 

@@ -50,7 +50,7 @@ export function TransactionsPage() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>(() => (isKurir ? 'penugasan' : 'all'));
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [selectedDate, setSelectedDate] = useState<string>(getTodayWIB());
 
@@ -146,14 +146,9 @@ export function TransactionsPage() {
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
     setStockLevels(lvls as StockLevel[]);
     setLoading(false);
-  }, [selectedDate, role, user?.id, showToast]);
+  }, [selectedDate, role, user?.id, showToast, isOwner, isKasir]);
 
-  useEffect(() => { load(); }, [load]);
-
-  // Default to Penugasan tab for kurir
-  useEffect(() => {
-    if (isKurir) setStatusFilter('penugasan');
-  }, [isKurir]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   // ── Filtered list ────────────────────────────────────────────────────────────
   const filteredTxs = useMemo(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import styles from './Input.module.scss';
 
 interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
@@ -17,13 +17,6 @@ function formatCurrency(val: string | number | readonly string[] | undefined): s
 
 export function Input({ label, error, hint, id, className, type, currency, value, onChange, ...props }: InputProps) {
   const [showPwd, setShowPwd] = useState(false);
-  const [displayValue, setDisplayValue] = useState(() => (currency ? formatCurrency(value) : ''));
-
-  useEffect(() => {
-    if (currency) {
-      setDisplayValue(formatCurrency(value));
-    }
-  }, [currency, value]);
 
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-');
   const isPassword = type === 'password';
@@ -31,8 +24,6 @@ export function Input({ label, error, hint, id, className, type, currency, value
 
   function handleCurrencyChange(e: React.ChangeEvent<HTMLInputElement>) {
     const raw = e.target.value.replace(/\D/g, '');
-    const formatted = formatCurrency(raw);
-    setDisplayValue(formatted);
     if (onChange) {
       const fakeEvent = {
         ...e,
@@ -43,7 +34,7 @@ export function Input({ label, error, hint, id, className, type, currency, value
     }
   }
 
-  const inputValue = currency ? displayValue : value;
+  const inputValue = currency ? formatCurrency(value) : value;
   const inputOnChange = currency ? handleCurrencyChange : onChange;
 
   return (

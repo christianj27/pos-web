@@ -550,9 +550,9 @@ export function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, user]);
+  }, [selectedDate, user, showToast]);
 
-  useEffect(() => { fetchStats(); }, [fetchStats]);
+  useEffect(() => { void Promise.resolve().then(fetchStats); }, [fetchStats]);
   usePolling(fetchStats, DASHBOARD_POLLING_INTERVAL);
 
   // Tick every 10s to keep "Terakhir diperbarui" fresh

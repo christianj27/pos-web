@@ -113,7 +113,7 @@ export function StockPage() {
     }
   }
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { void Promise.resolve().then(load); }, [load]);
 
   const productOptions = products.map((p) => ({ value: p.id, label: `${p.name} (${p.unit})` }));
   const selfProducedOptions = products
