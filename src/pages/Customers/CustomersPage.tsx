@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { customerService } from '../../services/customerService';
 import { productService } from '../../services/productService';
 import { useToast } from '../../context/ToastContext';
@@ -18,6 +18,7 @@ export function CustomersPage() {
   const { showToast } = useToast();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
 
   // Customer CRUD
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,6 +43,12 @@ export function CustomersPage() {
   }, [showToast, user?.role]);
 
   useEffect(() => { load(); }, [load]);
+
+  const filteredCustomers = useMemo(() =>
+    customers.filter((c) =>
+      c.name.toLowerCase().includes(search.toLowerCase()) ||
+      (c.phone ?? '').includes(search)
+    ), [customers, search]);
 
   function openCreate() { setEditTarget(null); setFormData(EMPTY_FORM); setFormErrors({}); setModalOpen(true); }
 
@@ -152,8 +159,23 @@ export function CustomersPage() {
         )}
 
         {!loading && customers.length > 0 && (
+          <div className={styles.searchWrap}>
+            <Input
+              label=""
+              placeholder="Cari nama atau nomor HP..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+          </div>
+        )}
+
+        {!loading && customers.length > 0 && filteredCustomers.length === 0 && (
+          <EmptyState message="Tidak ada pelanggan yang ditemukan." />
+        )}
+
+        {!loading && filteredCustomers.length > 0 && (
           <div className={styles.cardList}>
-            {customers.map((c) => (
+            {filteredCustomers.map((c) => (
               <div key={c.id} className={[styles.card, !c.isActive ? styles.cardInactive : ''].join(' ')}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>

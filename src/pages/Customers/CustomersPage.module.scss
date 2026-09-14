@@ -3,6 +3,7 @@
 .header { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
+.searchWrap { flex-shrink: 0; }
 .tableWrap { overflow-x: auto; border: 1px solid var(--color-light-violet-stroke); }
 
 .cardList { display: flex; flex-direction: column; gap: 8px; }
