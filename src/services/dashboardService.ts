@@ -91,7 +91,7 @@ export const dashboardService = {
     const isOwner = !_user || _user.role === 'owner';
 
     // Store-wide computed values (used by all roles)
-    const totalDebt     = mockDb.customers.reduce((s, c) => s + (c.outstandingDebt ?? 0), 0);
+    const totalDebt     = mockDb.customers.filter((c) => c.isActive).reduce((s, c) => s + (c.outstandingDebt ?? 0), 0);
     const customerDebts = mockDb.customers
       .filter((c) => c.isActive && (c.outstandingDebt ?? 0) > 0)
       .sort((a, b) => (b.outstandingDebt ?? 0) - (a.outstandingDebt ?? 0))

@@ -105,17 +105,12 @@ export function CustomersPage() {
     }
   }
 
-  async function handleToggleActive() {
+  async function handleDelete() {
     if (!confirmTarget) return;
     setConfirmLoading(true);
     try {
-      if (confirmTarget.isActive) {
-        await customerService.deactivate(confirmTarget.id, { name: confirmTarget.name, phone: confirmTarget.phone || undefined, address: confirmTarget.address || undefined, isActive: false });
-        showToast('Pelanggan berhasil dinonaktifkan.');
-      } else {
-        await customerService.reactivate(confirmTarget.id, { name: confirmTarget.name, phone: confirmTarget.phone || undefined, address: confirmTarget.address || undefined, isActive: true });
-        showToast('Pelanggan berhasil diaktifkan kembali.');
-      }
+      await customerService.remove(confirmTarget.id);
+      showToast('Pelanggan berhasil dihapus.');
       setConfirmTarget(null); load();
     }
     catch (err) { showToast(getErrorMessage(err, 'Terjadi kesalahan. Silakan coba lagi.'), 'error'); }
@@ -176,26 +171,27 @@ export function CustomersPage() {
         {!loading && filteredCustomers.length > 0 && (
           <div className={styles.cardList}>
             {filteredCustomers.map((c) => (
-              <div key={c.id} className={[styles.card, !c.isActive ? styles.cardInactive : ''].join(' ')}>
+              <div key={c.id} className={styles.card}>
                 <div className={styles.cardTop}>
                   <div className={styles.cardInfo}>
                     <span className={styles.cardName}>{c.name}</span>
                     {c.phone && <span className={styles.cardSub}>{c.phone}</span>}
                     {c.address && <span className={styles.cardAddress}>{c.address}</span>}
                   </div>
-                  <div className={styles.cardBadges}>
-                    <Badge variant={c.isActive ? 'active' : 'inactive'}>{c.isActive ? 'Aktif' : 'Tidak Aktif'}</Badge>
-                    {isOwner && c.isConfidential && <Badge variant="confidential">Konfidensial</Badge>}
-                  </div>
+                  {isOwner && c.isConfidential && (
+                    <div className={styles.cardBadges}>
+                      <Badge variant="confidential">Konfidensial</Badge>
+                    </div>
+                  )}
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
-                  {isOwner && (<button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>)}     
+                  {isOwner && (<button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>)}
                   <button
-                    className={[styles.actionBtn, c.isActive ? styles.deactivateBtn : styles.activateBtn].join(' ')}
+                    className={[styles.actionBtn, styles.deleteBtn].join(' ')}
                     onClick={() => setConfirmTarget(c)}
                   >
-                    {c.isActive ? 'Nonaktifkan' : 'Aktifkan'}
+                    Hapus
                   </button>
                 </div>
               </div>
@@ -259,10 +255,15 @@ export function CustomersPage() {
         </div>
       </Modal>
 
-      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleToggleActive}
-        title={confirmTarget?.isActive ? 'Nonaktifkan Pelanggan' : 'Aktifkan Pelanggan'}
-        message={confirmTarget?.isActive ? `Nonaktifkan ${confirmTarget?.name}?` : `Aktifkan kembali ${confirmTarget?.name}?`}
-        confirmText={confirmTarget?.isActive ? 'Nonaktifkan' : 'Aktifkan'} loading={confirmLoading} />
+      <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleDelete}
+        title="Hapus Pelanggan"
+        message={confirmTarget
+          ? `Hapus ${confirmTarget.name}? Pelanggan ini akan dihapus dari daftar dan formulir transaksi.`
+            + ((confirmTarget.outstandingDebt ?? 0) > 0
+              ? `\n\n⚠ Pelanggan ini masih memiliki hutang ${formatCurrency(confirmTarget.outstandingDebt!)}. Menghapus pelanggan tidak menghapus hutangnya.`
+              : '')
+          : ''}
+        confirmText="Hapus" loading={confirmLoading} />
     </div>
   );
 }

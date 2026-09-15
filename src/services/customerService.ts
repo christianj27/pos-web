@@ -3,9 +3,10 @@ import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import type { Customer, CustomerPricingItem } from '../types';
 
 export const customerService = {
+  /** Active customers only (FR-CST-010); the API excludes soft-deleted customers by default. */
   list: (role?: string): Promise<Customer[]> =>
     USE_MOCK
-      ? delay(mockDb.customers.filter((c) => role === 'owner' || !c.isConfidential))
+      ? delay(mockDb.customers.filter((c) => c.isActive && (role === 'owner' || !c.isConfidential)))
       : apiClient.get<Customer[]>('/api/customers').then((r) => r.data),
 
   create: (data: { name: string; phone?: string; address?: string; initialDebt?: number; isConfidential?: boolean }): Promise<Customer> => {
@@ -28,17 +29,14 @@ export const customerService = {
     return delay({ ...mockDb.customers[idx] });
   },
 
-  deactivate: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<void> => {
-    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, data).then((r) => r.data);
+  /**
+   * Soft delete (FR-CST-004): the record is retained so transaction history, debt history and
+   * container loans stay intact, but it disappears from the list and every customer picker.
+   */
+  remove: (id: string): Promise<void> => {
+    if (!USE_MOCK) return apiClient.delete(`/api/customers/${id}`).then((r) => r.data);
     const c = mockDb.customers.find((c) => c.id === id);
     if (c) c.isActive = false;
-    return delay(undefined);
-  },
-
-  reactivate: (id: string, data: { name?: string; phone?: string; address?: string; isActive?: boolean }): Promise<void> => {
-    if (!USE_MOCK) return apiClient.put(`/api/customers/${id}`, data).then((r) => r.data);
-    const c = mockDb.customers.find((c) => c.id === id);
-    if (c) c.isActive = true;
     return delay(undefined);
   },
 
