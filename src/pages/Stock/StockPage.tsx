@@ -51,6 +51,7 @@ export function StockPage() {
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
   const [containerLoans, setContainerLoans] = useState<ContainerLoan[]>([]);
   const [containerLoansLoading, setContainerLoansLoading] = useState(false);
+  const [containerSearch, setContainerSearch] = useState('');
   const [movementsDate, setMovementsDate] = useState<string>(getTodayWIB());
   const [movementsLoading, setMovementsLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -1110,8 +1111,13 @@ export function StockPage() {
               if (allEntries.length === 0) {
                 return <EmptyState message="Tidak ada transaksi kontainer aktif." />;
               }
-              const positiveEntries = allEntries.filter((e) => e.net > 0);
-              const negativeEntries = allEntries.filter((e) => e.net < 0);
+              // Client-side customer-name filter (FR-CON-007)
+              const searchQuery = containerSearch.trim().toLowerCase();
+              const filteredEntries = searchQuery
+                ? allEntries.filter((e) => e.customerName.toLowerCase().includes(searchQuery))
+                : allEntries;
+              const positiveEntries = filteredEntries.filter((e) => e.net > 0);
+              const negativeEntries = filteredEntries.filter((e) => e.net < 0);
 
               // Group by customer
               function groupByCustomer(entries: LoanEntry[]) {
@@ -1127,6 +1133,19 @@ export function StockPage() {
 
               return (
                 <div className={styles.containerLoansTable}>
+                  <div className={styles.searchWrap}>
+                    <Input
+                      label=""
+                      placeholder="Cari nama pelanggan..."
+                      value={containerSearch}
+                      onChange={(e) => setContainerSearch(e.target.value)}
+                    />
+                  </div>
+
+                  {filteredEntries.length === 0 && (
+                    <EmptyState message="Tidak ada pelanggan yang ditemukan." />
+                  )}
+
                   {/* Net > 0: customer holds our containers */}
                   {positiveEntries.length > 0 && (
                     <>

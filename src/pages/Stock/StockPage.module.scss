@@ -40,6 +40,7 @@
 .cancelMvtBtn { font-size: 12px; font-weight: 600; color: var(--color-danger); background: none; border: 1px solid var(--color-danger); border-radius: 6px; padding: 3px 10px; cursor: pointer; transition: background 0.15s, color 0.15s; &:hover:not(:disabled) { background: var(--color-danger); color: #fff; } &:disabled { opacity: 0.4; cursor: not-allowed; } }
 .cardReversed { opacity: 0.65; }
 .formCard { background: var(--color-white-canvas); border: 1px solid var(--color-light-violet-stroke); padding: 24px; max-width: 520px; }
+.searchWrap { flex-shrink: 0; }
 
 .dateFilterRow {
   display: flex;
