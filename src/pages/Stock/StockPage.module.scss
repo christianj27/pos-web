@@ -113,6 +113,7 @@
 .itemRowHeader { display: flex; align-items: flex-end; gap: 8px; > *:first-child { flex: 1; min-width: 0; } }
 .itemRowControls { display: grid; grid-template-columns: 1fr; gap: 10px; }
 .itemRowControls2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+.itemRowControls2Start { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; }
 .itemRowControls3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; align-items: end; }
 .removeItemBtn { display: flex; align-items: center; justify-content: center; min-width: 40px; min-height: 40px; border-radius: 8px; color: var(--color-danger); opacity: 0.6; flex-shrink: 0; transition: opacity 0.15s, background-color 0.15s; &:hover:not(:disabled) { opacity: 1; background: #fef2f2; } &:disabled { opacity: 0.25; cursor: not-allowed; } }
 .addItemBtn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 10px 16px; border: 1.5px dashed var(--color-digital-violet); border-radius: 8px; color: var(--color-digital-violet); font-size: 14px; font-weight: 500; background: none; cursor: pointer; transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); } }

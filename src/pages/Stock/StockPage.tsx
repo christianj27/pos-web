@@ -17,9 +17,20 @@ type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect'
 interface ReceiveItem { _key: string; product_id: string; quantity: string; container_status: string; purchase_cost: string; }
 interface BulkLoanItem { _key: string; product_id: string; quantity: string; container_status: string; }
 interface TransferItem { _key: string; product_id: string; quantity: string; container_status: string; }
-interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; purchase_cost: string; }
+interface VendorItem { _key: string; product_id: string; empty_quantity: string; filled_quantity: string; unit_purchase_cost: string; purchase_cost: string; cost_overridden: boolean; }
 interface AdjustItem { _key: string; product_id: string; quantity: string; direction: '+' | '-'; container_status: string; }
 function newKey() { return Math.random().toString(36).slice(2); }
+/** Blank vendor-exchange item row. `cost_overridden` tracks whether the user typed the item total manually. */
+function newVendorItem(): VendorItem {
+  return { _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', unit_purchase_cost: '', purchase_cost: '', cost_overridden: false };
+}
+/** Item purchase cost = harga beli satuan × jumlah terisi diterima. Returns a digits-only string (currency mask strips non-digits). */
+function computeVendorItemCost(unitPrice: string, filledQuantity: string): string {
+  const unit = parseFloat(unitPrice);
+  const qty = parseInt(filledQuantity);
+  if (!isFinite(unit) || !isFinite(qty) || unit <= 0 || qty <= 0) return '';
+  return String(Math.round(unit * qty));
+}
 function getTodayWIB(): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date());
 }
@@ -47,7 +58,7 @@ export function StockPage() {
   const [defectForm, setDefectForm] = useState({ product_id: '', from_location_id: '', quantity: '', container_status: '', notes: '' });
   // Forms — Vendor Exchange (multi-item cart)
   const [vendorShared, setVendorShared] = useState({ location_id: '', notes: '' });
-  const [vendorItems, setVendorItems] = useState<VendorItem[]>([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
+  const [vendorItems, setVendorItems] = useState<VendorItem[]>(() => [newVendorItem()]);
   const [productionForm, setProductionForm] = useState({ product_id: '', location_id: '', quantity: '', production_cost: '', notes: '' });
   const [containerLoans, setContainerLoans] = useState<ContainerLoan[]>([]);
   const [containerLoansLoading, setContainerLoansLoading] = useState(false);
@@ -410,7 +421,7 @@ export function StockPage() {
         })),
       });
       setVendorShared({ location_id: '', notes: '' });
-      setVendorItems([{ _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
+      setVendorItems([newVendorItem()]);
       showToast('Tukar agent berhasil dicatat.'); load();
     } catch (err) { showToast(getErrorMessage(err, 'Gagal menyimpan. Periksa kembali data.'), 'error'); }
     finally { setSaving(false); }
@@ -429,13 +440,25 @@ export function StockPage() {
 
   // -- Vendor item helpers --
   function updateVendorItem(key: string, patch: Partial<VendorItem>) {
-    setVendorItems((prev) => prev.map((item) => item._key === key ? { ...item, ...patch } : item));
+    setVendorItems((prev) => prev.map((item) => {
+      if (item._key !== key) return item;
+      const updated = { ...item, ...patch };
+      if ('purchase_cost' in patch) {
+        // Typing into the derived total freezes auto-fill for this row; clearing it re-enables it.
+        const manual = (patch.purchase_cost ?? '') !== '';
+        updated.cost_overridden = manual;
+        if (!manual) updated.purchase_cost = computeVendorItemCost(updated.unit_purchase_cost, updated.filled_quantity);
+      } else if (('unit_purchase_cost' in patch || 'filled_quantity' in patch) && !item.cost_overridden) {
+        updated.purchase_cost = computeVendorItemCost(updated.unit_purchase_cost, updated.filled_quantity);
+      }
+      return updated;
+    }));
   }
   function removeVendorItem(key: string) {
     setVendorItems((prev) => prev.length > 1 ? prev.filter((item) => item._key !== key) : prev);
   }
   function addVendorItem() {
-    setVendorItems((prev) => [...prev, { _key: newKey(), product_id: '', empty_quantity: '', filled_quantity: '', purchase_cost: '' }]);
+    setVendorItems((prev) => [...prev, newVendorItem()]);
   }
 
   // ── Adjust item helpers ───────────────────────────────────────────────────────
@@ -913,8 +936,24 @@ export function StockPage() {
                       <Input label="Jml Kosong Diserahkan" type="number" min="0" value={item.empty_quantity} onChange={(e) => updateVendorItem(item._key, { empty_quantity: e.target.value })} required />
                       <Input label="Jml Terisi Diterima" type="number" min="1" value={item.filled_quantity} onChange={(e) => updateVendorItem(item._key, { filled_quantity: e.target.value })} required />
                     </div>
-                    <div className={styles.itemRowControls}>
-                       <Input label="Biaya Pembelian (Rp)" currency min="0" value={item.purchase_cost} onChange={(e) => updateVendorItem(item._key, { purchase_cost: e.target.value })} required />
+                    <div className={styles.itemRowControls2Start}>
+                      <Input
+                        label="Harga Beli Satuan (Rp)"
+                        currency
+                        min="0"
+                        hint="Otomatis mengisi biaya pembelian."
+                        value={item.unit_purchase_cost}
+                        onChange={(e) => updateVendorItem(item._key, { unit_purchase_cost: e.target.value })}
+                      />
+                      <Input
+                        label="Biaya Pembelian (Rp)"
+                        currency
+                        min="0"
+                        hint={item.cost_overridden ? 'Diubah manual.' : 'Harga satuan × jml terisi.'}
+                        value={item.purchase_cost}
+                        onChange={(e) => updateVendorItem(item._key, { purchase_cost: e.target.value })}
+                        required
+                      />
                     </div>
                   </div>
                 ))}
