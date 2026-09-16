@@ -233,6 +233,16 @@ export interface CustomerDebtSummary {
   outstandingDebt: number;
 }
 
+/** Net container balance per customer + product (FR-DSH-014). Positive = customer holds our containers. */
+export interface ContainerLoanSummaryItem {
+  customerId: string;
+  customerName: string;
+  productId: string;
+  productName: string;
+  productUnit: string;
+  netQuantity: number;
+}
+
 export interface StaffRevenueSummary {
   staffId: string;
   staffName: string;
@@ -268,6 +278,7 @@ export interface DashboardStats {
   recentTransactions: RecentTransaction[];
   warehouseStock: StockLevel[];
   customerDebts: CustomerDebtSummary[];
+  containerLoans: ContainerLoanSummaryItem[];
   staffRevenue: StaffRevenueSummary[];
   dailyStockSummary: DailyStockProductSummary[];
   paymentMethodBreakdown?: PaymentMethodBreakdownItem[];

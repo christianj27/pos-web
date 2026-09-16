@@ -27,7 +27,7 @@ import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { PaymentMethodModal } from './PaymentMethodModal';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, ContainerLoanSummaryItem, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
@@ -319,6 +319,121 @@ function CustomerDebtRow({ item, onClick }: { item: CustomerDebtSummary; onClick
   );
 }
 
+// --- Container loans (FR-DSH-014) --------------------------------------------
+
+interface ContainerLoanCustomerGroup {
+  customerId: string;
+  customerName: string;
+  products: ContainerLoanSummaryItem[];
+  totalUnits: number;
+}
+
+interface ContainerLoanSections {
+  positive: ContainerLoanCustomerGroup[];
+  negative: ContainerLoanCustomerGroup[];
+}
+
+/** Splits flat customer+product nets into the two direction sections, one row per customer. */
+function groupContainerLoans(items: ContainerLoanSummaryItem[]): ContainerLoanSections {
+  const byCustomer = new Map<string, { customerId: string; customerName: string; positive: ContainerLoanSummaryItem[]; negative: ContainerLoanSummaryItem[] }>();
+
+  for (const item of items) {
+    if (!byCustomer.has(item.customerId)) {
+      byCustomer.set(item.customerId, {
+        customerId: item.customerId,
+        customerName: item.customerName,
+        positive: [],
+        negative: [],
+      });
+    }
+    const group = byCustomer.get(item.customerId)!;
+    (item.netQuantity > 0 ? group.positive : group.negative).push(item);
+  }
+
+  function build(rowsOf: (g: { positive: ContainerLoanSummaryItem[]; negative: ContainerLoanSummaryItem[] }) => ContainerLoanSummaryItem[]) {
+    return [...byCustomer.values()]
+      .filter((g) => rowsOf(g).length > 0)
+      .map((g) => {
+        const products = [...rowsOf(g)].sort(
+          (a, b) => Math.abs(b.netQuantity) - Math.abs(a.netQuantity) ||
+            a.productName.localeCompare(b.productName),
+        );
+        return {
+          customerId: g.customerId,
+          customerName: g.customerName,
+          products,
+          totalUnits: products.reduce((s, p) => s + Math.abs(p.netQuantity), 0),
+        };
+      })
+      .sort((a, b) => b.totalUnits - a.totalUnits || a.customerName.localeCompare(b.customerName));
+  }
+
+  return { positive: build((g) => g.positive), negative: build((g) => g.negative) };
+}
+
+function ContainerLoanCustomerRow({
+  group,
+  direction,
+  expanded,
+  onToggle,
+}: {
+  group: ContainerLoanCustomerGroup;
+  direction: 'positive' | 'negative';
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const isPositive = direction === 'positive';
+
+  return (
+    <div className={[
+      styles.containerLoanGroup,
+      isPositive ? styles.containerLoanGroupPositive : styles.containerLoanGroupNegative,
+    ].join(' ')}>
+      <button
+        type="button"
+        className={styles.containerLoanCustomerBtn}
+        onClick={onToggle}
+        aria-expanded={expanded}
+      >
+        <span className={styles.containerLoanCustomerInfo}>
+          <span className={styles.containerLoanCustomerName}>{group.customerName}</span>
+          <span className={styles.containerLoanCustomerSummary}>
+            {group.products.length} produk {'\u00B7'} {group.totalUnits} unit
+          </span>
+        </span>
+        <svg
+          viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+          width="16" height="16"
+          className={[styles.containerLoanChevron, expanded ? styles.containerLoanChevronOpen : ''].join(' ')}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className={styles.containerLoanProducts}>
+          {group.products.map((p) => (
+            <div key={p.productId} className={styles.containerLoanProductRow}>
+              <div className={styles.containerLoanProductInfo}>
+                <span className={styles.containerLoanProductName}>{p.productName}</span>
+                <span className={styles.containerLoanProductUnit}>{p.productUnit}</span>
+              </div>
+              <div className={styles.containerLoanProductRight}>
+                <span className={isPositive ? styles.containerLoanNetPositive : styles.containerLoanNetNegative}>
+                  {Math.abs(p.netQuantity)} {p.productUnit}
+                </span>
+                <span className={styles.containerLoanNetNote}>
+                  {isPositive ? 'belum dikembalikan' : 'kontainer mereka ada di kami'}
+                </span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Warehouse stock ----------------------------------------------------------
 
 function WarehouseStockRow({ item }: { item: StockLevel }) {
@@ -539,6 +654,7 @@ export function DashboardPage() {
   const [detailStockMovements, setDetailStockMovements] = useState<StockMovement[] | null>(null);
   const [detailStockLoading, setDetailStockLoading]   = useState(false);
   const [paymentModalOpen, setPaymentModalOpen]       = useState(false);
+  const [expandedContainerRows, setExpandedContainerRows] = useState<Set<string>>(() => new Set());
 
   const fetchStats = useCallback(async () => {
     try {
@@ -567,6 +683,19 @@ export function DashboardPage() {
   }).format(new Date());
 
   const isToday = selectedDate === getTodayWIB();
+
+  const containerLoanSections = groupContainerLoans(stats?.containerLoans ?? []);
+  const hasContainerLoans =
+    containerLoanSections.positive.length > 0 || containerLoanSections.negative.length > 0;
+
+  function toggleContainerRow(key: string) {
+    setExpandedContainerRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }
 
   async function handleTxRowClick(id: string) {
     setDetailLoading(true);
@@ -787,6 +916,49 @@ export function DashboardPage() {
             </div>
           ) : (
             <p className={styles.recentEmpty}>Tidak ada hutang pelanggan aktif.</p>
+          )}
+        </section>
+
+        {/* Container loans — FR-DSH-014 (below Hutang Pelanggan) */}
+        <section>
+          <h2 className={styles.sectionTitle}>Kontainer Pelanggan</h2>
+          {hasContainerLoans ? (
+            <div className={styles.containerLoanSections}>
+              {containerLoanSections.positive.length > 0 && (
+                <div>
+                  <div className={styles.containerGroupTitle}>Pelanggan memegang kontainer kami</div>
+                  {containerLoanSections.positive.map((group) => (
+                    <ContainerLoanCustomerRow
+                      key={`positive__${group.customerId}`}
+                      group={group}
+                      direction="positive"
+                      expanded={expandedContainerRows.has(`positive__${group.customerId}`)}
+                      onToggle={() => toggleContainerRow(`positive__${group.customerId}`)}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {containerLoanSections.negative.length > 0 && (
+                <div>
+                  <div className={styles.containerGroupTitle}>Kontainer pelanggan ada di kami</div>
+                  <p className={styles.containerGroupHint}>
+                    Kirim kembali sebagai galon terisi di pengiriman berikutnya
+                  </p>
+                  {containerLoanSections.negative.map((group) => (
+                    <ContainerLoanCustomerRow
+                      key={`negative__${group.customerId}`}
+                      group={group}
+                      direction="negative"
+                      expanded={expandedContainerRows.has(`negative__${group.customerId}`)}
+                      onToggle={() => toggleContainerRow(`negative__${group.customerId}`)}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          ) : (
+            <p className={styles.recentEmpty}>Tidak ada transaksi kontainer aktif.</p>
           )}
         </section>
 

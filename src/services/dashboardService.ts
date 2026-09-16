@@ -1,6 +1,6 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { AuthUser, DashboardStats, DailyStockProductSummary, StaffRevenueSummary, PaymentMethodBreakdownItem } from '../types';
+import type { AuthUser, DashboardStats, DailyStockProductSummary, ContainerLoanSummaryItem, StaffRevenueSummary, PaymentMethodBreakdownItem } from '../types';
 
 function toWIBDate(isoString: string): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
@@ -49,6 +49,37 @@ function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
 
   result.sort((a, b) => a.productName.localeCompare(b.productName));
   return result;
+}
+
+// Net container balance per customer + product (FR-DSH-014) — store-wide, active customers only, net != 0 only.
+function computeContainerLoanSummary(): ContainerLoanSummaryItem[] {
+  const activeCustomerIds = new Set(mockDb.customers.filter((c) => c.isActive).map((c) => c.id));
+
+  const netMap = new Map<string, ContainerLoanSummaryItem>();
+  for (const loan of mockDb.containerLoans) {
+    if (!activeCustomerIds.has(loan.customerId)) continue;
+    const key = `${loan.customerId}__${loan.productId}`;
+    if (!netMap.has(key)) {
+      const product = mockDb.products.find((p) => p.id === loan.productId);
+      netMap.set(key, {
+        customerId:   loan.customerId,
+        customerName: loan.customerName ?? loan.customerId,
+        productId:    loan.productId,
+        productName:  loan.productName ?? loan.productId,
+        productUnit:  product?.unit ?? '',
+        netQuantity:  0,
+      });
+    }
+    netMap.get(key)!.netQuantity += loan.quantity;
+  }
+
+  return [...netMap.values()]
+    .filter((e) => e.netQuantity !== 0)
+    .sort((a, b) =>
+      a.customerName.localeCompare(b.customerName) ||
+      Math.abs(b.netQuantity) - Math.abs(a.netQuantity) ||
+      a.productName.localeCompare(b.productName),
+    );
 }
 
 function computePaymentMethodBreakdown(transactions: Array<{ paymentMethod: string | undefined; paidAmount: number }>): PaymentMethodBreakdownItem[] {
@@ -131,6 +162,7 @@ export const dashboardService = {
         todayDebtCollected:   debtCollected,
         previousDayRevenue:   prevDayRevenue,
         customerDebts,
+        containerLoans: computeContainerLoanSummary(),
         staffRevenue,
         dailyStockSummary: computeDailyStockSummary(_date),
         paymentMethodBreakdown: paymentBreakdown,
@@ -165,6 +197,7 @@ export const dashboardService = {
       staffRevenue:         [],
       totalOutstandingDebt: totalDebt,
       customerDebts,
+      containerLoans: computeContainerLoanSummary(),
       dailyStockSummary: computeDailyStockSummary(_date),
       paymentMethodBreakdown: userPaymentBreakdown,
     });
