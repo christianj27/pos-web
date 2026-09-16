@@ -1,16 +1,16 @@
 name: Build, Test & Publish to GHCR
  
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'src/**'
-      - 'package.json'
-      - 'package-lock.json'
-      - 'vite.config.ts'
-      - 'index.html'
-      - 'Dockerfile'
-      - 'nginx.conf'
+  # push:
+  #   branches: [main]
+  #   paths:
+  #     - 'src/**'
+  #     - 'package.json'
+  #     - 'package-lock.json'
+  #     - 'vite.config.ts'
+  #     - 'index.html'
+  #     - 'Dockerfile'
+  #     - 'nginx.conf'
   workflow_dispatch:
  
 jobs:
