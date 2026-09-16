@@ -38,6 +38,16 @@ jobs:
  
       - name: Build
         run: npm run build                # → dist/ (Vite output)
+
+      - name: Verify injected app version
+        shell: pwsh
+        run: |
+          $version = (Get-Content 'package.json' -Raw | ConvertFrom-Json).version
+          $bundle = (Get-ChildItem 'dist/assets/*.js' | Get-Content -Raw) -join "`n"
+          if ($bundle -notmatch [regex]::Escape($version)) {
+            throw "App version $version was not injected into the bundle - check define.__APP_VERSION__ in vite.config.ts"
+          }
+          Write-Host "App version $version injected OK"
  
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3

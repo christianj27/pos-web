@@ -5,6 +5,7 @@ import { userService } from '../../services/userService';
 import { useToast } from '../../context/ToastContext';
 import { Button, Input, Badge } from '../../components/common';
 import { getErrorMessage } from '../../utils/apiError';
+import { formatAppVersion } from '../../utils/constants';
 import styles from './ProfilePage.module.scss';
 
 export function ProfilePage() {
@@ -125,6 +126,8 @@ export function ProfilePage() {
             </Button>
           </div>
         )}
+
+        <p className={styles.appVersion}>Versi aplikasi {formatAppVersion()}</p>
       </div>
     </div>
   );

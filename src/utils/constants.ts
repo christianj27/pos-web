@@ -75,3 +75,13 @@ export const CONTAINER_STATUS_LABELS: Record<string, string> = {
 export const POLLING_INTERVAL = 8000; // 8 seconds
 
 export const DEFAULT_PAGE_SIZE = 20;
+
+// ── App version ───────────────────────────────────────────────────────────
+// Declared in package.json ("version") and injected at build time by Vite.
+// Mirrors <Version> in Pos.Api.csproj and the App Version token in the FRD.
+export const APP_VERSION = __APP_VERSION__;
+
+/** `"1.0.0"` for local builds, `"1.0.0+abc1234"` for CI builds. */
+export function formatAppVersion(): string {
+  return __APP_BUILD__ ? `${APP_VERSION}+${__APP_BUILD__}` : APP_VERSION;
+}

@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getRoleDefaultPath } from '../../context/AuthContext';
 import { USE_MOCK } from '../../mocks/db';
 import { ApiError } from '../../utils/apiError';
+import { formatAppVersion } from '../../utils/constants';
 import { Button } from '../../components/common/Button/Button';
 import { Input } from '../../components/common/Input/Input';
 import logoSrc from '../../assets/logo.png';
@@ -118,6 +119,8 @@ export function LoginPage() {
           </div>
           </div>
         )}
+
+        <p className={styles.appVersion}>Versi aplikasi {formatAppVersion()}</p>
       </div>
     </div>
   );

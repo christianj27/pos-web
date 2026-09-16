@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
+import { formatAppVersion } from '../../utils/constants';
 import styles from './LainnyaPage.module.scss';
 
 function UsersIcon() {
@@ -105,6 +106,8 @@ export function LainnyaPage() {
             </button>
           </div>
         </div>
+
+        <p className={styles.appVersion}>Versi aplikasi {formatAppVersion()}</p>
       </div>
     </div>
   );
