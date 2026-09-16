@@ -259,11 +259,20 @@ export interface DailyStockProductSummary {
   totalSold: number;
 }
 
+export interface PaymentMethodStaffItem {
+  staffId: string;
+  staffName: string;
+  amount: number;
+  count: number;
+}
+
 export interface PaymentMethodBreakdownItem {
   method: string; // 'cash' | 'transfer' | 'qris'
   label: string; // 'Tunai' | 'Transfer' | 'QRIS'
   amount: number;
   count: number;
+  /** Per-staff breakdown of this payment method — owner only; always empty for kasir/kurir (FR-DSH-015) */
+  staff?: PaymentMethodStaffItem[];
 }
 
 export interface DashboardStats {

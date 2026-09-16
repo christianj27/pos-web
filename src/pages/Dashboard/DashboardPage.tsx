@@ -1100,6 +1100,7 @@ export function DashboardPage() {
         paymentBreakdown={stats?.paymentMethodBreakdown ?? []}
         isOpen={paymentModalOpen}
         onClose={() => setPaymentModalOpen(false)}
+        showStaffBreakdown={isOwner}
       />
     </>
   );

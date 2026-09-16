@@ -287,6 +287,7 @@ export const mockDb = {
       { date: '2026-05-09', revenue: 118500, transactionCount: 5,  purchaseCost: 1525000 },
     ],
     recentTransactions: [
+      { id: 'tx-8', createdAt: '2025-04-21T08:15:00.000Z', customerName: 'Restoran Sedap',  createdByName: 'Sari Kasir',   type: 'counter',  totalAmount:  60000, paidAmount:  60000, status: 'completed', paymentMethod: 'qris' },
       { id: 'tx-7', createdAt: '2025-04-20T11:00:00.000Z', customerName: 'Warung Pak Joko', createdByName: 'Andi Kurir',   type: 'delivery', totalAmount: 100000, paidAmount: 100000, status: 'completed', paymentMethod: 'cash' },
       { id: 'tx-6', createdAt: '2025-04-20T09:30:00.000Z', customerName: 'Toko Bu Ani',     createdByName: 'Andi Kurir',   type: 'delivery', totalAmount:  45000, paidAmount:  45000, status: 'completed', paymentMethod: 'cash' },
       { id: 'tx-5', createdAt: '2025-04-14T15:00:00.000Z', customerName: 'Toko Bu Ani',     createdByName: 'Budi Santoso', type: 'counter',  totalAmount: 100000, paidAmount: 100000, status: 'completed', paymentMethod: 'cash' },

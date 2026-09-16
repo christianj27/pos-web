@@ -8,9 +8,16 @@ interface PaymentMethodModalProps {
   paymentBreakdown: PaymentMethodBreakdownItem[];
   isOpen: boolean;
   onClose: () => void;
+  /** FR-DSH-015 — the per-staff breakdown is only rendered for the owner role */
+  showStaffBreakdown?: boolean;
 }
 
-export function PaymentMethodModal({ paymentBreakdown, isOpen, onClose }: PaymentMethodModalProps) {
+export function PaymentMethodModal({
+  paymentBreakdown,
+  isOpen,
+  onClose,
+  showStaffBreakdown = false,
+}: PaymentMethodModalProps) {
   const methodIcons: Record<string, React.ReactNode> = {
     cash: (
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28">
@@ -43,21 +50,55 @@ export function PaymentMethodModal({ paymentBreakdown, isOpen, onClose }: Paymen
       isOpen={isOpen}
       onClose={onClose}
       title="Rincian Metode Pembayaran"
+      size="lg"
       footer={<Button variant="ghost" onClick={onClose}>Tutup</Button>}
     >
       <div className={styles.breakdownGrid}>
-        {paymentBreakdown.map((item) => (
-          <div key={item.method} className={styles.methodCard}>
-            <div className={[styles.methodIcon, methodColors[item.method] ?? ''].join(' ')}>
-              {methodIcons[item.method]}
+        {paymentBreakdown.map((item) => {
+          const staffRows = showStaffBreakdown ? item.staff ?? [] : [];
+
+          return (
+            <div key={item.method} className={styles.methodCard}>
+              <div className={[styles.methodIcon, methodColors[item.method] ?? ''].join(' ')}>
+                {methodIcons[item.method]}
+              </div>
+              <div className={styles.methodContent}>
+                <p className={styles.methodLabel}>{item.label}</p>
+                <p className={styles.methodAmount}>{formatCurrency(item.amount)}</p>
+                <p className={styles.methodCount}>{item.count} transaksi</p>
+              </div>
+
+              {/* FR-DSH-015 — per-staff income detail (owner only) */}
+              {showStaffBreakdown && (
+                <div className={styles.staffList}>
+                  <div className={styles.cardDivider} />
+                  <p className={styles.staffTitle}>Per Staf</p>
+                  {staffRows.length === 0 ? (
+                    <p className={styles.staffEmpty}>Belum ada transaksi</p>
+                  ) : (
+                    staffRows.map((staff) => {
+                      const share = item.amount > 0 ? (staff.amount / item.amount) * 100 : 0;
+
+                      return (
+                        <div key={staff.staffId} className={styles.staffRow}>
+                          <div className={styles.staffRowTop}>
+                            <span className={styles.staffName}>{staff.staffName}</span>
+                            <span className={styles.staffAmount}>
+                              {formatCurrency(staff.amount)} &middot; {staff.count} trx
+                            </span>
+                          </div>
+                          <div className={styles.staffBar}>
+                            <div className={styles.staffBarFill} style={{ width: `${share}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
-            <div className={styles.methodContent}>
-              <p className={styles.methodLabel}>{item.label}</p>
-              <p className={styles.methodAmount}>{formatCurrency(item.amount)}</p>
-              <p className={styles.methodCount}>{item.count} transaksi</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </Modal>
   );

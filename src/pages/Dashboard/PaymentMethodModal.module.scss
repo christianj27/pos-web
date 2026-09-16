@@ -21,6 +21,9 @@
   border-radius: 8px;
   text-align: center;
   transition: all 0.2s ease;
+  // Grid items default to min-width: auto, which would let the staff rows push the
+  // `1fr` tracks wider than the modal body and cause horizontal overflow.
+  min-width: 0;
 
   &:hover {
     background: var(--color-white-canvas);
@@ -78,6 +81,88 @@
 
 .methodCount {
   font-size: 13px;
+  color: var(--color-subtle-gray);
+  margin: 0;
+}
+
+// ─── Per-staff breakdown (FR-DSH-015) ─────────────────────────────────────────
+
+.cardDivider {
+  height: 1px;
+  background: var(--color-light-violet-stroke);
+  margin-bottom: 12px;
+}
+
+.staffList {
+  // .methodCard centres its children — the staff list must span the full card width
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+}
+
+.staffTitle {
+  font-family: var(--font-object-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-whisper-gray);
+  margin: 0;
+}
+
+.staffRow {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.staffRowTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap; // narrow cards: the amount drops onto its own line instead of overflowing
+  gap: 4px 8px;
+}
+
+.staffName {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-text);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.staffAmount {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+}
+
+.staffBar {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--color-light-violet-stroke);
+  overflow: hidden;
+}
+
+.staffBarFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--color-digital-violet);
+  transition: width 0.3s ease;
+}
+
+.staffEmpty {
+  font-size: 12px;
+  font-style: italic;
   color: var(--color-subtle-gray);
   margin: 0;
 }
