@@ -17,7 +17,7 @@ export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 import type {
   AuthUser, User, Location, Product, Customer, CustomerPricingItem,
   StockLevel, StockMovement, Transaction, DebtPayment, ContainerLoan, DashboardStats,
-  DeliveryAssignment, StaffRevenueSummary,
+  DeliveryAssignment, StaffRevenueSummary, Expense,
 } from '../types';
 
 // ─── Auth credentials ─────────────────────────────────────────────────────────
@@ -310,6 +310,15 @@ export const mockDb = {
       { staffId: 'user-4', staffName: 'Rudi Kurir',   revenue:      0, transactionCount: 1 },
     ] as StaffRevenueSummary[],
   } as DashboardStats,
+
+  // FR-CSH-006 — operational expenses (owner-recorded). `createdAt` is UTC; `expenseDate`
+  // is the WIB business date the expense is reported under.
+  expenses: [
+    { id: 'exp-1', category: 'fuel',        description: 'Isi bensin truk Andi', amount:  85000, expenseDate: '2026-05-10', createdByName: 'Budi Santoso', createdAt: '2026-05-10T02:15:00.000Z' },
+    { id: 'exp-2', category: 'gallon_cap',  description: 'Tutup galon 200 pcs',  amount:  60000, expenseDate: '2026-05-10', createdByName: 'Budi Santoso', createdAt: '2026-05-10T03:40:00.000Z' },
+    { id: 'exp-3', category: 'salary',      description: 'Gaji harian Sari',     amount: 100000, expenseDate: '2026-05-10', createdByName: 'Budi Santoso', createdAt: '2026-05-10T04:05:00.000Z' },
+    { id: 'exp-4', category: 'electricity', description: 'Token listrik gudang', amount:  50000, expenseDate: '2026-05-09', createdByName: 'Budi Santoso', createdAt: '2026-05-09T01:30:00.000Z' },
+  ] as Expense[],
 };
 
 /** Generate a simple unique ID for new mock records. */

@@ -27,6 +27,7 @@
   color: var(--color-deep-space-violet);
   letter-spacing: -0.56px;
 }
+.headerAction { margin-left: auto; }
 
 // ── Date filter ───────────────────────────────────────────────────────────────
 .filterRow { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
@@ -131,6 +132,24 @@
 .amountOut  { color: var(--color-danger); }
 .amountDebt { color: #d97706; }
 
+.rowRight { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.rowActions { display: flex; align-items: center; gap: 4px; }
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 8px;
+  background: var(--color-white-canvas);
+  color: var(--color-digital-violet);
+  cursor: pointer;
+  transition: background-color 0.15s;
+  &:hover { background: var(--color-cloud-gray); }
+}
+.iconBtnDanger { color: var(--color-danger); }
+
 // ── Empty state ───────────────────────────────────────────────────────────────
 .emptyWrap { padding: 40px 0; text-align: center; }
 .emptyText { font-size: 14px; color: var(--color-whisper-gray); }
@@ -186,4 +205,8 @@
   &:hover:not(:disabled) { opacity: 0.88; }
   &:disabled { opacity: 0.6; cursor: not-allowed; }
 }
+
+// ── Operational expense form (FR-CSH-006) ─────────────────────────────────────
+.formFields { display: flex; flex-direction: column; gap: 16px; }
+.formError { font-size: 13px; color: var(--color-danger); }
 

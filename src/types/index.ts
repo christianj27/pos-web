@@ -307,7 +307,12 @@ export interface CustomerDebtHistory {
 
 // ─── Cash Flow ────────────────────────────────────────────────────────────────
 export type CashFlowType = 'cash_in' | 'cash_out' | 'new_debt';
-export type CashFlowCategory = 'sale_payment' | 'debt_payment' | 'stock_purchase' | 'debt_created';
+export type CashFlowCategory =
+  | 'sale_payment'
+  | 'debt_payment'
+  | 'stock_purchase'
+  | 'debt_created'
+  | 'operational_expense';
 
 export interface CashFlowEntry {
   index: string; // unique index for frontend rendering`
@@ -327,6 +332,34 @@ export interface CashFlowSummary {
   netCash: number;
   totalNewDebt: number;
   entries: CashFlowEntry[];
+}
+
+// ─── Operational Expenses (FR-CSH-006) ────────────────────────────────────────
+export type ExpenseCategory =
+  | 'fuel'
+  | 'dues'
+  | 'electricity'
+  | 'gallon_cap'
+  | 'cleaning'
+  | 'salary'
+  | 'other';
+
+export interface Expense {
+  id: string;
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  /** Business date in WIB (YYYY-MM-DD) — determines which day the expense appears under. */
+  expenseDate: string;
+  createdByName: string;
+  createdAt: string;
+}
+
+export interface ExpensePayload {
+  category: ExpenseCategory;
+  description: string;
+  amount: number;
+  expenseDate: string;
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────

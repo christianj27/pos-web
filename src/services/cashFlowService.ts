@@ -1,9 +1,37 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { CashFlowEntry, CashFlowSummary } from '../types';
+import { expenseCategoryLabel } from '../utils/expenseLabels';
+import type { CashFlowEntry, CashFlowSummary, Expense } from '../types';
 
 function toWIBDate(isoString: string): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
+}
+
+/**
+ * Mirrors the backend: an expense entry keeps its business date (`expenseDate`) while
+ * preserving the recording time-of-day in WIB, so back-dated expenses group under the
+ * day they belong to.
+ */
+function expenseEntryTimestamp(expense: Expense): string {
+  const time = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Asia/Jakarta', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false,
+  }).format(new Date(expense.createdAt));
+  return new Date(`${expense.expenseDate}T${time}+07:00`).toISOString();
+}
+
+/** FR-CSH-006 — an operational expense shows up as a cash_out/operational_expense entry. */
+function pushExpenseEntry(entries: CashFlowEntry[], expense: Expense): void {
+  entries.push({
+    index: `exp-${expense.id}`,
+    id: `exp-${expense.id}`,
+    flowType: 'cash_out',
+    category: 'operational_expense',
+    amount: expense.amount,
+    description: `${expenseCategoryLabel(expense.category)} — ${expense.description}`,
+    referenceId: expense.id,
+    createdByName: expense.createdByName,
+    createdAt: expenseEntryTimestamp(expense),
+  });
 }
 
 export const cashFlowService = {
@@ -81,6 +109,12 @@ export const cashFlowService = {
         createdByName: m.createdByName,
         createdAt: m.createdAt,
       });
+    }
+
+    // 4. Operational expenses (FR-CSH-006) → cash_out, matched on the WIB business date
+    for (const ex of mockDb.expenses) {
+      if (date && ex.expenseDate !== date) continue;
+      pushExpenseEntry(entries, ex);
     }
 
     // Sort newest first
@@ -178,6 +212,12 @@ export const cashFlowService = {
         createdByName: m.createdByName,
         createdAt: m.createdAt,
       });
+    }
+
+    // Operational expenses (FR-CSH-006) → cash_out, matched on the WIB business date
+    for (const ex of mockDb.expenses) {
+      if (ex.expenseDate < startDate || ex.expenseDate > endDate) continue;
+      pushExpenseEntry(entries, ex);
     }
 
     entries.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

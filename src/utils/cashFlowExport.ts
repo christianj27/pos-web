@@ -6,6 +6,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   debt_payment:  'Bayar Hutang',
   stock_purchase: 'Pembelian Stok',
   debt_created:  'Piutang Dibuat',
+  operational_expense: 'Pengeluaran',
 };
 
 const FLOW_TYPE_LABELS: Record<string, string> = {
