@@ -118,7 +118,7 @@ export function StockPage() {
   async function loadMovements(date: string) {
     setMovementsLoading(true);
     try {
-      const mvts = await stockService.getMovements(date);
+      const mvts = await stockService.getMovements({ date });
       setMovements(mvts as StockMovement[]);
     } finally {
       setMovementsLoading(false);

@@ -1,15 +1,19 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, delay } from '../mocks/db';
-import type { AuthUser, DashboardStats, DailyStockProductSummary, ContainerLoanSummaryItem, StaffRevenueSummary, PaymentMethodBreakdownItem, PaymentMethodStaffItem } from '../types';
+import { resolveStockPeriodRange, todayWIB } from '../utils/stockPeriod';
+import type { AuthUser, DashboardStats, StockProductSummary, ContainerLoanSummaryItem, StaffRevenueSummary, PaymentMethodBreakdownItem, PaymentMethodStaffItem, StockMovementSummaryResponse, StockPeriod } from '../types';
 
 function toWIBDate(isoString: string): string {
   return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
 }
 
-function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
-  const filtered = mockDb.stockMovements.filter(
-    (m) => (!date || toWIBDate(m.createdAt) === date) && !m.isReversed && !m.isReversal,
-  );
+/** Mock equivalent of GET /api/dashboard/stock-summary — inclusive WIB range, store-wide (FR-DSH-012). */
+function computeStockSummary(startDate: string, endDate: string): StockProductSummary[] {
+  const filtered = mockDb.stockMovements.filter((m) => {
+    if (m.isReversed || m.isReversal) return false;
+    const day = toWIBDate(m.createdAt);
+    return day >= startDate && day <= endDate;
+  });
 
   const byProduct = new Map<string, typeof filtered>();
   for (const m of filtered) {
@@ -17,7 +21,7 @@ function computeDailyStockSummary(date?: string): DailyStockProductSummary[] {
     byProduct.get(m.productId)!.push(m);
   }
 
-  const result: DailyStockProductSummary[] = [];
+  const result: StockProductSummary[] = [];
   for (const movements of byProduct.values()) {
     const first = movements[0];
     const prod  = mockDb.products.find((p) => p.id === first.productId);
@@ -144,7 +148,44 @@ function computePaymentMethodBreakdown(
   return result;
 }
 
+export interface StockSummaryQuery {
+  period: StockPeriod;
+  /** Anchor date for day/week/month/year (YYYY-MM-DD); ignored for a custom range. */
+  date?: string;
+  /** Required when `period === 'custom'` (YYYY-MM-DD). */
+  startDate?: string;
+  endDate?: string;
+}
+
 export const dashboardService = {
+  /**
+   * FR-DSH-012 — "Pergerakan Stok" summary for the section's own period selector.
+   * Deliberately separate from `getStats`: changing the period never refetches (or alters) the
+   * other dashboard sections, and the 5s dashboard poll never re-runs this query.
+   */
+  getStockSummary: (query: StockSummaryQuery): Promise<StockMovementSummaryResponse> => {
+    if (!USE_MOCK) {
+      const params = new URLSearchParams({ period: query.period });
+      if (query.period === 'custom') {
+        params.set('start_date', query.startDate ?? '');
+        params.set('end_date', query.endDate ?? '');
+      } else {
+        params.set('date', query.date ?? todayWIB());
+      }
+      return apiClient
+        .get<StockMovementSummaryResponse>(`/api/dashboard/stock-summary?${params.toString()}`)
+        .then((r) => r.data);
+    }
+
+    const range = resolveStockPeriodRange(query.period, query.date ?? todayWIB(), query.startDate, query.endDate);
+    return delay({
+      period: range.period,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      items: computeStockSummary(range.startDate, range.endDate),
+    });
+  },
+
   getStats: (_date?: string, _user?: AuthUser | null): Promise<DashboardStats> => {
     if (!USE_MOCK) return apiClient.get<DashboardStats>(`/api/dashboard${_date ? `?date=${_date}` : ''}`).then((r) => r.data);
 
@@ -199,7 +240,6 @@ export const dashboardService = {
         customerDebts,
         containerLoans: computeContainerLoanSummary(),
         staffRevenue,
-        dailyStockSummary: computeDailyStockSummary(_date),
         paymentMethodBreakdown: paymentBreakdown,
       });
     }
@@ -233,7 +273,6 @@ export const dashboardService = {
       totalOutstandingDebt: totalDebt,
       customerDebts,
       containerLoans: computeContainerLoanSummary(),
-      dailyStockSummary: computeDailyStockSummary(_date),
       paymentMethodBreakdown: userPaymentBreakdown,
     });
   },

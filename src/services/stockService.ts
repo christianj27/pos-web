@@ -31,6 +31,16 @@ function toWIBDate(isoString: string): string {
 
 // ─── Service ──────────────────────────────────────────────────────────────────
 
+export interface StockMovementQuery {
+  /** Single WIB day (YYYY-MM-DD); ignored when both range bounds are supplied. */
+  date?: string;
+  /** Inclusive WIB range bounds (YYYY-MM-DD) — both must be present to take effect. */
+  startDate?: string;
+  endDate?: string;
+  /** Restricts the result to a single product. */
+  productId?: string;
+}
+
 export const stockService = {
   getLevels: (locationId?: string): Promise<StockLevel[]> => {
     if (!USE_MOCK) {
@@ -43,10 +53,30 @@ export const stockService = {
     return delay(levels);
   },
 
-  getMovements: (date?: string): Promise<StockMovement[]> => {
-    if (!USE_MOCK) return apiClient.get<StockMovement[]>(`/api/stock/movements${date ? `?date=${date}` : ''}`).then((r) => r.data);
+  getMovements: (query?: StockMovementQuery): Promise<StockMovement[]> => {
+    if (!USE_MOCK) {
+      const params = new URLSearchParams();
+      if (query?.date) params.set('date', query.date);
+      if (query?.startDate) params.set('start_date', query.startDate);
+      if (query?.endDate) params.set('end_date', query.endDate);
+      if (query?.productId) params.set('product_id', query.productId);
+      const qs = params.toString();
+      return apiClient.get<StockMovement[]>(`/api/stock/movements${qs ? `?${qs}` : ''}`).then((r) => r.data);
+    }
+
     const all = [...mockDb.stockMovements].reverse();
-    const filtered = date ? all.filter((m) => toWIBDate(m.createdAt) === date) : all;
+    const useRange = !!query?.startDate && !!query?.endDate;
+    let filtered = all;
+    if (useRange) {
+      // Range wins over `date`, mirroring the API contract.
+      filtered = all.filter((m) => {
+        const day = toWIBDate(m.createdAt);
+        return day >= query!.startDate! && day <= query!.endDate!;
+      });
+    } else if (query?.date) {
+      filtered = all.filter((m) => toWIBDate(m.createdAt) === query.date);
+    }
+    if (query?.productId) filtered = filtered.filter((m) => m.productId === query.productId);
     return delay(filtered);
   },
 

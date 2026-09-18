@@ -27,7 +27,8 @@ import { getErrorMessage } from '../../utils/apiError';
 import { useToast } from '../../context/ToastContext';
 import { useAuth } from '../../hooks/useAuth';
 import { PaymentMethodModal } from './PaymentMethodModal';
-import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, ContainerLoanSummaryItem, StaffRevenueSummary, StockMovement, DailyStockProductSummary } from '../../types';
+import { STOCK_PERIOD_OPTIONS, formatStockPeriodCaption, resolveStockPeriodRange } from '../../utils/stockPeriod';
+import type { DashboardStats, StockLevel, WeeklyChartEntry, RecentTransaction, Transaction, CustomerDebtSummary, ContainerLoanSummaryItem, StaffRevenueSummary, StockMovement, StockProductSummary, StockMovementSummaryResponse, StockPeriod } from '../../types';
 import styles from './DashboardPage.module.scss';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip, ArcElement, Legend);
@@ -458,9 +459,9 @@ function WarehouseStockRow({ item }: { item: StockLevel }) {
   );
 }
 
-// --- Daily stock movement summary row (FR-DSH-012) ----------------------------
+// --- Stock movement summary row (FR-DSH-012) ----------------------------------
 
-function DailyStockSummaryRow({ item, onClick }: { item: DailyStockProductSummary; onClick: () => void }) {
+function StockSummaryRow({ item, onClick }: { item: StockProductSummary; onClick: () => void }) {
   return (
     <div
       className={styles.summaryRow}
@@ -495,10 +496,13 @@ function DailyStockSummaryRow({ item, onClick }: { item: DailyStockProductSummar
 function StockMovementDetailModal({
   product,
   movements,
+  periodCaption,
   onClose,
 }: {
-  product: DailyStockProductSummary;
+  product: StockProductSummary;
   movements: StockMovement[];
+  /** Resolved period of the section that opened this modal, e.g. "14 – 20 Sep 2026". */
+  periodCaption: string;
   onClose: () => void;
 }) {
   const isRefillable = product.productCategory === 'refillable';
@@ -529,6 +533,7 @@ function StockMovementDetailModal({
         <p className={styles.recentEmpty}>Tidak ada pergerakan stok untuk produk ini.</p>
       ) : (
         <>
+          <p className={styles.periodCaption}>{periodCaption}</p>
           <div className={styles.staffSummaryHeader}>
             <span>Staf</span>
             <span>Terjual</span>
@@ -650,9 +655,15 @@ export function DashboardPage() {
   const [, forceRender]                         = useState(0);
   const [detailTx, setDetailTx]                 = useState<Transaction | null>(null);
   const [detailLoading, setDetailLoading]       = useState(false);
-  const [detailStockProduct, setDetailStockProduct]   = useState<DailyStockProductSummary | null>(null);
+  const [detailStockProduct, setDetailStockProduct]   = useState<StockProductSummary | null>(null);
   const [detailStockMovements, setDetailStockMovements] = useState<StockMovement[] | null>(null);
   const [detailStockLoading, setDetailStockLoading]   = useState(false);
+  // FR-DSH-012 period selector — scoped to the "Pergerakan Stok" section only.
+  const [stockPeriod, setStockPeriod]                 = useState<StockPeriod>('day');
+  const [stockCustomStart, setStockCustomStart]       = useState<string>('');
+  const [stockCustomEnd, setStockCustomEnd]           = useState<string>('');
+  const [stockSummary, setStockSummary]               = useState<StockMovementSummaryResponse | null>(null);
+  const [stockSummaryError, setStockSummaryError]     = useState(false);
   const [paymentModalOpen, setPaymentModalOpen]       = useState(false);
   const [expandedContainerRows, setExpandedContainerRows] = useState<Set<string>>(() => new Set());
 
@@ -676,6 +687,33 @@ export function DashboardPage() {
     const id = setInterval(() => forceRender((n) => n + 1), 10_000);
     return () => clearInterval(id);
   }, []);
+
+  // FR-DSH-012 — the period selector drives the "Pergerakan Stok" section only, so its range and data are
+  // resolved independently of `fetchStats`: switching the period never re-fetches the other sections.
+  const stockRange = resolveStockPeriodRange(stockPeriod, selectedDate, stockCustomStart, stockCustomEnd);
+
+  const fetchStockSummary = useCallback(async () => {
+    if (!stockRange.valid) return;
+    setStockSummaryError(false);
+    try {
+      const data = await dashboardService.getStockSummary({
+        period: stockPeriod,
+        date: selectedDate,
+        startDate: stockCustomStart,
+        endDate: stockCustomEnd,
+      });
+      setStockSummary(data);
+    } catch {
+      // The last successful payload stays in state but only renders while it still matches the range.
+      setStockSummaryError(true);
+    }
+  }, [stockRange.valid, stockPeriod, selectedDate, stockCustomStart, stockCustomEnd]);
+
+  useEffect(() => {
+    void Promise.resolve().then(fetchStockSummary);
+  }, [fetchStockSummary]);
+
+  usePolling(fetchStockSummary, DASHBOARD_POLLING_INTERVAL, stockRange.valid);
 
   const today = new Intl.DateTimeFormat('id-ID', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
@@ -711,18 +749,73 @@ export function DashboardPage() {
     setClickedEntry((prev) => prev?.date === entry.date ? null : entry);
   };
 
-  async function handleProductSummaryClick(product: DailyStockProductSummary) {
+  function handleStockPeriodChange(next: StockPeriod) {
+    setStockPeriod(next);
+    // The detail modal belongs to the previous period.
+    setDetailStockProduct(null);
+    setDetailStockMovements(null);
+    if (next === 'custom' && (!stockCustomStart || !stockCustomEnd)) {
+      // Seed the custom inputs from the range in effect so the first custom fetch is meaningful.
+      // The end is clamped to today because a future bound is rejected by the custom-range rule
+      // (the "Bulanan"/"Tahunan" presets legitimately run past today).
+      const today = getTodayWIB();
+      setStockCustomStart(stockRange.startDate > today ? today : stockRange.startDate);
+      setStockCustomEnd(stockRange.endDate > today ? today : stockRange.endDate);
+    }
+  }
+
+  async function handleProductSummaryClick(product: StockProductSummary) {
     setDetailStockProduct(product);
     setDetailStockMovements(null);
     setDetailStockLoading(true);
     try {
-      const all = await stockService.getMovements(selectedDate);
-      setDetailStockMovements(
-        all.filter((m) => m.productId === product.productId && !m.isReversed && !m.isReversal),
-      );
+      const all = await stockService.getMovements({
+        startDate: stockRange.startDate,
+        endDate: stockRange.endDate,
+        productId: product.productId,
+      });
+      setDetailStockMovements(all.filter((m) => !m.isReversed && !m.isReversal));
     } finally {
       setDetailStockLoading(false);
     }
+  }
+
+  // A payload only renders while it belongs to the range currently selected — a period change therefore
+  // never shows the previous range's rows under the new caption, and the stale data is never cleared in an effect.
+  const stockSummaryForRange =
+    stockSummary &&
+    stockSummary.period === stockRange.period &&
+    stockSummary.startDate === stockRange.startDate &&
+    stockSummary.endDate === stockRange.endDate
+      ? stockSummary
+      : null;
+
+  const stockSummaryEmptyText = stockPeriod === 'day'
+    ? 'Tidak ada pergerakan stok pada tanggal ini.'
+    : 'Tidak ada pergerakan stok pada periode ini.';
+
+  let stockSummaryBody: React.ReactNode;
+  if (!stockRange.valid) {
+    // Incomplete custom range — the caption area carries the validation message instead.
+    stockSummaryBody = null;
+  } else if (!stockSummaryForRange) {
+    stockSummaryBody = stockSummaryError
+      ? <p className={styles.recentEmpty}>Gagal memuat pergerakan stok.</p>
+      : <div className={styles.periodLoading}><Spinner size="sm" /></div>;
+  } else if (stockSummaryForRange.items.length > 0) {
+    stockSummaryBody = (
+      <div className={styles.summaryList}>
+        {stockSummaryForRange.items.map((item) => (
+          <StockSummaryRow
+            key={item.productId}
+            item={item}
+            onClick={() => handleProductSummaryClick(item)}
+          />
+        ))}
+      </div>
+    );
+  } else {
+    stockSummaryBody = <p className={styles.recentEmpty}>{stockSummaryEmptyText}</p>;
   }
 
   return (
@@ -962,22 +1055,53 @@ export function DashboardPage() {
           )}
         </section>
 
-        {/* Daily stock movement summary — FR-DSH-012 */}
+        {/* Stock movement summary — FR-DSH-012 (the period filter applies to this section only) */}
         <section>
           <h2 className={styles.sectionTitle}>Pergerakan Stok</h2>
-          {stats?.dailyStockSummary && stats.dailyStockSummary.length > 0 ? (
-            <div className={styles.summaryList}>
-              {stats.dailyStockSummary.map((item) => (
-                <DailyStockSummaryRow
-                  key={item.productId}
-                  item={item}
-                  onClick={() => handleProductSummaryClick(item)}
-                />
-              ))}
+
+          <div className={styles.periodTabs} role="group" aria-label="Periode pergerakan stok">
+            {STOCK_PERIOD_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={[styles.periodTab, stockPeriod === option.value ? styles.periodTabActive : ''].join(' ')}
+                aria-pressed={stockPeriod === option.value}
+                onClick={() => handleStockPeriodChange(option.value)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {stockPeriod === 'custom' && (
+            <div className={styles.periodCustomRow}>
+              <input
+                type="date"
+                className={styles.dateInput}
+                value={stockCustomStart}
+                max={getTodayWIB()}
+                aria-label="Tanggal mulai"
+                onChange={(e) => setStockCustomStart(e.target.value)}
+              />
+              <span className={styles.periodCustomSep}>{'\u2013'}</span>
+              <input
+                type="date"
+                className={styles.dateInput}
+                value={stockCustomEnd}
+                max={getTodayWIB()}
+                aria-label="Tanggal selesai"
+                onChange={(e) => setStockCustomEnd(e.target.value)}
+              />
             </div>
-          ) : (
-            <p className={styles.recentEmpty}>Tidak ada pergerakan stok pada tanggal ini.</p>
           )}
+
+          {stockRange.valid ? (
+            <p className={styles.periodCaption}>{formatStockPeriodCaption(stockRange)}</p>
+          ) : (
+            <p className={styles.periodError}>{stockRange.error}</p>
+          )}
+
+          {stockSummaryBody}
         </section>
 
         {/* Warehouse stock summary — FR-DSH-004 */}
@@ -1091,6 +1215,7 @@ export function DashboardPage() {
         <StockMovementDetailModal
           product={detailStockProduct}
           movements={detailStockMovements}
+          periodCaption={formatStockPeriodCaption(stockRange)}
           onClose={() => { setDetailStockProduct(null); setDetailStockMovements(null); }}
         />
       )}

@@ -250,13 +250,26 @@ export interface StaffRevenueSummary {
   transactionCount: number;
 }
 
-export interface DailyStockProductSummary {
+/** Per-product sold/received totals over a resolved period — Dashboard "Pergerakan Stok" (FR-DSH-012). */
+export interface StockProductSummary {
   productId: string;
   productName: string;
   productUnit: string;
   productCategory: ProductCategory;
   totalReceived: number;
   totalSold: number;
+}
+
+/** Period selector of the "Pergerakan Stok" section only — every other Dashboard section keeps the date filter (FR-DSH-012). */
+export type StockPeriod = 'day' | 'week' | 'month' | 'year' | 'custom';
+
+/** Response of `GET /api/dashboard/stock-summary` (FR-DSH-012). */
+export interface StockMovementSummaryResponse {
+  period: StockPeriod;
+  /** Resolved WIB range, inclusive (YYYY-MM-DD) */
+  startDate: string;
+  endDate: string;
+  items: StockProductSummary[];
 }
 
 export interface PaymentMethodStaffItem {
@@ -289,7 +302,6 @@ export interface DashboardStats {
   customerDebts: CustomerDebtSummary[];
   containerLoans: ContainerLoanSummaryItem[];
   staffRevenue: StaffRevenueSummary[];
-  dailyStockSummary: DailyStockProductSummary[];
   paymentMethodBreakdown?: PaymentMethodBreakdownItem[];
 }
 

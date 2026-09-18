@@ -803,6 +803,71 @@
   }
 }
 
+// ─── Pergerakan Stok period selector — FR-DSH-012 ─────────────────────────────
+
+.periodTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.periodTab {
+  padding: 6px 12px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 9999px;
+  background: var(--color-white-canvas);
+  color: var(--color-whisper-gray);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
+
+.periodTabActive {
+  background: var(--color-digital-violet);
+  border-color: var(--color-digital-violet);
+  color: #ffffff;
+
+  &:hover {
+    background: var(--color-digital-violet);
+  }
+}
+
+.periodCustomRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.periodCustomSep {
+  color: var(--color-whisper-gray);
+  font-size: 13px;
+}
+
+.periodCaption {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-whisper-gray);
+}
+
+.periodError {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.periodLoading {
+  padding: 8px 0;
+}
+
 // ─── Daily stock movement summary — FR-DSH-012 ───────────────────────────────
 
 .summaryList {
