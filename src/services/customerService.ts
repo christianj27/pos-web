@@ -1,6 +1,103 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
-import type { Customer, CustomerPricingItem } from '../types';
+import { resolveStockPeriodRange, todayWIB } from '../utils/stockPeriod';
+import type {
+  Customer,
+  CustomerPricingItem,
+  CustomerStockProductItem,
+  CustomerStockStaffItem,
+  CustomerStockSummaryResponse,
+  StockPeriod,
+} from '../types';
+
+export interface CustomerStockSummaryQuery {
+  period: StockPeriod;
+  /** Anchor date for day/week/month/year (YYYY-MM-DD); ignored for a custom range. */
+  date?: string;
+  /** Required when `period === 'custom'` (YYYY-MM-DD). */
+  startDate?: string;
+  endDate?: string;
+}
+
+function toWIBDate(isoString: string): string {
+  return new Intl.DateTimeFormat('sv-SE', { timeZone: 'Asia/Jakarta' }).format(new Date(isoString));
+}
+
+/**
+ * Mock equivalent of `GET /api/customers/{id}/stock-summary` (FR-CST-011): only movements linked to
+ * the customer's own transactions count, using the same Terjual / Dikembalikan rules as the API.
+ * (The API resolves ownership through the movement's transaction; mock movements carry `customerId`.)
+ */
+function computeCustomerStockSummary(
+  customerId: string,
+  startDate: string,
+  endDate: string,
+): CustomerStockProductItem[] {
+  const filtered = mockDb.stockMovements.filter((m) => {
+    if (m.customerId !== customerId) return false;
+    if (m.isReversed || m.isReversal) return false;
+    const day = toWIBDate(m.createdAt);
+    return day >= startDate && day <= endDate;
+  });
+
+  const byProduct = new Map<string, typeof filtered>();
+  for (const m of filtered) {
+    if (!byProduct.has(m.productId)) byProduct.set(m.productId, []);
+    byProduct.get(m.productId)!.push(m);
+  }
+
+  const result: CustomerStockProductItem[] = [];
+  for (const movements of byProduct.values()) {
+    const first = movements[0];
+    const product = mockDb.products.find((p) => p.id === first.productId);
+    const isRefillable = product?.category === 'refillable';
+
+    // Terjual: refillable = filled dispatch qty only; simple = every dispatch qty.
+    const soldOf = (list: typeof filtered) =>
+      isRefillable
+        ? list.filter((m) => m.movementType === 'dispatch' && m.containerStatus === 'filled')
+              .reduce((sum, m) => sum + m.quantity, 0)
+        : list.filter((m) => m.movementType === 'dispatch')
+              .reduce((sum, m) => sum + m.quantity, 0);
+
+    // Dikembalikan: a customer only ever hands back empty containers.
+    const returnedOf = (list: typeof filtered) =>
+      list.filter((m) => m.movementType === 'receive' && m.containerStatus === 'empty')
+          .reduce((sum, m) => sum + m.quantity, 0);
+
+    const totalSold = soldOf(movements);
+    const totalReturned = returnedOf(movements);
+    if (totalSold === 0 && totalReturned === 0) continue;
+
+    const staff: CustomerStockStaffItem[] = [];
+    for (const name of Array.from(new Set(movements.map((m) => m.createdByName)))) {
+      const own = movements.filter((m) => m.createdByName === name);
+      const sold = soldOf(own);
+      const returned = returnedOf(own);
+      if (sold === 0 && returned === 0) continue;
+      staff.push({
+        staffId: mockDb.users.find((u) => u.name === name)?.id ?? name,
+        staffName: name,
+        sold,
+        returned,
+      });
+    }
+    staff.sort((a, b) => b.sold - a.sold || a.staffName.localeCompare(b.staffName));
+
+    result.push({
+      productId: first.productId,
+      productName: first.productName,
+      productUnit: product?.unit ?? '',
+      productCategory: product?.category ?? 'simple',
+      totalSold,
+      totalReturned,
+      staff,
+    });
+  }
+
+  result.sort((a, b) => a.productName.localeCompare(b.productName));
+  return result;
+}
 
 export const customerService = {
   /** Active customers only (FR-CST-010); the API excludes soft-deleted customers by default. */
@@ -71,5 +168,34 @@ export const customerService = {
   getContainerLoans: (id: string) => {
     if (!USE_MOCK) return apiClient.get(`/api/customers/${id}/container-loans`).then((r) => r.data);
     return delay(mockDb.containerLoans.filter((l) => l.customerId === id));
+  },
+
+  /**
+   * FR-CST-011 — per-customer "Pergerakan Stok" summary for a resolved period, mirroring
+   * `GET /api/customers/{id}/stock-summary`. Available to all roles.
+   */
+  getStockSummary: (id: string, query: CustomerStockSummaryQuery): Promise<CustomerStockSummaryResponse> => {
+    if (!USE_MOCK) {
+      const params = new URLSearchParams({ period: query.period });
+      if (query.period === 'custom') {
+        params.set('start_date', query.startDate ?? '');
+        params.set('end_date', query.endDate ?? '');
+      } else {
+        params.set('date', query.date ?? todayWIB());
+      }
+      return apiClient
+        .get<CustomerStockSummaryResponse>(`/api/customers/${id}/stock-summary?${params.toString()}`)
+        .then((r) => r.data);
+    }
+
+    const range = resolveStockPeriodRange(query.period, query.date ?? todayWIB(), query.startDate, query.endDate);
+    return delay({
+      customerId: id,
+      customerName: mockDb.customers.find((c) => c.id === id)?.name ?? '',
+      period: range.period,
+      startDate: range.startDate,
+      endDate: range.endDate,
+      items: computeCustomerStockSummary(id, range.startDate, range.endDate),
+    });
   },
 };

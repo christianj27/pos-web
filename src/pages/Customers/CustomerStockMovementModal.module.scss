@@ -1,0 +1,260 @@
+// Per-customer "Pergerakan Stok" modal — FR-CST-011.
+// The period/chip classes deliberately mirror DashboardPage.module.scss (FR-DSH-012) so the customer
+// variant and the dashboard section look identical; both pages keep their own style module.
+
+.anchorRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.anchorLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-text);
+}
+
+.dateInput {
+  height: 36px;
+  padding: 0 10px;
+  border: 1px solid var(--color-light-violet-stroke);
+  background: var(--color-white-canvas);
+  color: var(--color-deep-space-violet);
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+
+  &:focus {
+    outline: 2px solid var(--color-digital-violet);
+    outline-offset: -1px;
+  }
+}
+
+// ─── Period selector ─────────────────────────────────────────────────────────
+
+.periodTabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.periodTab {
+  padding: 6px 12px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 9999px;
+  background: var(--color-white-canvas);
+  color: var(--color-whisper-gray);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
+
+.periodTabActive {
+  background: var(--color-digital-violet);
+  border-color: var(--color-digital-violet);
+  color: #ffffff;
+
+  &:hover {
+    background: var(--color-digital-violet);
+  }
+}
+
+.customRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.customSep {
+  color: var(--color-whisper-gray);
+  font-size: 13px;
+}
+
+.caption {
+  margin: 0 0 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-whisper-gray);
+}
+
+.error {
+  margin: 0 0 10px;
+  font-size: 12px;
+  color: var(--color-danger);
+}
+
+.loading {
+  padding: 8px 0;
+}
+
+.emptyText {
+  margin: 0;
+  padding: 12px 0;
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+}
+
+// ─── Product rows + per-staff accordion ──────────────────────────────────────
+
+.list {
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--color-white-canvas);
+}
+
+.rowWrap {
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  cursor: pointer;
+  transition: background 120ms ease;
+  outline: none;
+
+  &:hover,
+  &:focus-visible {
+    background: var(--color-hover-violet);
+  }
+}
+
+.productInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.productName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.productUnit {
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.chips {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: flex-end;
+}
+
+.chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.chipSold {
+  background: rgba(239, 68, 68, 0.12);
+  color: #dc2626;
+}
+
+.chipReturned {
+  background: rgba(34, 197, 94, 0.12);
+  color: #16a34a;
+}
+
+.chevron {
+  color: var(--color-whisper-gray);
+  flex-shrink: 0;
+  transition: transform 120ms ease;
+}
+
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.staffPanel {
+  padding: 4px 16px 12px;
+  background: var(--color-cloud-gray);
+}
+
+.staffHeader {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-whisper-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  span:nth-child(2),
+  span:nth-child(3) {
+    min-width: 64px;
+    text-align: center;
+  }
+}
+
+.staffRow {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--color-light-violet-stroke);
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.staffName {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.staffCell {
+  display: flex;
+  justify-content: center;
+  min-width: 64px;
+}
+
+.zero {
+  font-size: 13px;
+  color: var(--color-whisper-gray);
+}
