@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { transactionService } from '../../services/transactionService';
+import { settlementService } from '../../services/settlementService';
 import { productService } from '../../services/productService';
 import { customerService } from '../../services/customerService';
 import { locationService } from '../../services/locationService';
@@ -13,6 +15,8 @@ import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
 import type { Transaction, Product, Customer, Location, User, DeliveryAssignment, StockLevel, CustomerPricingItem } from '../../types';
+import type { SettlementStatusInfo } from '../../types';
+import { EditTransactionModal } from './EditTransactionModal';
 import styles from './TransactionsPage.module.scss';
 
 type PaymentMethod = 'cash' | 'transfer' | 'qris';
@@ -107,6 +111,11 @@ export function TransactionsPage() {
   const [txWarnings, setTxWarnings] = useState<string[]>([]);
   const [txConfirmOpen, setTxConfirmOpen] = useState(false);
 
+  // ── Daily settlement gate (FR-STL) ───────────────────────────────────────────
+  const [settlementBlock, setSettlementBlock] = useState<SettlementStatusInfo | null>(null);
+  const [editTx, setEditTx] = useState<Transaction | null>(null);
+  const navigate = useNavigate();
+
   // ── Customer pricing overrides ───────────────────────────────────────────────
   const [customerPricing, setCustomerPricing] = useState<CustomerPricingItem[]>([]);
   const [assignCustomerPricing, setAssignCustomerPricing] = useState<CustomerPricingItem[]>([]);
@@ -127,7 +136,7 @@ export function TransactionsPage() {
   }
 
   const load = useCallback(async () => {
-    const [txs, prods, custs, locs, asgns, usrs, lvls] = await Promise.all([
+    const [txs, prods, custs, locs, asgns, usrs, lvls, stl] = await Promise.all([
       transactionService.list(selectedDate).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat transaksi.'), 'error'); return []; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
       customerService.list(role).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return []; }),
@@ -137,6 +146,7 @@ export function TransactionsPage() {
         ? userService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pengguna.'), 'error'); return []; })
         : Promise.resolve([]),
       stockService.getLevels().catch(() => []),
+      settlementService.status(user?.id).catch(() => ({ blocked: false })),
     ]);
     setTransactions(txs as Transaction[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
@@ -145,6 +155,7 @@ export function TransactionsPage() {
     setAssignments(asgns as DeliveryAssignment[]);
     setKurirUsers((usrs as User[]).filter((u) => u.role === 'kurir' && u.isActive));
     setStockLevels(lvls as StockLevel[]);
+    setSettlementBlock(stl as SettlementStatusInfo);
     setLoading(false);
   }, [selectedDate, role, user?.id, showToast, isOwner, isKasir]);
 
@@ -259,6 +270,11 @@ export function TransactionsPage() {
 
   // ── Submit ───────────────────────────────────────────────────────────────────
   async function doCreate() {
+    if (settlementBlock?.blocked) {
+      showToast(settlementBlock.message ?? 'Selesaikan settlement sebelumnya dulu.', 'error');
+      return;
+    }
+
     setSaving(true);
     const containerReturnsArr = Object.entries(containerReturns)
       .filter(([, qty]) => parseInt(qty) > 0)
@@ -525,12 +541,34 @@ export function TransactionsPage() {
         <div className={styles.header}>
           <h1 className={styles.title}>Transaksi</h1>
           <div className={styles.headerActions}>
+            {/* FR-STL — kurir/kasir cannot reach the Lainnya hub (owner-only) and never see this
+                entry point elsewhere, so give them a permanent one here. The owner keeps using
+                Lainnya → Tutup Kas. */}
+            {(isKurir || isKasir) && (
+              <Button variant="secondary" size="sm" onClick={() => navigate('/settlement')}>
+                Tutup Kas
+              </Button>
+            )}
             {(isOwner || isKasir) && (
               <Button variant="secondary" size="sm" onClick={openAssignmentOverlay}>+ Penugasan</Button>
             )}
-            <Button onClick={openOverlay} size="sm">+ Transaksi Baru</Button>
+            <Button onClick={openOverlay} size="sm" disabled={!!settlementBlock?.blocked}>
+              + Transaksi Baru
+            </Button>
           </div>
         </div>
+
+        {settlementBlock?.blocked && (
+          <div className={styles.blockBanner} role="alert">
+            <div>
+              <strong>Belum bisa mencatat transaksi baru.</strong>
+              <p>{settlementBlock.message}</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/settlement')}>
+              Buka Tutup Kas
+            </Button>
+          </div>
+        )}
 
         {/* Date filter — FR-TXN-015 */}
         <div className={styles.dateFilterRow}>
@@ -678,6 +716,16 @@ export function TransactionsPage() {
                         + Bayar
                       </button>
                     )}
+                    {/* FR-STL-008 — editing is the fix path, so it stays available while a user is
+                        blocked by Gate A; the backend freezes an approved day. */}
+                    {tx.status !== 'cancelled' && (isOwner || tx.staffId === user?.id) && (
+                      <button
+                        className={styles.txActionBtn}
+                        onClick={() => setEditTx(tx)}
+                      >
+                        Ubah
+                      </button>
+                    )}
                     {tx.status !== 'cancelled' && isOwner && (
                       <button
                         className={[styles.txActionBtn, styles.cancelBtn].join(' ')}
@@ -693,6 +741,20 @@ export function TransactionsPage() {
           </div>
         )}
       </div>
+
+      {/* FR-STL-008 — correct a transaction before its day is approved */}
+      {editTx && (
+        <EditTransactionModal
+          key={editTx.id}
+          transaction={editTx}
+          products={products}
+          onClose={() => setEditTx(null)}
+          onSaved={() => {
+            setEditTx(null);
+            void load();
+          }}
+        />
+      )}
 
       {/* ── 3-Step Overlay ─────────────────────────────────────────────────────── */}
       {overlayOpen && (

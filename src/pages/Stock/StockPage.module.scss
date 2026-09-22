@@ -4,6 +4,8 @@
 .title { font-family: var(--font-object-sans); font-size: 28px; font-weight: 700; color: var(--color-deep-space-violet); letter-spacing: -0.56px; }
 .refreshBtn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; color: var(--color-whisper-gray); transition: background-color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
 .loadingWrap { display: flex; justify-content: center; padding: 48px; }
+.blockBanner { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; border: 1px solid var(--color-danger); border-left-width: 4px; border-radius: 10px; background: rgba(220, 38, 38, 0.06); padding: 12px 14px; strong { color: var(--color-danger); font-size: 14px; } p { margin: 4px 0 0; font-size: 13px; color: var(--color-slate-text); } }
+.tabBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 .tabBar { display: flex; gap: 4px; overflow-x: auto; padding-bottom: 2px; -webkit-overflow-scrolling: touch; scrollbar-width: none; &::-webkit-scrollbar { display: none; } }
 .tabBtn { flex-shrink: 0; font-size: 14px; font-weight: 500; padding: 8px 16px; border-radius: 9999px; white-space: nowrap; color: var(--color-whisper-gray); background: none; border: none; cursor: pointer; transition: background-color 0.15s, color 0.15s; &:hover { background: var(--color-cloud-gray); color: var(--color-slate-text); } }
 .tabActive { background: var(--color-deep-space-violet) !important; color: #fff !important; }

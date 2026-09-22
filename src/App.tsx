@@ -16,6 +16,7 @@ import { DebtPaymentsPage } from './pages/DebtPayments/DebtPaymentsPage';
 import { CustomerDebtDetailPage } from './pages/DebtPayments/CustomerDebtDetailPage';
 import { LainnyaPage } from './pages/Lainnya/LainnyaPage';
 import { CashFlowPage } from './pages/CashFlow/CashFlowPage';
+import { SettlementPage } from './pages/Settlement/SettlementPage';
 import { ProfilePage } from './pages/Profile/ProfilePage';
 import { Spinner } from './components/common';
 import type { UserRole } from './types';
@@ -93,6 +94,11 @@ export default function App() {
 
             <Route path="/cash-flow" element={
               <RequireAuth allowedRoles={['owner']}><CashFlowPage /></RequireAuth>
+            } />
+
+            {/* FR-STL — every role needs to close their own day, so this is not owner-gated. */}
+            <Route path="/settlement" element={
+              <RequireAuth><SettlementPage /></RequireAuth>
             } />
           </Route>
 

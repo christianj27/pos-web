@@ -1,5 +1,7 @@
 ﻿import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { stockService } from '../../services/stockService';
+import { settlementService } from '../../services/settlementService';
 import { productService } from '../../services/productService';
 import { locationService } from '../../services/locationService';
 import { containerLoanService } from '../../services/containerLoanService';
@@ -11,6 +13,7 @@ import { formatCurrency, formatDate } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { getErrorMessage } from '../../utils/apiError';
 import type { StockLevel, StockMovement, Product, Location, ContainerLoan, Customer } from '../../types';
+import type { SettlementStatusInfo } from '../../types';
 import styles from './StockPage.module.scss';
 
 type Tab = 'levels' | 'movements' | 'receive' | 'vendor' | 'transfer' | 'defect' | 'production' | 'adjustment' | 'container_loans';
@@ -37,6 +40,8 @@ function getTodayWIB(): string {
 
 export function StockPage() {
   const { user } = useAuth();
+  const userId = user?.id;
+  const navigate = useNavigate();
   const isOwner = user?.role === 'owner';
   const isKasir = user?.role === 'kasir';
   const isKurir = user?.role === 'kurir';
@@ -48,6 +53,9 @@ export function StockPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [locations, setLocations] = useState<Location[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ── Daily settlement gate (FR-STL) ───────────────────────────────────────────
+  const [settlementBlock, setSettlementBlock] = useState<SettlementStatusInfo | null>(null);
 
   // Forms — Receive (multi-item cart)
   const [receiveShared, setReceiveShared] = useState({ to_location_id: '', notes: '' });
@@ -102,18 +110,20 @@ export function StockPage() {
   const [transferAutoPopulated, setTransferAutoPopulated] = useState(false);
 
   const load = useCallback(async () => {
-    const [lvls, prods, locs, custs] = await Promise.all([
+    const [lvls, prods, locs, custs, stl] = await Promise.all([
       stockService.getLevels().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat level stok.'), 'error'); return []; }),
       productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return []; }),
       locationService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat lokasi.'), 'error'); return []; }),
       customerService.list().catch(() => []),
+      settlementService.status(userId).catch(() => ({ blocked: false })),
     ]);
     setLevels(lvls as StockLevel[]);
     setProducts((prods as Product[]).filter((p) => p.isActive));
     setLocations((locs as Location[]).filter((l) => l.isActive));
     setCustomers((custs as Customer[]).filter((c) => c.isActive));
+    setSettlementBlock(stl as SettlementStatusInfo);
     setLoading(false);
-  }, [showToast]);
+  }, [showToast, userId]);
 
   async function loadMovements(date: string) {
     setMovementsLoading(true);
@@ -594,6 +604,9 @@ export function StockPage() {
   }
 
   // --- Tab config -------------------------------------------------------------
+  // FR-STL-002 — tabs that write stock, locked while an earlier business day is unsettled.
+  const WRITE_TABS = new Set(['container_loans', 'receive', 'vendor', 'production', 'transfer', 'defect', 'adjustment']);
+
   const tabs: { key: Tab; label: string }[] = [
     { key: 'levels',          label: 'Level Stok' },
     ...(isOwner                ? [{ key: 'container_loans' as Tab, label: 'Kontainer' }] : []),
@@ -655,11 +668,24 @@ export function StockPage() {
           </button>
         </div>
 
+        {settlementBlock?.blocked && (
+          <div className={styles.blockBanner} role="alert">
+            <div>
+              <strong>Pencatatan stok baru dikunci.</strong>
+              <p>{settlementBlock.message}</p>
+            </div>
+            <Button size="sm" variant="secondary" onClick={() => navigate('/settlement')}>
+              Buka Tutup Kas
+            </Button>
+          </div>
+        )}
+
         <div className={styles.tabBar}>
           {tabs.map((t) => (
             <button
               key={t.key}
               className={[styles.tabBtn, tab === t.key ? styles.tabActive : ''].join(' ')}
+              disabled={!!settlementBlock?.blocked && WRITE_TABS.has(t.key)}
               onClick={() => {
               setTab(t.key);
               resetFeedback();

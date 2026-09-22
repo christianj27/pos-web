@@ -1,0 +1,167 @@
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.headTitle {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+}
+
+.headSub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+}
+
+.sectionTitle {
+  margin: 18px 0 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-whisper-gray);
+}
+
+.hint {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-style: italic;
+  color: var(--color-whisper-gray);
+}
+
+// Same pattern as the settlement page: the scroll is confined to the wrapper, first column pinned.
+.tableScroll {
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-light-violet-stroke);
+    border-radius: 3px;
+  }
+}
+
+.table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    border: 1px solid var(--color-light-violet-stroke);
+    padding: 6px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #f7f6fb;
+    font-weight: 600;
+    color: var(--color-slate-text);
+  }
+
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-white-canvas);
+  }
+
+  th:first-child {
+    background: #f7f6fb;
+    z-index: 2;
+  }
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--color-slate-text);
+}
+
+.rowStrong {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+  padding-top: 6px;
+  border-top: 1px solid var(--color-light-violet-stroke);
+}
+
+.zero {
+  color: #15803d;
+}
+
+.nonZero {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.auditList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auditItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 2px solid var(--color-light-violet-stroke);
+  padding-left: 10px;
+}
+
+.auditAction {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-text);
+}
+
+.auditMeta {
+  font-size: 11px;
+  color: var(--color-whisper-gray);
+}
+
+.auditReason {
+  font-size: 12px;
+  color: var(--color-slate-text);
+  font-style: italic;
+}
+
+.note {
+  margin: 0 0 4px;
+  font-size: 13px;
+  color: var(--color-slate-text);
+}

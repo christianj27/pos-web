@@ -1,0 +1,339 @@
+.page {
+  min-height: 100%;
+  background: var(--color-white-canvas);
+  padding: 16px 16px 96px;
+  // The stock table scrolls inside its own wrapper; the screen itself must never pan sideways.
+  overflow-x: hidden;
+}
+
+.container {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+// ── Header ────────────────────────────────────────────────────────────────────
+.header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.titleGroup { display: flex; align-items: center; gap: 8px; }
+.backArrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  color: var(--color-slate-text);
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s;
+  &:hover { background: var(--color-cloud-gray); }
+}
+.title {
+  font-family: var(--font-object-sans);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+  letter-spacing: -0.56px;
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 60vh;
+}
+
+.backBtn {
+  align-self: flex-start;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--color-digital-violet);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+  margin: 0;
+}
+
+.blockBanner {
+  border: 1px solid var(--color-danger);
+  border-left-width: 4px;
+  border-radius: 10px;
+  background: rgba(220, 38, 38, 0.06);
+  padding: 12px 14px;
+
+  strong {
+    color: var(--color-danger);
+    font-size: 14px;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: var(--color-slate-text);
+  }
+}
+
+.card {
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  background: #fff;
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+}
+
+.cardSub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+  font-weight: 600;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  color: var(--color-slate-text);
+}
+
+.rowStrong {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+  padding-top: 8px;
+  border-top: 1px solid var(--color-light-violet-stroke);
+}
+
+.stockBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  // Flex items default to min-width:auto, which would let the wide table stretch the card
+  // instead of letting the wrapper below scroll.
+  min-width: 0;
+}
+
+.tableHint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--color-whisper-gray);
+  font-style: italic;
+
+  @media (min-width: 640px) {
+    display: none;
+  }
+}
+
+.tableScroll {
+  min-width: 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  // Thin scrollbar where supported; harmless elsewhere.
+  scrollbar-width: thin;
+  padding-bottom: 2px;
+
+  &::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: var(--color-light-violet-stroke);
+    border-radius: 3px;
+  }
+}
+
+.table {
+  // max-content lets the table grow past the viewport (so the wrapper scrolls);
+  // min-width keeps it full width when there is room.
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+
+  th,
+  td {
+    border: 1px solid var(--color-light-violet-stroke);
+    padding: 6px 8px;
+    text-align: left;
+    white-space: nowrap;
+  }
+
+  th {
+    background: #f7f6fb;
+    font-weight: 600;
+    color: var(--color-slate-text);
+  }
+
+  // Keep the product name pinned while the numeric columns scroll past.
+  th:first-child,
+  td:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    background: var(--color-white-canvas);
+  }
+
+  th:first-child {
+    background: #f7f6fb;
+    z-index: 2;
+  }
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-light-violet-stroke);
+}
+
+.varianceOk {
+  font-size: 13px;
+  color: #15803d;
+  background: rgba(21, 128, 61, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.varianceBad {
+  font-size: 13px;
+  color: var(--color-danger);
+  background: rgba(220, 38, 38, 0.08);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sectionHead {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sectionTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.filter {
+  border: 1px solid var(--color-light-violet-stroke);
+  background: #fff;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: var(--color-slate-text);
+  cursor: pointer;
+}
+
+.filterActive {
+  background: var(--color-digital-violet);
+  border-color: var(--color-digital-violet);
+  color: #fff;
+  font-weight: 600;
+}
+
+.cardList {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.historyCard {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+
+  & + & {
+    border-top: 1px solid var(--color-light-violet-stroke);
+  }
+}
+
+.historyTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.historyTitle {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-slate-text);
+}
+
+.historySub {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-whisper-gray);
+}
+
+.historyNote {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-slate-text);
+  font-style: italic;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.modalNote {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: var(--color-slate-text);
+}

@@ -50,6 +50,16 @@ function CashFlowIcon() {
   );
 }
 
+function SettlementIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" width="28" height="28" aria-hidden="true">
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <path d="M8 9h8M8 13h5" />
+      <path d="M15 17l2 2 3-3" />
+    </svg>
+  );
+}
+
 interface MasterCard {
   label: string;
   description: string;
@@ -67,6 +77,7 @@ export function LainnyaPage() {
     { label: 'Lokasi', description: 'Kelola lokasi stok & kendaraan', to: '/locations', icon: <LocationIcon /> },
     { label: 'Pembayaran Hutang', description: 'Riwayat pembayaran hutang', to: '/debt-payments', icon: <DebtIcon /> },
     { label: 'Arus Kas', description: 'Riwayat arus kas harian', to: '/cash-flow', icon: <CashFlowIcon /> },
+    { label: 'Tutup Kas', description: 'Settlement harian & persetujuan', to: '/settlement', icon: <SettlementIcon /> },
   ];
 
   return (

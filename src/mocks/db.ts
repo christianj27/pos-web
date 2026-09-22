@@ -17,7 +17,7 @@ export const USE_MOCK = import.meta.env.VITE_USE_MOCK !== 'false';
 import type {
   AuthUser, User, Location, Product, Customer, CustomerPricingItem,
   StockLevel, StockMovement, Transaction, DebtPayment, ContainerLoan, DashboardStats,
-  DeliveryAssignment, StaffRevenueSummary, Expense,
+  DeliveryAssignment, StaffRevenueSummary, Expense, Settlement,
 } from '../types';
 
 // ─── Auth credentials ─────────────────────────────────────────────────────────
@@ -338,6 +338,14 @@ export const mockDb = {
     { id: 'exp-3', category: 'salary',      description: 'Gaji harian Sari',     amount: 100000, expenseDate: '2026-05-10', createdByName: 'Budi Santoso', createdAt: '2026-05-10T04:05:00.000Z' },
     { id: 'exp-4', category: 'electricity', description: 'Token listrik gudang', amount:  50000, expenseDate: '2026-05-09', createdByName: 'Budi Santoso', createdAt: '2026-05-09T01:30:00.000Z' },
   ] as Expense[],
+
+  // FR-STL — daily settlement ("Tutup Kas"): one row per user per WIB business date.
+  settlements: [] as Settlement[],
+
+  // FR-STL-009 — owner-booked "Selisih Kas" corrections. Signed: negative = short, positive = over.
+  cashAdjustments: [] as {
+    id: string; userId: string; businessDate: string; amount: number; reason: string; createdAt: string;
+  }[],
 };
 
 /** Generate a simple unique ID for new mock records. */

@@ -1,5 +1,6 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
+import { ApiError } from '../utils/apiError';
 import type { Transaction } from '../types';
 
 export interface CreateTransactionPayload {
@@ -12,6 +13,16 @@ export interface CreateTransactionPayload {
   notes?: string;
   containerReturns?: { productId: string; quantity: number }[];
   debtPaymentAmount?: number;
+}
+
+/** FR-STL-008 — correct a transaction while its business date is still open. */
+export interface UpdateTransactionPayload {
+  items: { productId: string; quantity: number; unitPrice: number }[];
+  paidAmount: number;
+  paymentMethod?: 'cash' | 'transfer' | 'qris';
+  referenceNo?: string;
+  notes?: string;
+  reason: string;
 }
 
 function toWIBDate(isoString: string): string {
@@ -119,6 +130,42 @@ export const transactionService = {
       });
       customer.outstandingDebt = Math.max(0, (customer.outstandingDebt ?? 0) - data.debtPaymentAmount);
     }
+    return delay({ ...tx });
+  },
+
+  /**
+   * FR-STL-008 — corrects an open-day transaction (items, amounts, method, notes) with a reason.
+   * The mock restates the transaction row only; the real backend also rewrites the dispatch stock
+   * movements and container loans and writes an audit entry.
+   */
+  update: (id: string, data: UpdateTransactionPayload): Promise<Transaction> => {
+    if (!USE_MOCK) return apiClient.put<Transaction>(`/api/transactions/${id}`, data).then((r) => r.data);
+
+    const tx = mockDb.transactions.find((t) => t.id === id);
+    if (!tx) throw new ApiError('Transaksi tidak ditemukan.', 404);
+    if (tx.status === 'cancelled') throw new ApiError('Transaksi sudah dibatalkan.', 400);
+
+    const items = data.items.map((i) => {
+      const prod = mockDb.products.find((p) => p.id === i.productId);
+      return {
+        productId: i.productId,
+        productName: prod?.name ?? '',
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        subtotal: i.quantity * i.unitPrice,
+      };
+    });
+    const totalAmount = items.reduce((s, i) => s + i.subtotal, 0);
+
+    if (data.paidAmount > totalAmount)
+      throw new ApiError('Jumlah bayar tidak boleh melebihi total transaksi.', 400);
+
+    tx.items = items;
+    tx.totalAmount = totalAmount;
+    tx.paidAmount = data.paidAmount;
+    tx.paymentMethod = data.paymentMethod ?? tx.paymentMethod;
+    tx.notes = data.notes;
+
     return delay({ ...tx });
   },
 

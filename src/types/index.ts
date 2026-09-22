@@ -384,6 +384,115 @@ export interface ExpensePayload {
 }
 
 // ─── API ──────────────────────────────────────────────────────────────────────
+// ─── Daily Settlement / Tutup Kas (FR-STL) ───────────────────────────────────
+export type SettlementStatus = 'open' | 'submitted' | 'rejected' | 'approved';
+export type SettlementMethod = 'cash' | 'transfer' | 'qris';
+
+export interface SettlementMethodLine {
+  id: string;
+  method: SettlementMethod;
+  expectedAmount: number;
+  countedAmount: number;
+  variance: number;
+}
+
+export interface SettlementStockLine {
+  id: string;
+  productId: string;
+  productName: string;
+  productUnit: string;
+  isRefillable: boolean;
+  expectedFilled: number;
+  countedFilled: number;
+  expectedEmpty: number;
+  countedEmpty: number;
+  containersOut: number;
+  containersReturned: number;
+}
+
+/** Live figures for a business date, recomputed from the ledger by the backend. */
+export interface SettlementPreview {
+  businessDate: string;
+  status: SettlementStatus;
+  settlementId?: string;
+  expectedCash: number;
+  countedCash: number;
+  cashVariance: number;
+  cashIn: number;
+  cashOut: number;
+  cashAdjustments: number;
+  transferExpected: number;
+  qrisExpected: number;
+  newDebtTotal: number;
+  debtPaymentTotal: number;
+  vehicleLocationId?: string;
+  vehicleLocationName?: string;
+  methods: SettlementMethodLine[];
+  stocks: SettlementStockLine[];
+}
+
+export interface Settlement {
+  id: string;
+  userId: string;
+  userName: string;
+  businessDate: string;
+  status: SettlementStatus;
+  expectedCash: number;
+  countedCash: number;
+  cashVariance: number;
+  transferExpected: number;
+  qrisExpected: number;
+  newDebtTotal: number;
+  debtPaymentTotal: number;
+  note?: string;
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewerName?: string;
+  reviewNote?: string;
+  createdAt: string;
+}
+
+export interface SettlementAuditEntry {
+  id: string;
+  action: 'submit' | 'approve' | 'reject' | 'reopen' | 'cash_adjustment' | 'edit';
+  reason?: string;
+  changesJson?: string;
+  actorName: string;
+  createdAt: string;
+}
+
+/** `GET /api/settlements/{id}` — header fields plus the snapshot lines and the audit trail. */
+export interface SettlementDetail {
+  settlement: Settlement;
+  methods: SettlementMethodLine[];
+  stocks: SettlementStockLine[];
+  auditTrail: SettlementAuditEntry[];
+}
+
+/** Drives the "you must settle first" banner; never blocks the owner. */
+export interface SettlementStatusInfo {
+  blocked: boolean;
+  blockingBusinessDate?: string;
+  blockingStatus?: string;
+  blockingSettlementId?: string;
+  message?: string;
+}
+
+export interface SubmitSettlementPayload {
+  businessDate?: string;
+  countedCash: number;
+  methodLines?: { method: SettlementMethod; countedAmount: number }[];
+  stockLines?: { productId: string; countedFilled: number; countedEmpty: number }[];
+  note?: string;
+}
+
+export interface CashAdjustmentPayload {
+  userId: string;
+  businessDate: string;
+  amount: number;
+  reason: string;
+}
+
 export type { ApiError } from '../utils/apiError';
 
 export interface PaginatedResponse<T> {
