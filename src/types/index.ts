@@ -102,6 +102,11 @@ export interface StockMovement {
   createdByName: string;
   createdAt: string;
   customerName?: string;
+  /**
+   * Mock-only: movements in the mock store carry the customer directly, whereas the API derives
+   * customer ownership from the movement's transaction (FR-CST-011).
+   */
+  customerId?: string;
   batchId?: string | null;
   isReversed?: boolean;
   isReversal?: boolean;
@@ -270,6 +275,40 @@ export interface StockMovementSummaryResponse {
   startDate: string;
   endDate: string;
   items: StockProductSummary[];
+}
+
+// ─── Per-customer stock movement summary — FR-CST-011 ────────────────────────
+
+/** Per-staff split of a single product's movements for one customer (FR-CST-011). */
+export interface CustomerStockStaffItem {
+  staffId: string;
+  staffName: string;
+  sold: number;
+  returned: number;
+}
+
+/** One product row of the per-customer "Pergerakan Stok" summary (FR-CST-011). */
+export interface CustomerStockProductItem {
+  productId: string;
+  productName: string;
+  productUnit: string;
+  productCategory: ProductCategory;
+  /** Filled containers delivered to the customer (all dispatch qty for simple products). */
+  totalSold: number;
+  /** Empty containers the customer handed back. */
+  totalReturned: number;
+  staff: CustomerStockStaffItem[];
+}
+
+/** Response of `GET /api/customers/{id}/stock-summary` (FR-CST-011). */
+export interface CustomerStockSummaryResponse {
+  customerId: string;
+  customerName: string;
+  period: StockPeriod;
+  /** Resolved WIB range, inclusive (YYYY-MM-DD) */
+  startDate: string;
+  endDate: string;
+  items: CustomerStockProductItem[];
 }
 
 export interface PaymentMethodStaffItem {

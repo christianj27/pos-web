@@ -6,6 +6,7 @@ import { Button, Badge, Modal, Input, ConfirmDialog, EmptyState, Spinner } from 
 import { formatCurrency, formatNumber } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError, getErrorMessage } from '../../utils/apiError';
+import { CustomerStockMovementModal } from './CustomerStockMovementModal';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
 import styles from './CustomersPage.module.scss';
 
@@ -35,6 +36,9 @@ export function CustomersPage() {
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [pricingUpdates, setPricingUpdates] = useState<Record<string, string>>({});
   const [savingPricing, setSavingPricing] = useState(false);
+
+  // Per-customer stock movement summary — FR-CST-011
+  const [stockCustomer, setStockCustomer] = useState<Customer | null>(null);
 
   const load = useCallback(async () => {
     const data = await customerService.list(user?.role).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return [] as Customer[]; });
@@ -186,6 +190,7 @@ export function CustomersPage() {
                 </div>
                 <div className={styles.cardActions}>
                   <button className={styles.actionBtn} onClick={() => openEdit(c)}>Edit</button>
+                  <button className={[styles.actionBtn, styles.stockBtn].join(' ')} onClick={() => setStockCustomer(c)}>Pergerakan Stok</button>
                   {isOwner && (<button className={[styles.actionBtn, styles.pricingBtn].join(' ')} onClick={() => openPricing(c)}>Harga Khusus</button>)}
                   <button
                     className={[styles.actionBtn, styles.deleteBtn].join(' ')}
@@ -254,6 +259,11 @@ export function CustomersPage() {
           })}
         </div>
       </Modal>
+
+      {/* Per-customer stock movement summary — FR-CST-011 */}
+      {stockCustomer && (
+        <CustomerStockMovementModal customer={stockCustomer} onClose={() => setStockCustomer(null)} />
+      )}
 
       <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleDelete}
         title="Hapus Pelanggan"
