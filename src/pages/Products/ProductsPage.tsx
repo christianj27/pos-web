@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { productService } from '../../services/productService';
+import { customerService } from '../../services/customerService';
+import { BulkPricingAdjustModal } from '../../components/pricing/BulkPricingAdjustModal';
 import { useToast } from '../../context/ToastContext';
 import { Button, Badge, Modal, Input, Select, ConfirmDialog, EmptyState, Spinner } from '../../components/common';
 import { PRODUCT_CATEGORY_LABELS, PRODUCT_TYPE_LABELS, UNIT_OPTIONS } from '../../utils/constants';
@@ -35,6 +37,8 @@ export function ProductsPage() {
   const [saving, setSaving] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<Product | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  // FR-CST-012 — offered after a base price change when customers hold a custom price for the product
+  const [priceAdjust, setPriceAdjust] = useState<{ productId: string; amount: number } | null>(null);
 
   const load = useCallback(async () => {
     const data = await productService.list().catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat produk.'), 'error'); return [] as Product[]; });
@@ -78,16 +82,20 @@ export function ProductsPage() {
     setSaving(true);
     try {
       if (editTarget) {
+        const newBasePrice = parseFloat(formData.base_price);
         await productService.update(editTarget.id, {
           name: formData.name,
           category: formData.category,
           productionType: formData.production_type || undefined,
           type: formData.type as 'air' | 'gas',
           unit: formData.unit,
-          basePrice: parseFloat(formData.base_price),
+          basePrice: newBasePrice,
           isActive: editTarget.isActive,
         });
         showToast('Produk berhasil diperbarui.');
+        if (editTarget.isActive && newBasePrice !== editTarget.basePrice) {
+          void offerPriceAdjust(editTarget.id, newBasePrice - editTarget.basePrice);
+        }
       } else {
         await productService.create({
           name: formData.name,
@@ -108,6 +116,15 @@ export function ProductsPage() {
       }
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function offerPriceAdjust(productId: string, amount: number) {
+    try {
+      const pricing = await customerService.getPricingByProduct(productId);
+      if (pricing.items.length > 0) setPriceAdjust({ productId, amount });
+    } catch {
+      // The base price is already saved; the owner can still adjust from the Pelanggan page.
     }
   }
 
@@ -202,6 +219,15 @@ export function ProductsPage() {
           <Input label="Harga Dasar (Rp)" currency min="0" value={formData.base_price} onChange={(e) => setField('base_price', e.target.value)} error={formErrors.base_price} required />
         </div>
       </Modal>
+
+      {priceAdjust && (
+        <BulkPricingAdjustModal
+          lockProduct
+          initialProductId={priceAdjust.productId}
+          initialAmount={priceAdjust.amount}
+          onClose={() => setPriceAdjust(null)}
+        />
+      )}
 
       <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleToggleActive}
         title={confirmTarget?.isActive ? 'Nonaktifkan Produk' : 'Aktifkan Produk'}

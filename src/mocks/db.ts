@@ -73,7 +73,7 @@ export const mockDb = {
       { productId: 'prod-6', productName: 'Air Isi Ulang 240ml', basePrice: 500,   customPrice: undefined },
     ],
     'cust-2': [
-      { productId: 'prod-1', productName: 'Galon Aqua',          basePrice: 5000,  customPrice: undefined },
+      { productId: 'prod-1', productName: 'Galon Aqua',          basePrice: 5000,  customPrice: 4700  },
       { productId: 'prod-2', productName: 'Galon Vit',           basePrice: 4800,  customPrice: undefined },
       { productId: 'prod-3', productName: 'Galon Isi Ulang',     basePrice: 3000,  customPrice: undefined },
       { productId: 'prod-4', productName: 'Gas LPG 3 kg',        basePrice: 20000, customPrice: 18000 },

@@ -1,0 +1,158 @@
+// Bulk custom pricing adjustment modal — FR-CST-012.
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.intro {
+  font-size: 14px;
+  color: var(--color-charcoal-text);
+}
+
+.muted {
+  font-size: 13px;
+  color: var(--color-slate-text);
+}
+
+.errorText {
+  font-size: 13px;
+  color: var(--color-danger);
+}
+
+.loadingWrap {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
+}
+
+// ─── Amount ──────────────────────────────────────────────────────────────────
+
+.amountRow {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.directionGroup {
+  display: flex;
+  gap: 6px;
+}
+
+.directionBtn {
+  flex: 1;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 9999px;
+  background: var(--color-white-canvas);
+  color: var(--color-whisper-gray);
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: var(--color-hover-violet);
+  }
+}
+
+.directionActive {
+  background: var(--color-deep-space-violet);
+  border-color: var(--color-deep-space-violet);
+  color: var(--color-white-canvas);
+
+  &:hover {
+    background: var(--color-deep-space-violet);
+  }
+}
+
+// ─── Preview list ────────────────────────────────────────────────────────────
+
+.selectAll {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-slate-text);
+  cursor: pointer;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--color-light-violet-stroke);
+  border-radius: 8px;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  min-height: 44px;
+
+  & + & {
+    border-top: 1px solid var(--color-light-violet-stroke);
+  }
+}
+
+.rowInvalid {
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+}
+
+.rowLabel {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  cursor: pointer;
+
+  input {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+}
+
+.rowName {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-deep-space-violet);
+}
+
+.rowPrice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--color-slate-text);
+  white-space: nowrap;
+}
+
+.oldPrice {
+  color: var(--color-slate-text);
+}
+
+.newPrice {
+  font-weight: 700;
+  color: var(--color-deep-space-violet);
+}
+
+.newPriceInvalid {
+  font-weight: 700;
+  color: var(--color-danger);
+}

@@ -7,6 +7,7 @@ import { formatCurrency, formatNumber } from '../../utils/formatCurrency';
 import { useAuth } from '../../hooks/useAuth';
 import { ApiError, getErrorMessage } from '../../utils/apiError';
 import { CustomerStockMovementModal } from './CustomerStockMovementModal';
+import { BulkPricingAdjustModal } from '../../components/pricing/BulkPricingAdjustModal';
 import type { Customer, CustomerPricingItem, Product } from '../../types';
 import styles from './CustomersPage.module.scss';
 
@@ -39,6 +40,9 @@ export function CustomersPage() {
 
   // Per-customer stock movement summary — FR-CST-011
   const [stockCustomer, setStockCustomer] = useState<Customer | null>(null);
+
+  // Bulk custom pricing adjustment — FR-CST-012 (owner only)
+  const [bulkPricingOpen, setBulkPricingOpen] = useState(false);
 
   const load = useCallback(async () => {
     const data = await customerService.list(user?.role).catch((err) => { showToast(getErrorMessage(err, 'Gagal memuat pelanggan.'), 'error'); return [] as Customer[]; });
@@ -148,7 +152,12 @@ export function CustomersPage() {
       <div className={styles.container}>
         <div className={styles.header}>
           <h1 className={styles.title}>Pelanggan</h1>
-          <Button onClick={openCreate} size="sm">+ Tambah Pelanggan</Button>
+          <div className={styles.headerActions}>
+            {isOwner && (
+              <Button variant="secondary" size="sm" onClick={() => setBulkPricingOpen(true)}>Sesuaikan Harga Khusus</Button>
+            )}
+            <Button onClick={openCreate} size="sm">+ Tambah Pelanggan</Button>
+          </div>
         </div>
 
         {loading && <div className={styles.loadingWrap}><Spinner /></div>}
@@ -264,6 +273,9 @@ export function CustomersPage() {
       {stockCustomer && (
         <CustomerStockMovementModal customer={stockCustomer} onClose={() => setStockCustomer(null)} />
       )}
+
+      {/* Bulk custom pricing adjustment — FR-CST-012 */}
+      {bulkPricingOpen && <BulkPricingAdjustModal onClose={() => setBulkPricingOpen(false)} />}
 
       <ConfirmDialog isOpen={!!confirmTarget} onClose={() => setConfirmTarget(null)} onConfirm={handleDelete}
         title="Hapus Pelanggan"

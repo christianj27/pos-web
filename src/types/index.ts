@@ -67,6 +67,29 @@ export interface CustomerPricingItem {
   customPrice?: number;
 }
 
+/** FR-CST-012 — one active customer that has a custom price for the product. */
+export interface ProductCustomerPricingItem {
+  customerId: string;
+  customerName: string;
+  isConfidential: boolean;
+  customPrice: number;
+}
+
+/** FR-CST-012 — response of `GET /api/customers/pricing?product_id=`. */
+export interface ProductCustomerPricing {
+  productId: string;
+  productName: string;
+  unit: string;
+  basePrice: number;
+  items: ProductCustomerPricingItem[];
+}
+
+/** FR-CST-012 — response of `POST /api/customers/pricing/bulk-adjust`. */
+export interface BulkAdjustPricingResult {
+  updatedCount: number;
+  items: { customerId: string; customerName: string; oldPrice: number; newPrice: number }[];
+}
+
 // ─── Stock ────────────────────────────────────────────────────────────────────
 export type ContainerStatus = 'filled' | 'empty';
 export type MovementType = 'receive' | 'transfer' | 'dispatch' | 'defect' | 'production' | 'vendor_exchange' | 'adjustment';

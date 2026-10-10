@@ -1,9 +1,13 @@
 import { apiClient } from '../hooks/useApi';
 import { USE_MOCK, mockDb, uid, delay } from '../mocks/db';
 import { resolveStockPeriodRange, todayWIB } from '../utils/stockPeriod';
+import { ApiError } from '../utils/apiError';
 import type {
+  BulkAdjustPricingResult,
   Customer,
   CustomerPricingItem,
+  ProductCustomerPricing,
+  ProductCustomerPricingItem,
   CustomerStockProductItem,
   CustomerStockStaffItem,
   CustomerStockSummaryResponse,
@@ -157,6 +161,57 @@ export const customerService = {
     });
     mockDb.customerPricing[id] = existing;
     return delay(undefined);
+  },
+
+  /** FR-CST-012 — active customers with a custom price for the product (bulk adjustment preview). */
+  getPricingByProduct: (productId: string): Promise<ProductCustomerPricing> => {
+    if (!USE_MOCK) {
+      return apiClient
+        .get<ProductCustomerPricing>('/api/customers/pricing', { params: { product_id: productId } })
+        .then((r) => r.data);
+    }
+    const product = mockDb.products.find((p) => p.id === productId);
+    if (!product) return Promise.reject(new ApiError('Produk tidak ditemukan.', 404));
+    const items: ProductCustomerPricingItem[] = mockDb.customers
+      .filter((c) => c.isActive)
+      .flatMap((c) => {
+        const row = mockDb.customerPricing[c.id]?.find((r) => r.productId === productId);
+        return row?.customPrice != null
+          ? [{ customerId: c.id, customerName: c.name, isConfidential: c.isConfidential ?? false, customPrice: row.customPrice }]
+          : [];
+      })
+      .sort((a, b) => a.customerName.localeCompare(b.customerName));
+    return delay({ productId, productName: product.name, unit: product.unit, basePrice: product.basePrice, items });
+  },
+
+  /** FR-CST-012 — add a signed fixed amount to the selected customers' custom price; all or nothing. */
+  bulkAdjustPricing: (req: { productId: string; amount: number; customerIds: string[] }): Promise<BulkAdjustPricingResult> => {
+    if (!USE_MOCK) return apiClient.post<BulkAdjustPricingResult>('/api/customers/pricing/bulk-adjust', req).then((r) => r.data);
+    const fail = (message: string) => Promise.reject(new ApiError(message, 400));
+    const product = mockDb.products.find((p) => p.id === req.productId);
+    if (!product) return fail('Produk tidak ditemukan.');
+    if (!product.isActive) return fail('Produk tidak aktif.');
+    if (req.amount === 0) return fail('Nominal penyesuaian tidak boleh nol.');
+    const ids = [...new Set(req.customerIds)];
+    if (ids.length === 0) return fail('Pilih minimal satu pelanggan.');
+
+    const targets = ids.map((id) => {
+      const customer = mockDb.customers.find((c) => c.id === id && c.isActive);
+      const row = mockDb.customerPricing[id]?.find((r) => r.productId === req.productId);
+      return customer && row?.customPrice != null ? { customer, row, oldPrice: row.customPrice } : null;
+    });
+    if (targets.some((t) => t === null)) return fail('Sebagian pelanggan tidak memiliki harga khusus untuk produk ini.');
+    const valid = targets
+      .filter((t) => t !== null)
+      .sort((a, b) => a.customer.name.localeCompare(b.customer.name));
+    const invalid = valid.find((t) => t.oldPrice + req.amount <= 0);
+    if (invalid) return fail(`Harga khusus ${invalid.customer.name} akan menjadi Rp 0 atau kurang.`);
+
+    const items = valid.map(({ customer, row, oldPrice }) => {
+      row.customPrice = oldPrice + req.amount;
+      return { customerId: customer.id, customerName: customer.name, oldPrice, newPrice: row.customPrice };
+    });
+    return delay({ updatedCount: items.length, items });
   },
 
   getDebt: (id: string): Promise<{ outstandingDebt: number }> => {
